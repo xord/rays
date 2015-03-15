@@ -1,0 +1,47 @@
+// -*- c++ -*-
+#pragma once
+#ifndef __RAYS_RENDER_BUFFER_H__
+#define __RAYS_RENDER_BUFFER_H__
+
+
+#include <xot/pimpl.h>
+#include <rays/defs.h>
+#include <rays/opengl.h>
+
+
+namespace Rays
+{
+
+
+	class RenderBuffer
+	{
+
+		public:
+
+			RenderBuffer ();
+
+			RenderBuffer (int width, int height);
+
+			~RenderBuffer ();
+
+			GLuint id () const;
+
+			int width () const;
+
+			int height () const;
+
+			operator bool () const;
+
+			bool operator ! () const;
+
+			struct Data;
+
+			Xot::PImpl<Data, true> self;
+
+	};// RenderBuffer
+
+
+}// Rays
+
+
+#endif//EOH

@@ -1,0 +1,79 @@
+// -*- c++ -*-
+#pragma once
+#ifndef __RAYS_FRAME_BUFFER_H__
+#define __RAYS_FRAME_BUFFER_H__
+
+
+#include <xot/pimpl.h>
+#include <rays/defs.h>
+#include <rays/opengl.h>
+
+
+namespace Rays
+{
+
+
+	class Texture;
+
+
+	class FrameBuffer
+	{
+
+		public:
+
+			FrameBuffer ();
+
+			FrameBuffer (const Texture& texture);
+
+			~FrameBuffer ();
+
+			void attach (const Texture& texture);
+
+			GLuint id () const;
+
+			int width () const;
+
+			int height () const;
+
+			      Texture& texture ();
+
+			const Texture& texture () const;
+
+			operator bool () const;
+
+			bool operator ! () const;
+
+			struct Data;
+
+			Xot::PImpl<Data, true> self;
+
+	};// FrameBuffer
+
+
+	class FrameBufferBinder
+	{
+
+		public:
+
+			FrameBufferBinder (GLuint id);
+
+			~FrameBufferBinder ();
+
+			GLuint current () const;
+
+		private:
+
+			GLuint id;
+
+	};// FrameBufferBinder
+
+
+	void bind_frame_buffer (GLuint id);
+
+	void unbind_frame_buffer ();
+
+
+}// Rays
+
+
+#endif//EOH
