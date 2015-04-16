@@ -35,7 +35,7 @@ namespace Rays
 		{
 			if (id >= 0)
 			{
-				GLenum id_ = id;
+				GLuint id_ = id;
 				glDeleteTextures(1, &id_);
 			}
 

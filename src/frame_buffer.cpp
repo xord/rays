@@ -49,7 +49,7 @@ namespace Rays
 
 			if (id >= 0)
 			{
-				GLenum id_ = id;
+				GLuint id_ = id;
 				glDeleteFramebuffers(1, &id_);
 				check_error(__FILE__, __LINE__);
 			}

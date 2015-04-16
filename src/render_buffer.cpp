@@ -59,7 +59,7 @@ namespace Rays
 		{
 			if (id >= 0)
 			{
-				GLenum id_ = id;
+				GLuint id_ = id;
 				glDeleteRenderbuffers(1, &id_);
 			}
 
