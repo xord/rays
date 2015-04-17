@@ -1,4 +1,4 @@
 
-# Rays - A Drawing Engine using OpenGL
+# Rays - A Drawing Engine using OpenGL.
 
-## by snori@xord.org
+ by snori@xord.org

@@ -1,7 +1,7 @@
 #include "rays/exception.h"
 
 
-#include "xot/string.h"
+#include <xot/string.h>
 
 
 namespace Rays
