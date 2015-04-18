@@ -1,7 +1,7 @@
 // -*- c++ -*-
 #pragma once
-#ifndef __RAYS_OSX_HELPER_H__
-#define __RAYS_OSX_HELPER_H__
+#ifndef __RAYS_SRC_OSX_HELPER_H__
+#define __RAYS_SRC_OSX_HELPER_H__
 
 
 #include <boost/shared_ptr.hpp>

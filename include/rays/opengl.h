@@ -1,7 +1,7 @@
 // -*- c++ -*-
 #pragma once
-#ifndef __RAYS_GL_H__
-#define __RAYS_GL_H__
+#ifndef __RAYS_OPENGL_H__
+#define __RAYS_OPENGL_H__
 
 
 #if defined(OSX)

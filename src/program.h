@@ -1,7 +1,7 @@
 // -*- c++ -*-
 #pragma once
-#ifndef __RAYS_PROGRAM_H__
-#define __RAYS_PROGRAM_H__
+#ifndef __RAYS_SRC_PROGRAM_H__
+#define __RAYS_SRC_PROGRAM_H__
 
 
 #include <xot/pimpl.h>

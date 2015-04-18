@@ -1,7 +1,7 @@
 // -*- c++ -*-
 #pragma once
-#ifndef __RAYS_WIN32_GDI_H__
-#define __RAYS_WIN32_GDI_H__
+#ifndef __RAYS_SRC_WIN32_GDI_H__
+#define __RAYS_SRC_WIN32_GDI_H__
 
 
 #include <windows.h>

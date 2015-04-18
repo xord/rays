@@ -870,7 +870,7 @@ namespace Rays
 		if (!tex)
 			rays_error(__FILE__, __LINE__, "text_image's texture is invalid.");
 
-		#ifdef DEBUG
+		#if 0//def DEBUG
 			save_image(self->text_image, "/Users/snori/font.png");
 
 			painter->push_attr();
