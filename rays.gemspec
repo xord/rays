@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
 
   s.authors  = %w[snori]
   s.email    = 'snori@xord.org'
-  s.homepage = "https://github.com/xord/reflexion/wiki/#{name.capitalize}-Home"
+  s.homepage = "https://github.com/xord/rays"
 
   s.platform              = Gem::Platform::RUBY
   s.required_ruby_version = '>=1.9.0'
