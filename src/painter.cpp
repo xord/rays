@@ -82,11 +82,13 @@ namespace Rays
 
 		FrameBuffer frame_buffer;
 
+		float scale_factor;
+
 		mutable Matrix matrix_tmp;
 
 		Data ()
 		:	painting(false), prev_matrix_mode(0), current_texture(0),
-			text_image(1, 1, GRAY, true)
+			text_image(1, 1, GRAY, true), scale_factor(1)
 		{
 			attrs.init();
 		}
@@ -172,6 +174,16 @@ namespace Rays
 	};// Painter::Data
 
 
+	void
+	set_painter_scale_factor (Painter* painter, float factor)
+	{
+		if (!painter)
+			argument_error(__FILE__, __LINE__, "invalid texture.");
+
+		painter->self->scale_factor = factor;
+	}
+
+
 	Painter::Painter ()
 	{
 	}
@@ -252,7 +264,10 @@ namespace Rays
 		push_shader();
 
 		const Bounds& vp = self->viewport;
-		glViewport((int) vp.x, (int) vp.y, (int) vp.width, (int) vp.height);
+		float scale      = self->scale_factor;
+		glViewport(
+			(int) vp.x,             (int) vp.y,
+			(int) vp.width * scale, (int) vp.height * scale);
 
 		coord x1 = vp.x, x2 = vp.x + vp.width;
 		coord y1 = vp.y, y2 = vp.y + vp.height;
