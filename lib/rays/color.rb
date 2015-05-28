@@ -46,6 +46,10 @@ module Rays
       [red, green, blue, alpha]
     end
 
+    def to_s ()
+      to_a.map {|o| o.to_s}
+    end
+
     def [] (index)
       case index
       when 0 then red
@@ -78,7 +82,7 @@ module Rays
     end
 
     def inspect ()
-      "#<Rays::Color r=#{red}, g=#{green}, b=#{blue}, a=#{alpha}>"
+      "#<#{self.class.name} #{to_s}>"
     end
 
     COLORS = {
