@@ -52,6 +52,10 @@ namespace Rays
 
 		bool operator ! () const;
 
+		friend bool operator == (const This& lhs, const This& rhs);
+
+		friend bool operator != (const This& lhs, const This& rhs);
+
 		static uchar float2uchar (float value) {return (uchar) Xot::clip(0.f, 255.f, value * 255);}
 
 		static float uchar2float (uchar value) {return value / 255.f;}
