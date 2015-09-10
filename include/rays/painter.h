@@ -213,9 +213,9 @@ namespace Rays
 
 			const Font& font () const;
 
-			void push_attr ();
+			void push_attrs ();
 
-			void  pop_attr ();
+			void  pop_attrs ();
 
 			//
 			// shader manipulation methods
@@ -244,9 +244,9 @@ namespace Rays
 
 			void set_uniform (const char* name, const float* args, size_t size);
 
-			void push_shader ();
+			void push_shaders ();
 
-			void  pop_shader ();
+			void  pop_shaders ();
 
 			//
 			// transformation methods

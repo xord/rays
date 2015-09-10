@@ -27,15 +27,33 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF4(setup, width, height, color_space, alpha_only)
+RUCY_DEFN(initialize)
 {
 	RUCY_CHECK_OBJ(Rays::Texture, self);
+	check_arg_count(__FILE__, __LINE__, "Texture#initialize", argc, 1, 2, 3, 4);
 
-	Rays::ColorSpace* cs = to<Rays::ColorSpace*>(color_space);
-	if (!cs) argument_error(__FILE__, __LINE__);
+	if (argv[0].is_kind_of(Rays::bitmap_class()))
+	{
+		check_arg_count(__FILE__, __LINE__, "Image#initialize", argc, 1, 2);
 
-	*THIS = Rays::Texture(
-		to<int>(width), to<int>(height), *cs, to<bool>(alpha_only));
+		const Rays::Bitmap* bitmap = to<Rays::Bitmap*>(argv[0]);
+		if (!bitmap)
+			argument_error(__FILE__, __LINE__);
+
+		bool alpha_only = (argc >= 2) ? to<bool>(argv[1]) : false;
+		*THIS = Rays::Texture(*bitmap, alpha_only);
+	}
+	else
+	{
+		check_arg_count(__FILE__, __LINE__, "Image#initialize", argc, 2, 3, 4);
+
+		int width           = to<int>(argv[0]);
+		int height          = to<int>(argv[1]);
+		Rays::ColorSpace cs = (argc >= 3) ? to<Rays::ColorSpace>(argv[2]) : Rays::RGBA;
+		bool alpha_only     = (argc >= 4) ? to<bool>(argv[3])             : false;
+		*THIS = Rays::Texture(width, height, cs, alpha_only);
+	}
+
 	return self;
 }
 RUCY_END
@@ -122,7 +140,7 @@ Init_texture ()
 
 	cTexture = mRays.define_class("Texture");
 	cTexture.define_alloc_func(alloc);
-	cTexture.define_private_method("setup", setup);
+	cTexture.define_private_method("initialize", initialize);
 	cTexture.define_method("width", width);
 	cTexture.define_method("height", height);
 	cTexture.define_method("color_space", color_space);

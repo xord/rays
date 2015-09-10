@@ -21,30 +21,18 @@ module Rays
     alias d  depth
     alias d= depth=
 
-    def position= (*args)
-      set_position *Point.from(*args).to_a(3)
-    end
-
     alias pos  position
     alias pos= position=
-
-    def size= (*args)
-      set_size *Point.from(*args).to_a(3)
-    end
-
-    def center= (*args)
-      set_center *Point.from(*args).to_a(3)
-    end
 
     alias left_top                position
     def  right_top    ()          position.move_by w - 1,     0 end
     def   left_bottom ()          position.move_by     0, h - 1 end
     def  right_bottom () (position + size).move_by!   -1,    -1 end
 
-    def  left_top=    (*args) p = Point.from *args; self.left,  self.top    = p.x, p.y;  left_top end
-    def right_top=    (*args) p = Point.from *args; self.right, self.top    = p.x, p.y; right_top end
-    def  left_bottom= (*args) p = Point.from *args; self.left,  self.bottom = p.x, p.y;  left_bottom end
-    def right_bottom= (*args) p = Point.from *args; self.right, self.bottom = p.x, p.y; right_bottom end
+    def  left_top=    (*args) p = Point.new *args; self.left,  self.top    = p.x, p.y;  left_top end
+    def right_top=    (*args) p = Point.new *args; self.right, self.top    = p.x, p.y; right_top end
+    def  left_bottom= (*args) p = Point.new *args; self.left,  self.bottom = p.x, p.y;  left_bottom end
+    def right_bottom= (*args) p = Point.new *args; self.right, self.bottom = p.x, p.y; right_bottom end
 
     alias lt   left_top
     alias lt=  left_top=

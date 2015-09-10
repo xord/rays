@@ -11,24 +11,6 @@ module Rays
 
     include Comparable
 
-    def self.color (*args)
-      c = case arg0 = args[0]
-      when Color                  then arg0
-      when Symbol                 then COLORS[arg0]
-      when /^\s*#[\da-fA-F]+\s*$/ then Color.new arg0
-      when String                 then COLORS[arg0.intern]
-      else                             Color.new *args
-      end
-      raise ArgumentError, "invalid argument '#{args}.'" unless c
-      c
-    end
-
-    def initialize (*args)
-      arg0 = args[0]
-      args = parse arg0 if arg0 && arg0.kind_of?(String)
-      setup *args
-    end
-
     def opaque? ()
       alpha >= 1
     end
@@ -84,36 +66,6 @@ module Rays
     def inspect ()
       "#<#{self.class.name} #{to_s}>"
     end
-
-    COLORS = {
-      black:   [0, 0, 0],
-      red:     [1, 0, 0],
-      green:   [0, 1, 0],
-      blue:    [0, 0, 1],
-      yellow:  [1, 1, 0],
-      cyan:    [0, 1, 1],
-      magenta: [1, 0, 1],
-      white:   [1, 1, 1],
-      gray:    [0.5, 0.5, 0.5],
-      no:      [0, 0],
-      none:    [0, 0],
-      nil:     [0, 0],
-    }.inject({}) {|h, (k, v)| h[k] = Color.new *v; h}
-
-    private
-
-      RE_RGBA     = /^\s*##{'([\da-fA-F]{1})' * 4}?\s*$/
-      RE_RRGGBBAA = /^\s*##{'([\da-fA-F]{2})' * 4}?\s*$/
-
-      def parse (str)
-        case str
-        when RE_RGBA
-          [$1, $2, $3, $4 || 'f' ].map {|s| s.to_i(16) / 15.0}
-        when RE_RRGGBBAA
-          [$1, $2, $3, $4 || 'ff'].map {|s| s.to_i(16) / 255.0}
-        else raise ArgumentError, "can not parse '#{str}'."
-        end
-      end
 
   end# Color
 

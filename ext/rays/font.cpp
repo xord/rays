@@ -30,10 +30,7 @@ RUCY_DEFN(initialize)
 	RUCY_CHECK_OBJ(Rays::Font, self);
 	check_arg_count(__FILE__, __LINE__, "Font#initialize", argc, 0, 1, 2);
 
-	const char* name = (argc >= 1) ? argv[0].c_str()    : NULL;
-	float size       = (argc >= 2) ? to<float>(argv[1]) : 0;
-	*THIS = Rays::Font(name, size);
-
+	*THIS = to<Rays::Font>(argc, argv);
 	return self;
 }
 RUCY_END
@@ -90,13 +87,50 @@ Init_font ()
 
 	cFont = mRays.define_class("Font");
 	cFont.define_alloc_func(alloc);
-	cFont.define_private_method("initialize", initialize);
+	cFont.define_private_method("initialize",      initialize);
 	cFont.define_private_method("initialize_copy", initialize_copy);
 	cFont.define_method("name", name);
 	cFont.define_method("size", size);
 	cFont.define_method("width", width);
 	cFont.define_method("height", height);
 }
+
+
+namespace Rucy
+{
+
+
+	template <> Rays::Font
+	value_to<Rays::Font> (int argc, const Value* argv, bool convert)
+	{
+		if (argc == 1 && argv->is_array())
+		{
+			argc = argv->size();
+			argv = argv->as_array();
+		}
+
+		assert(argc == 0 || (argc > 0 && argv));
+
+		if (convert)
+		{
+			if (argc == 0)
+				return Rays::default_font();
+
+			coord size = argc >= 2 ? to<coord>(argv[1]) : 0;
+			if (argv->is_nil())
+				return Rays::Font(NULL, size);
+			else if (argv->is_s() || argv->is_sym())
+				return Rays::Font(argv[0].c_str(), size);
+		}
+
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Font&>(*argv, convert);
+	}
+
+
+}// Rucy
 
 
 namespace Rays

@@ -316,34 +316,7 @@ static
 RUCY_DEFN(set_background)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_background", argc, 1, 2, 3, 4);
-
-	if (argc == 1 && argv[0].is_kind_of(Rays::color_class()))
-		THIS->set_background(to<Rays::Color&>(argv[0]));
-	else if (argc == 1 || argc == 2)
-	{
-		float v = to<float>(argv[0]);
-		float a = (argc >= 2) ? to<float>(argv[1]) : 1;
-		THIS->set_background(v, v, v, a);
-	}
-	else
-	{
-		float r = to<float>(argv[0]);
-		float g = to<float>(argv[1]);
-		float b = to<float>(argv[2]);
-		float a = (argc == 4) ? to<float>(argv[3]) : 1;
-		THIS->set_background(r, g, b, a);
-	}
-
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF0(no_background)
-{
-	CHECK;
-	THIS->no_background();
+	THIS->set_background(to<Rays::Color>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -357,37 +330,19 @@ RUCY_DEF0(get_background)
 RUCY_END
 
 static
-RUCY_DEFN(set_fill)
+RUCY_DEF0(no_background)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_fill", argc, 1, 2, 3, 4);
-
-	if (argc == 1 && argv[0].is_kind_of(Rays::color_class()))
-		THIS->set_fill(to<Rays::Color&>(argv[0]));
-	else if (argc == 1 || argc == 2)
-	{
-		float v = to<float>(argv[0]);
-		float a = (argc >= 2) ? to<float>(argv[1]) : 1;
-		THIS->set_fill(v, v, v, a);
-	}
-	else
-	{
-		float r = to<float>(argv[0]);
-		float g = to<float>(argv[1]);
-		float b = to<float>(argv[2]);
-		float a = (argc == 4) ? to<float>(argv[3]) : 1;
-		THIS->set_fill(r, g, b, a);
-	}
-
+	THIS->no_background();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(no_fill)
+RUCY_DEFN(set_fill)
 {
 	CHECK;
-	THIS->no_fill();
+	THIS->set_fill(to<Rays::Color>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -401,37 +356,19 @@ RUCY_DEF0(get_fill)
 RUCY_END
 
 static
-RUCY_DEFN(set_stroke)
+RUCY_DEF0(no_fill)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_stroke", argc, 1, 2, 3, 4);
-
-	if (argc == 1 && argv[0].is_kind_of(Rays::color_class()))
-		THIS->set_stroke(to<Rays::Color&>(argv[0]));
-	else if (argc == 1 || argc == 2)
-	{
-		float v = to<float>(argv[0]);
-		float a = (argc >= 2) ? to<float>(argv[1]) : 1;
-		THIS->set_stroke(v, v, v, a);
-	}
-	else
-	{
-		float r = to<float>(argv[0]);
-		float g = to<float>(argv[1]);
-		float b = to<float>(argv[2]);
-		float a = (argc == 4) ? to<float>(argv[3]) : 1;
-		THIS->set_stroke(r, g, b, a);
-	}
-
+	THIS->no_fill();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(no_stroke)
+RUCY_DEFN(set_stroke)
 {
 	CHECK;
-	THIS->no_stroke();
+	THIS->set_stroke(to<Rays::Color>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -445,31 +382,19 @@ RUCY_DEF0(get_stroke)
 RUCY_END
 
 static
-RUCY_DEFN(set_clip)
+RUCY_DEF0(no_stroke)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_clip", argc, 1, 4);
-
-	if (argc == 1)
-		THIS->set_clip(to<Rays::Bounds&>(argv[0]));
-	else
-	{
-		coord x = to<coord>(argv[0]);
-		coord y = to<coord>(argv[1]);
-		coord w = to<coord>(argv[2]);
-		coord h = to<coord>(argv[3]);
-		THIS->set_clip(x, y, w, h);
-	}
-
+	THIS->no_stroke();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(no_clip)
+RUCY_DEFN(set_clip)
 {
 	CHECK;
-	THIS->no_clip();
+	THIS->set_clip(to<Rays::Bounds>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -483,28 +408,21 @@ RUCY_DEF0(get_clip)
 RUCY_END
 
 static
+RUCY_DEF0(no_clip)
+{
+	CHECK;
+	THIS->no_clip();
+	return self;
+}
+RUCY_END
+
+static
 RUCY_DEFN(set_font)
 {
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Painter#set_font", argc, 0, 1, 2);
 
-	if (argc == 0 || argv[0].is_kind_of(Rays::font_class()))
-	{
-		const Rays::Font* f = argc == 0
-			? &Rays::default_font()
-			: to<Rays::Font*>(argv[0]);
-		if (!f || !*f)
-			argument_error(__FILE__, __LINE__);
-
-		THIS->set_font(*f);
-	}
-	else
-	{
-		const char* name = argv[0].c_str();
-		coord size       = argc >= 2 ? to<coord>(argv[1]) : 0;
-		THIS->set_font(name, size);
-	}
-
+	THIS->set_font(to<Rays::Font>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -518,19 +436,19 @@ RUCY_DEF0(get_font)
 RUCY_END
 
 static
-RUCY_DEF0(push_attr)
+RUCY_DEF0(push_attrs)
 {
 	CHECK;
-	THIS->push_attr();
+	THIS->push_attrs();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(pop_attr)
+RUCY_DEF0(pop_attrs)
 {
 	CHECK;
-	THIS->pop_attr();
+	THIS->pop_attrs();
 	return self;
 }
 RUCY_END
@@ -540,8 +458,9 @@ static
 RUCY_DEF1(attach_shader, shader)
 {
 	CHECK;
-	THIS->attach(to<Rays::Shader&>(shader));
-	return self;
+	Rays::Shader t = to<Rays::Shader>(shader);
+	THIS->attach(t);
+	return value(t);
 }
 RUCY_END
 
@@ -595,19 +514,19 @@ RUCY_DEFN(set_uniform)
 RUCY_END
 
 static
-RUCY_DEF0(push_shader)
+RUCY_DEF0(push_shaders)
 {
 	CHECK;
-	THIS->push_shader();
+	THIS->push_shaders();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(pop_shader)
+RUCY_DEF0(pop_shaders)
 {
 	CHECK;
-	THIS->pop_shader();
+	THIS->pop_shaders();
 	return self;
 }
 RUCY_END
@@ -667,8 +586,8 @@ static
 RUCY_DEFN(set_matrix)
 {
 	CHECK;
-	THIS->set_matrix();
-	return self;
+	THIS->set_matrix(to<Rays::Matrix>(argc, argv));
+	return value(THIS->matrix());
 }
 RUCY_END
 
@@ -724,34 +643,34 @@ Init_painter ()
 	cPainter.define_method("image",   image);
 	cPainter.define_method("text",    text);
 
-	cPainter.define_private_method("set_background", set_background);
-	cPainter.define_private_method("get_background", get_background);
-	cPainter.define_method(         "no_background",  no_background);
-	cPainter.define_private_method("set_fill", set_fill);
-	cPainter.define_private_method("get_fill", get_fill);
-	cPainter.define_method(         "no_fill",  no_fill);
-	cPainter.define_private_method("set_stroke", set_stroke);
-	cPainter.define_private_method("get_stroke", get_stroke);
-	cPainter.define_method(         "no_stroke",  no_stroke);
-	cPainter.define_private_method("set_clip", set_clip);
-	cPainter.define_private_method("get_clip", get_clip);
-	cPainter.define_method(         "no_clip",  no_clip);
-	cPainter.define_private_method("set_font", set_font);
-	cPainter.define_private_method("get_font", get_font);
-	cPainter.define_method("push_attr", push_attr);
-	cPainter.define_method( "pop_attr",  pop_attr);
+	cPainter.define_method(   "background=", set_background);
+	cPainter.define_method(   "background",  get_background);
+	cPainter.define_method("no_background",   no_background);
+	cPainter.define_method(   "fill=", set_fill);
+	cPainter.define_method(   "fill",  get_fill);
+	cPainter.define_method("no_fill",   no_fill);
+	cPainter.define_method(   "stroke=", set_stroke);
+	cPainter.define_method(   "stroke",  get_stroke);
+	cPainter.define_method("no_stroke",   no_stroke);
+	cPainter.define_method(   "clip=", set_clip);
+	cPainter.define_method(   "clip",  get_clip);
+	cPainter.define_method("no_clip",   no_clip);
+	cPainter.define_method("font=", set_font);
+	cPainter.define_method("font",  get_font);
+	cPainter.define_method("push_attrs", push_attrs);
+	cPainter.define_method( "pop_attrs",  pop_attrs);
 
 	cPainter.define_private_method("attach_shader", attach_shader);
 	cPainter.define_private_method("detach_shader", detach_shader);
 	cPainter.define_private_method("set_uniform", set_uniform);
-	cPainter.define_method("push_shader", push_shader);
-	cPainter.define_method( "pop_shader",  pop_shader);
+	cPainter.define_method("push_shaders", push_shaders);
+	cPainter.define_method( "pop_shaders",  pop_shaders);
 
 	cPainter.define_method("translate", translate);
 	cPainter.define_method("scale",     scale);
 	cPainter.define_method("rotate",    rotate);
-	cPainter.define_private_method("set_matrix", set_matrix);
-	cPainter.define_private_method("get_matrix", get_matrix);
+	cPainter.define_private_method("matrix=", set_matrix);
+	cPainter.define_private_method("matrix",  get_matrix);
 	cPainter.define_method("push_matrix", push_matrix);
 	cPainter.define_method( "pop_matrix",  pop_matrix);
 }

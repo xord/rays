@@ -293,6 +293,22 @@ namespace Rays
 		return z + d - 1;
 	}
 
+	void
+	Bounds::set_position (coord x, coord y, coord z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	void
+	Bounds::set_position (const Point& position)
+	{
+		x = position.x;
+		y = position.y;
+		z = position.z;
+	}
+
 	Point&
 	Bounds::position ()
 	{
@@ -303,6 +319,20 @@ namespace Rays
 	Bounds::position () const
 	{
 		return const_cast<This*>(this)->position();
+	}
+
+	void
+	Bounds::set_size (coord width, coord height, coord depth)
+	{
+		w = width;
+		h = height;
+		d = depth;
+	}
+
+	void
+	Bounds::set_size (const Point& size)
+	{
+		set_size(size.x, size.y, size.z);
 	}
 
 	Point&
@@ -326,9 +356,9 @@ namespace Rays
 	}
 
 	void
-	Bounds::set_center (const Point& point)
+	Bounds::set_center (const Point& center)
 	{
-		set_center(point.x, point.y, point.z);
+		set_center(center.x, center.y, center.z);
 	}
 
 	Point

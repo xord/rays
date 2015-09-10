@@ -33,25 +33,25 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF1(initialize_copy, obj)
+RUCY_DEFN(initialize)
 {
 	RUCY_CHECK_OBJ(Rays::Bitmap, self);
+	check_arg_count(__FILE__, __LINE__, "Bitmap#initialize", argc, 2, 3);
 
-	*THIS = to<Rays::Bitmap&>(obj).copy();
+	*THIS = Rays::Bitmap(
+		to<int>(argv[0]), to<int>(argv[1]),
+		argc >= 3 ? to<Rays::ColorSpace>(argv[2]) : Rays::RGBA);
+
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF3(setup, width, height, color_space)
+RUCY_DEF1(initialize_copy, obj)
 {
 	RUCY_CHECK_OBJ(Rays::Bitmap, self);
 
-	Rays::ColorSpace* cs = to<Rays::ColorSpace*>(color_space);
-	if (!cs)
-		argument_error(__FILE__, __LINE__);
-
-	*THIS = Rays::Bitmap(to<int>(width), to<int>(height), *cs);
+	*THIS = to<Rays::Bitmap&>(obj).copy();
 	return self;
 }
 RUCY_END
@@ -101,26 +101,26 @@ RUCY_DEF0(color_space)
 RUCY_END
 
 static
-RUCY_DEF2(at, x, y)
+RUCY_DEFN(set_at)
 {
 	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Bitmap#set_at", argc, 3, 4, 5, 6);
 
-	return value(Rays::Color(THIS->at<void>(x.as_i(), y.as_i()), THIS->color_space()));
+	int x = argv[0].to_i();
+	int y = argv[1].to_i();
+	Rays::Color color = to<Rays::Color>(argc - 2, argv + 2);
+
+	color.get(THIS->at<void>(x, y), THIS->color_space());
+	return color;
 }
 RUCY_END
 
 static
-RUCY_DEF3(set_at, x, y, color)
+RUCY_DEF2(get_at, x, y)
 {
 	CHECK;
 
-	Rays::Color* col = to<Rays::Color*>(color);
-	if (!col)
-		argument_error(__FILE__, __LINE__);
-
-	col->get(THIS->at<void>(x.as_i(), y.as_i()), THIS->color_space());
-
-	return color;
+	return value(Rays::Color(THIS->at<void>(x.as_i(), y.as_i()), THIS->color_space()));
 }
 RUCY_END
 
@@ -162,14 +162,14 @@ Init_bitmap ()
 
 	cBitmap = mRays.define_class("Bitmap");
 	cBitmap.define_alloc_func(alloc);
+	cBitmap.define_private_method("initialize",      initialize);
 	cBitmap.define_private_method("initialize_copy", initialize_copy);
-	cBitmap.define_private_method("setup", setup);
 	cBitmap.define_method("draw_string", draw_string);
 	cBitmap.define_method("width", width);
 	cBitmap.define_method("height", height);
 	cBitmap.define_method("color_space", color_space);
-	cBitmap.define_method("[]", at);
-	cBitmap.define_method("set_at", set_at);
+	cBitmap.define_method("[]=", set_at);
+	cBitmap.define_method("[]",  get_at);
 	cBitmap.define_method("to_texture", to_texture);
 	cBitmap.define_method("save", save);
 	cBitmap.define_function("load", load);

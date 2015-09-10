@@ -260,8 +260,8 @@ namespace Rays
 		FrameBuffer& fb = self->frame_buffer;
 		if (fb) bind_frame_buffer(fb.id());
 
-		push_attr();
-		push_shader();
+		push_attrs();
+		push_shaders();
 
 		const Bounds& vp = self->viewport;
 		float scale      = self->scale_factor;
@@ -337,8 +337,8 @@ namespace Rays
 
 		glMatrixMode(self->prev_matrix_mode);
 
-		pop_shader();
-		pop_attr();
+		pop_shaders();
+		pop_attrs();
 
 		//glFinish();
 
@@ -726,7 +726,8 @@ namespace Rays
 
 			if (type == FILL)
 			{
-				coord tex_coords[] = {
+				coord tex_coords[] =
+				{
 					s_min, t_min,
 					s_min, t_max,
 					s_max, t_max,
@@ -888,7 +889,7 @@ namespace Rays
 		#if 0//def DEBUG
 			save_image(self->text_image, "/Users/snori/font.png");
 
-			painter->push_attr();
+			painter->push_attrs();
 			{
 				coord asc, desc, lead;
 				font.get_height(&asc, &desc, &lead);
@@ -1091,13 +1092,13 @@ namespace Rays
 	}
 
 	void
-	Painter::push_attr ()
+	Painter::push_attrs ()
 	{
 		self->attrs_stack.push_back(self->attrs);
 	}
 
 	void
-	Painter::pop_attr ()
+	Painter::pop_attrs ()
 	{
 		if (self->attrs_stack.empty())
 			rays_error(__FILE__, __LINE__, "attrs_stack is empty.");
@@ -1181,13 +1182,13 @@ namespace Rays
 	}
 
 	void
-	Painter::push_shader ()
+	Painter::push_shaders ()
 	{
 		self->program.push();
 	}
 
 	void
-	Painter::pop_shader ()
+	Painter::pop_shaders ()
 	{
 		self->program.pop();
 	}
@@ -1252,7 +1253,8 @@ namespace Rays
 		float c1, float c2, float c3, float c4,
 		float d1, float d2, float d3, float d4)
 	{
-		float array[] = {
+		float array[] =
+		{
 			a1, a2, a3, a4,
 			b1, b2, b3, b4,
 			c1, c2, c3, c4,

@@ -26,9 +26,9 @@ class TestPainter < Test::Unit::TestCase
     assert_equal rgb(0, 0, 0, 1), pa.background
     pa.background 1
     assert_equal rgb(1, 1, 1, 1), pa.background
-    assert_equal rgb(1, 1, 1, 1), pa.background(0) {|_|
+    pa.push background: 0 do |_|
       assert_equal rgb(0, 0, 0, 1), pa.background
-    }
+    end
     assert_equal rgb(1, 1, 1, 1), pa.background
   end
 
@@ -40,9 +40,9 @@ class TestPainter < Test::Unit::TestCase
     assert_equal rgb(0, 0, 0, 1), pa.fill
     pa.fill 1
     assert_equal rgb(1, 1, 1, 1), pa.fill
-    assert_equal rgb(1, 1, 1, 1), pa.fill(0) {|_|
+    pa.push fill: 0 do |_|
       assert_equal rgb(0, 0, 0, 1), pa.fill
-    }
+    end
     assert_equal rgb(1, 1, 1, 1), pa.fill
   end
 
@@ -54,9 +54,9 @@ class TestPainter < Test::Unit::TestCase
     assert_equal rgb(0, 0, 0, 1), pa.stroke
     pa.stroke 1
     assert_equal rgb(1, 1, 1, 1), pa.stroke
-    assert_equal rgb(1, 1, 1, 1), pa.stroke(0) {|_|
+    pa.push stroke: 0 do |_|
       assert_equal rgb(0, 0, 0, 1), pa.stroke
-    }
+    end
     assert_equal rgb(1, 1, 1, 1), pa.stroke
   end
 
@@ -68,9 +68,9 @@ class TestPainter < Test::Unit::TestCase
     assert_equal [5, 6, 7, 8], pa.clip.to_a
     pa.clip 1, 2, 3, 4
     assert_equal [1, 2, 3, 4], pa.clip.to_a
-    assert_equal [1, 2, 3, 4], pa.clip(5, 6, 7, 8) {|_|
+    pa.push clip: [5, 6, 7, 8] do |_|
       assert_equal [5, 6, 7, 8], pa.clip.to_a
-    }.to_a
+    end
     assert_equal [1, 2, 3, 4], pa.clip.to_a
   end
 
@@ -83,9 +83,9 @@ class TestPainter < Test::Unit::TestCase
     assert_equal f20, pa.font
     pa.font f10
     assert_equal f10, pa.font
-    assert_equal f10, pa.font(f20) {|_|
+    pa.push font: f20 do |_|
       assert_equal f20, pa.font
-    }
+    end
     assert_equal f10, pa.font
   end
 
@@ -100,30 +100,65 @@ class TestPainter < Test::Unit::TestCase
     assert_equal 20, pa.font.size
   end
 
-  def test_color_accessor ()
-    pa = painter
-    f1, f2, s1, s2 = rgb(1, 0, 0), rgb(0, 1, 0), rgb(1, 0, 1), rgb(0, 1, 1)
-    pa.color f1, s1
-    assert_equal f1, pa.fill
-    assert_equal s1, pa.stroke
-    assert_equal [f1, s1], pa.color(f2, s2) {|_|
-      assert_equal f2, pa.fill
-      assert_equal s2, pa.stroke
-    }
-    assert_equal f1, pa.fill
-    assert_equal s1, pa.stroke
-  end
-
   def test_color_by_name ()
     pa = painter
-    pa.fill = [1, 0, 0]
+    pa.fill =        :green
+    assert_equal rgb(0, 1, 0), pa.fill
+    pa.fill          :blue
+    assert_equal rgb(0, 0, 1), pa.fill
+    pa.fill =       [1, 0, 0]
     assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill = :red
+    pa.fill          0, 1, 0
+    assert_equal rgb(0, 1, 0), pa.fill
+    pa.fill =       '#f00'
     assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill = '#f00'
+    pa.fill         '#0f0'
+    assert_equal rgb(0, 1, 0), pa.fill
+    pa.fill =       '#ff0000'
     assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill = '#ff0000'
-    assert_equal rgb(1, 0, 0), pa.fill
+    pa.fill         '#00ff00'
+    assert_equal rgb(0, 1, 0), pa.fill
+  end
+
+  def test_push ()
+    pa = painter
+    pa.fill =         [1, 0, 0]
+    assert_equal   rgb(1, 0, 0), pa.fill
+
+    pa.push :all do |_|
+      assert_equal rgb(1, 0, 0), pa.fill
+      pa.fill =       [0, 1, 0]
+      assert_equal rgb(0, 1, 0), pa.fill
+    end
+    assert_equal   rgb(1, 0, 0), pa.fill
+
+    pa.push :attrs do |_|
+      assert_equal rgb(1, 0, 0), pa.fill
+      pa.fill =       [0, 1, 0]
+      assert_equal rgb(0, 1, 0), pa.fill
+    end
+    assert_equal   rgb(1, 0, 0), pa.fill
+
+    pa.push :matrix do |_|
+      assert_equal rgb(1, 0, 0), pa.fill
+      pa.fill =       [0, 1, 0]
+      assert_equal rgb(0, 1, 0), pa.fill
+    end
+    assert_equal   rgb(0, 1, 0), pa.fill
+
+    pa.push fill:     [0, 0, 1] do |_|
+      assert_equal rgb(0, 0, 1), pa.fill
+      pa.fill =       [1, 0, 0]
+      assert_equal rgb(1, 0, 0), pa.fill
+    end
+    assert_equal   rgb(0, 1, 0), pa.fill
+
+    pa.push stroke:   [0, 0, 1] do |_|
+      assert_equal rgb(0, 1, 0), pa.fill
+      pa.fill =       [0, 0, 1]
+      assert_equal rgb(0, 0, 1), pa.fill
+    end
+    assert_equal   rgb(0, 0, 1), pa.fill
   end
 
 end# TestPainter

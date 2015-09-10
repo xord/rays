@@ -31,35 +31,8 @@ RUCY_DEFN(initialize)
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Bounds#initialize", argc, 0, 1, 2, 3, 4, 6);
 
-	if (argc == 0) return self;
-
-	switch (argc)
-	{
-		case 1:
-			*THIS = Rays::Bounds(to<coord>(argv[0]));
-			break;
-
-		case 2:
-			*THIS = Rays::Bounds(to<coord>(argv[0]), to<coord>(argv[1]));
-			break;
-
-		case 3:
-			*THIS = Rays::Bounds(
-				to<coord>(argv[0]), to<coord>(argv[1]), to<coord>(argv[2]));
-			break;
-
-		case 4:
-			*THIS = Rays::Bounds(
-				to<coord>(argv[0]), to<coord>(argv[1]),
-				to<coord>(argv[2]), to<coord>(argv[3]));
-			break;
-
-		case 6:
-			*THIS = Rays::Bounds(
-				to<coord>(argv[0]), to<coord>(argv[1]), to<coord>(argv[2]),
-				to<coord>(argv[3]), to<coord>(argv[4]), to<coord>(argv[5]));
-			break;
-	}
+	if (argc >= 1)
+		*THIS = to<Rays::Bounds>(argc, argv);
 
 	return self;
 }
@@ -69,6 +42,7 @@ static
 RUCY_DEF1(initialize_copy, obj)
 {
 	CHECK;
+
 	*THIS = to<Rays::Bounds&>(obj);
 	return self;
 }
@@ -237,7 +211,8 @@ RUCY_DEF1(set_x, x)
 {
 	CHECK;
 
-	return value(THIS->x = to<coord>(x));
+	THIS->x = to<coord>(x);
+	return x;
 }
 RUCY_END
 
@@ -255,7 +230,8 @@ RUCY_DEF1(set_y, y)
 {
 	CHECK;
 
-	return value(THIS->y = to<coord>(y));
+	THIS->y = to<coord>(y);
+	return y;
 }
 RUCY_END
 
@@ -273,7 +249,8 @@ RUCY_DEF1(set_z, z)
 {
 	CHECK;
 
-	return value(THIS->z = to<coord>(z));
+	THIS->z = to<coord>(z);
+	return z;
 }
 RUCY_END
 
@@ -291,7 +268,8 @@ RUCY_DEF1(set_width, width)
 {
 	CHECK;
 
-	return value(THIS->width = to<coord>(width));
+	THIS->width = to<coord>(width);
+	return width;
 }
 RUCY_END
 
@@ -309,7 +287,8 @@ RUCY_DEF1(set_height, height)
 {
 	CHECK;
 
-	return value(THIS->height = to<coord>(height));
+	THIS->height = to<coord>(height);
+	return height;
 }
 RUCY_END
 
@@ -327,7 +306,8 @@ RUCY_DEF1(set_depth, depth)
 {
 	CHECK;
 
-	return value(THIS->depth = to<coord>(depth));
+	THIS->depth = to<coord>(depth);
+	return depth;
 }
 RUCY_END
 
@@ -344,10 +324,9 @@ static
 RUCY_DEF1(set_left, left)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_left(to<coord>(left));
-	return value(this_->left());
+	THIS->set_left(to<coord>(left));
+	return left;
 }
 RUCY_END
 
@@ -364,10 +343,9 @@ static
 RUCY_DEF1(set_right, right)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_right(to<coord>(right));
-	return value(this_->right());
+	THIS->set_right(to<coord>(right));
+	return right;
 }
 RUCY_END
 
@@ -384,10 +362,9 @@ static
 RUCY_DEF1(set_top, top)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_top(to<coord>(top));
-	return value(this_->top());
+	THIS->set_top(to<coord>(top));
+	return top;
 }
 RUCY_END
 
@@ -404,10 +381,9 @@ static
 RUCY_DEF1(set_bottom, bottom)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_bottom(to<coord>(bottom));
-	return value(this_->bottom());
+	THIS->set_bottom(to<coord>(bottom));
+	return bottom;
 }
 RUCY_END
 
@@ -424,10 +400,9 @@ static
 RUCY_DEF1(set_back, back)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_back(to<coord>(back));
-	return value(this_->back());
+	THIS->set_back(to<coord>(back));
+	return back;
 }
 RUCY_END
 
@@ -444,10 +419,9 @@ static
 RUCY_DEF1(set_front, front)
 {
 	CHECK;
-	Rays::Bounds* this_ = THIS;
 
-	this_->set_front(to<coord>(front));
-	return value(this_->front());
+	THIS->set_front(to<coord>(front));
+	return front;
 }
 RUCY_END
 
@@ -464,11 +438,9 @@ static
 RUCY_DEFN(set_position)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Bounds#set_position", argc, 1, 2, 3);
 
-	coord* pos = THIS->position().array;
-	for (int i = 0; i < 3; ++i)
-		if (argc > i && !argv[i].is_nil()) pos[i] = to<coord>(argv[i]);
+	THIS->set_position(to<Rays::Point>(argc, argv));
+	return value(THIS->position());
 }
 RUCY_END
 
@@ -485,11 +457,9 @@ static
 RUCY_DEFN(set_size)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Bounds#set_size", argc, 1, 2, 3);
 
-	coord* size = THIS->size().array;
-	for (int i = 0; i < 3; ++i)
-		if (argc > i && !argv[i].is_nil()) size[i] = to<coord>(argv[i]);
+	THIS->set_size(to<Rays::Point>(argc, argv));
+	return value(THIS->size());
 }
 RUCY_END
 
@@ -506,25 +476,14 @@ static
 RUCY_DEFN(set_center)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Bounds#set_center", argc, 1, 2, 3);
 
-	if (argv[0].is_kind_of(Rays::point_class()))
-		THIS->set_center(to<Rays::Point&>(argv[0]));
-	else
-	{
-		Rays::Point p = THIS->center();
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : p.x;
-		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : p.y;
-		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : p.z;
-		THIS->set_center(x, y, z);
-	}
-
+	THIS->set_center(to<Rays::Point>(argc, argv));
 	return value(THIS->center());
 }
 RUCY_END
 
 static
-RUCY_DEF0(center)
+RUCY_DEF0(get_center)
 {
 	CHECK;
 
@@ -533,20 +492,7 @@ RUCY_DEF0(center)
 RUCY_END
 
 static
-RUCY_DEF1(array_get, index)
-{
-	CHECK;
-
-	int i = index.as_i();
-	if (i < 0 || 1 < i)
-		index_error(__FILE__, __LINE__);
-
-	return value((*THIS)[i]);
-}
-RUCY_END
-
-static
-RUCY_DEF2(array_set, index, value)
+RUCY_DEF2(set_at, index, value)
 {
 	CHECK;
 
@@ -560,7 +506,20 @@ RUCY_DEF2(array_set, index, value)
 RUCY_END
 
 static
-RUCY_DEF1(and_, bounds)
+RUCY_DEF1(get_at, index)
+{
+	CHECK;
+
+	int i = index.as_i();
+	if (i < 0 || 1 < i)
+		index_error(__FILE__, __LINE__);
+
+	return value((*THIS)[i]);
+}
+RUCY_END
+
+static
+RUCY_DEF1(op_and, bounds)
 {
 	CHECK;
 
@@ -571,7 +530,7 @@ RUCY_DEF1(and_, bounds)
 RUCY_END
 
 static
-RUCY_DEF1(or_, bounds)
+RUCY_DEF1(op_or, bounds)
 {
 	CHECK;
 
@@ -600,7 +559,7 @@ Init_bounds ()
 
 	cBounds = mRays.define_class("Bounds");
 	cBounds.define_alloc_func(alloc);
-	cBounds.define_private_method("initialize", initialize);
+	cBounds.define_private_method("initialize",      initialize);
 	cBounds.define_private_method("initialize_copy", initialize_copy);
 	cBounds.define_method("intersect?", intersect);
 	cBounds.define_method("include?",   include);
@@ -633,16 +592,16 @@ Init_bounds ()
 	cBounds.define_method("back",    get_back);
 	cBounds.define_method("front=",  set_front);
 	cBounds.define_method("front",   get_front);
-	cBounds.define_method("set_position", set_position);
-	cBounds.define_method(    "position", get_position);
-	cBounds.define_method("set_size", set_size);
-	cBounds.define_method(    "size", get_size);
-	cBounds.define_method("set_center", set_center);
-	cBounds.define_method("center", center);
-	cBounds.define_method("[]",  array_get);
-	cBounds.define_method("[]=", array_set);
-	cBounds.define_method("&", and_);
-	cBounds.define_method("|", or_);
+	cBounds.define_method("position=", set_position);
+	cBounds.define_method("position",  get_position);
+	cBounds.define_method("size=", set_size);
+	cBounds.define_method("size",  get_size);
+	cBounds.define_method("center=", set_center);
+	cBounds.define_method("center",  get_center);
+	cBounds.define_method("[]",  get_at);
+	cBounds.define_method("[]=", set_at);
+	cBounds.define_method("&", op_and);
+	cBounds.define_method("|", op_or);
 	cBounds.define_method("inspect", inspect);
 }
 
@@ -652,29 +611,21 @@ namespace Rucy
 
 
 	template <> Rays::Bounds
-	value_to<Rays::Bounds> (Value value, bool convert)
+	value_to<Rays::Bounds> (int argc, const Value* argv, bool convert)
 	{
+		if (argc == 1 && argv->is_array())
+		{
+			argc = argv->size();
+			argv = argv->as_array();
+		}
+
+		assert(argc == 0 || (argc > 0 && argv));
+
 		if (convert)
 		{
-			size_t argc = 0;
-			Value* argv = NULL;
-			if (value.is_array())
-			{
-				argc = value.size();
-				argv = value.as_array();
-			}
-			else
-			{
-				argc = 1;
-				argv = &value;
-			}
-
-			if (argc < 1)
-				Rucy::argument_error(__FILE__, __LINE__);
-
-			if (argv[0].is_kind_of(Rays::bounds_class()))
-				value = argv[0];
-			else if (argv[0].is_kind_of(Rays::point_class()))
+			if (argc == 0)
+				return Rays::Bounds();
+			else if (argv->is_kind_of(Rays::point_class()))
 			{
 				switch (argc)
 				{
@@ -682,10 +633,10 @@ namespace Rucy
 					case 1: return Rays::Bounds(V(0));
 					case 2: return Rays::Bounds(V(0), V(1));
 					#undef V
-					default: Rucy::argument_error(__FILE__, __LINE__);
+					default: argument_error(__FILE__, __LINE__);
 				}
 			}
-			else if (argv[0].is_i() || argv[0].is_f())
+			else if (argv->is_i() || argv->is_f())
 			{
 				switch (argc)
 				{
@@ -696,12 +647,15 @@ namespace Rucy
 					case 4: return Rays::Bounds(V(0), V(1), V(2), V(3));
 					case 6: return Rays::Bounds(V(0), V(1), V(2), V(3), V(4), V(5));
 					#undef V
-					default: Rucy::argument_error(__FILE__, __LINE__);
+					default: argument_error(__FILE__, __LINE__);
 				}
 			}
 		}
 
-		return value_to<Rays::Bounds&>(value, convert);
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Bounds&>(*argv, convert);
 	}
 
 

@@ -21,7 +21,7 @@ class TestShader < Test::Unit::TestCase
   def test_initialize ()
     assert_raise(Rucy::NativeError) {sh "foo"}
     assert_raise(ArgumentError) {sh}
-    assert_raise(ArgumentError) {sh nil}
+    assert_raise(TypeError) {sh nil}
     assert sh("void main() {gl_FragColor = vec4(1, 0, 0, 1);}")
   end
 

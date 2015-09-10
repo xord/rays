@@ -27,7 +27,7 @@ namespace Rays
 	}
 
 	Color
-	Color8 (uchar gray, uchar alpha)
+	Color8 (int gray, int alpha)
 	{
 		Color c;
 		c.reset8(gray, alpha);
@@ -35,7 +35,7 @@ namespace Rays
 	}
 
 	Color
-	Color8 (uchar red, uchar green, uchar blue, uchar alpha)
+	Color8 (int red, int green, int blue, int alpha)
 	{
 		Color c;
 		c.reset8(red, green, blue, alpha);
@@ -65,7 +65,7 @@ namespace Rays
 	}
 
 	Color&
-	Color::reset8 (uchar gray, uchar alpha)
+	Color::reset8 (int gray, int alpha)
 	{
 		float g = uchar2float(gray);
 		float a = uchar2float(alpha);
@@ -73,7 +73,7 @@ namespace Rays
 	}
 
 	Color&
-	Color::reset8 (uchar red, uchar green, uchar blue, uchar alpha)
+	Color::reset8 (int red, int green, int blue, int alpha)
 	{
 		this->red   = uchar2float(red);
 		this->green = uchar2float(green);

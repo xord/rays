@@ -12,7 +12,7 @@ RUCY_DEFINE_VALUE_FROM_TO(Rays::ColorSpace)
 
 #define THIS  to<Rays::ColorSpace*>(self)
 
-#define CHECK RUCY_CHECK_OBJ(Rays::ColorSpace, self)
+#define CHECK RUCY_CHECK_OBJECT(Rays::ColorSpace, self)
 
 
 static
@@ -23,13 +23,12 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(setup, type, premultiplied)
+RUCY_DEFN(initialize)
 {
-	CHECK;
+	RUCY_CHECK_OBJ(Rays::ColorSpace, self);
+	check_arg_count(__FILE__, __LINE__, "ColorSpace#initialize", argc, 1, 2);
 
-	*THIS = Rays::ColorSpace(
-		(Rays::ColorSpaceType) to<uint>(type),
-		to<bool>(premultiplied));
+	*THIS = to<Rays::ColorSpace>(argc, argv);
 	return self;
 }
 RUCY_END
@@ -116,6 +115,51 @@ RUCY_DEF0(is_premult)
 RUCY_END
 
 
+static struct ColorSpaceEnum
+{
+	const char* name;
+	Rays::ColorSpaceType type;
+}
+COLOR_SPACES[] =
+{
+	{"GRAY_8",     Rays::GRAY_8},
+	{"GRAY_16",    Rays::GRAY_16},
+	{"GRAY_24",    Rays::GRAY_24},
+	{"GRAY_32",    Rays::GRAY_32},
+	{"GRAY_float", Rays::GRAY_float},
+	{"RGB_888",    Rays:: RGB_888},
+	{"RGBA_8888",  Rays:: RGBA_8888},
+	{"RGBX_8888",  Rays:: RGBX_8888},
+	{"ARGB_8888",  Rays::ARGB_8888},
+	{"XRGB_8888",  Rays::XRGB_8888},
+	{"BGR_888",    Rays:: BGR_888},
+	{"BGRA_8888",  Rays:: BGRA_8888},
+	{"BGRX_8888",  Rays:: BGRX_8888},
+	{"ABGR_8888",  Rays::ABGR_8888},
+	{"XBGR_8888",  Rays::XBGR_8888},
+	{"RGB_float",  Rays:: RGB_float},
+	{"RGBA_float", Rays:: RGBA_float},
+	{"ARGB_float", Rays::ARGB_float},
+	{"BGR_float",  Rays:: BGR_float},
+	{"BGRA_float", Rays:: BGRA_float},
+	{"ABGR_float", Rays::ABGR_float},
+	{"GRAY",       Rays::GRAY},
+	{"RGB",        Rays:: RGB},
+	{"BGR",        Rays:: BGR},
+	{"RGBA",       Rays:: RGBA},
+	{"RGBX",       Rays:: RGBX},
+	{"ARGB",       Rays::ARGB},
+	{"XRGB",       Rays::XRGB},
+	{"BGRA",       Rays:: BGRA},
+	{"BGRX",       Rays:: BGRX},
+	{"ABGR",       Rays::ABGR},
+	{"XBGR",       Rays::XBGR},
+};
+
+static const size_t COLOR_SPACES_SIZE =
+	sizeof(COLOR_SPACES) / sizeof(COLOR_SPACES[0]);
+
+
 static Class cColorSpace;
 
 void
@@ -125,8 +169,8 @@ Init_color_space ()
 
 	cColorSpace = mRays.define_class("ColorSpace");
 	cColorSpace.define_alloc_func(alloc);
+	cColorSpace.define_private_method("initialize",      initialize);
 	cColorSpace.define_private_method("initialize_copy", initialize_copy);
-	cColorSpace.define_private_method("setup", setup);
 	cColorSpace.define_method("type",     type);
 	cColorSpace.define_method("gray?",    is_gray);
 	cColorSpace.define_method("rgb?",     is_rgb);
@@ -136,39 +180,53 @@ Init_color_space ()
 	cColorSpace.define_method("skip?",    has_skip);
 	cColorSpace.define_method("premult?", is_premult);
 
-	cColorSpace.define_const("GRAY_8",     Rays::GRAY_8);
-	cColorSpace.define_const("GRAY_16",    Rays::GRAY_16);
-	cColorSpace.define_const("GRAY_24",    Rays::GRAY_24);
-	cColorSpace.define_const("GRAY_32",    Rays::GRAY_32);
-	cColorSpace.define_const("GRAY_float", Rays::GRAY_float);
-	cColorSpace.define_const("RGB_888",    Rays:: RGB_888);
-	cColorSpace.define_const("RGBA_8888",  Rays:: RGBA_8888);
-	cColorSpace.define_const("RGBX_8888",  Rays:: RGBX_8888);
-	cColorSpace.define_const("ARGB_8888",  Rays::ARGB_8888);
-	cColorSpace.define_const("XRGB_8888",  Rays::XRGB_8888);
-	cColorSpace.define_const("BGR_888",    Rays:: BGR_888);
-	cColorSpace.define_const("BGRA_8888",  Rays:: BGRA_8888);
-	cColorSpace.define_const("BGRX_8888",  Rays:: BGRX_8888);
-	cColorSpace.define_const("ABGR_8888",  Rays::ABGR_8888);
-	cColorSpace.define_const("XBGR_8888",  Rays::XBGR_8888);
-	cColorSpace.define_const("RGB_float",  Rays:: RGB_float);
-	cColorSpace.define_const("RGBA_float", Rays:: RGBA_float);
-	cColorSpace.define_const("ARGB_float", Rays::ARGB_float);
-	cColorSpace.define_const("BGR_float",  Rays:: BGR_float);
-	cColorSpace.define_const("BGRA_float", Rays:: BGRA_float);
-	cColorSpace.define_const("ABGR_float", Rays::ABGR_float);
-	cColorSpace.define_const("GRAY",       Rays::GRAY);
-	cColorSpace.define_const("RGB",        Rays:: RGB);
-	cColorSpace.define_const("BGR",        Rays:: BGR);
-	cColorSpace.define_const("RGBA",       Rays:: RGBA);
-	cColorSpace.define_const("RGBX",       Rays:: RGBX);
-	cColorSpace.define_const("ARGB",       Rays::ARGB);
-	cColorSpace.define_const("XRGB",       Rays::XRGB);
-	cColorSpace.define_const("BGRA",       Rays:: BGRA);
-	cColorSpace.define_const("BGRX",       Rays:: BGRX);
-	cColorSpace.define_const("ABGR",       Rays::ABGR);
-	cColorSpace.define_const("XBGR",       Rays::XBGR);
+	for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
+		cColorSpace.define_const(COLOR_SPACES[i].name, COLOR_SPACES[i].type);
 }
+
+
+namespace Rucy
+{
+
+
+	template <> Rays::ColorSpace
+	value_to<Rays::ColorSpace> (int argc, const Value* argv, bool convert)
+	{
+		if (argc == 1 && argv->is_array())
+		{
+			argc = argv->size();
+			argv = argv->as_array();
+		}
+
+		assert(argc > 0 && argv);
+
+		if (convert)
+		{
+			if (argv->is_s() || argv->is_sym())
+			{
+				const char* str = argv[0].c_str();
+				for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
+				{
+					if (strcasecmp(str, COLOR_SPACES[i].name) == 0)
+						return Rays::ColorSpace(COLOR_SPACES[i].type);
+				}
+			}
+			else if (argv->is_i())
+			{
+				return Rays::ColorSpace(
+					to<Rays::ColorSpaceType>(argv[0]),
+					argc >= 2 ? to<bool>(argv[1]) : true);
+			}
+		}
+
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::ColorSpace&>(*argv, convert);
+	}
+
+
+}// Rucy
 
 
 namespace Rays

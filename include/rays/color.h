@@ -40,9 +40,9 @@ namespace Rays
 
 		Color& reset (float red, float green, float blue, float alpha = 1);
 
-		Color& reset8 (uchar gray = 0,                     uchar alpha = 255);
+		Color& reset8 (int gray = 0,                 int alpha = 255);
 
-		Color& reset8 (uchar red, uchar green, uchar blue, uchar alpha = 255);
+		Color& reset8 (int red, int green, int blue, int alpha = 255);
 
 		Color& reset (const void* pixel, const ColorSpace& cs);
 
@@ -58,14 +58,14 @@ namespace Rays
 
 		static uchar float2uchar (float value) {return (uchar) Xot::clip(0.f, 255.f, value * 255);}
 
-		static float uchar2float (uchar value) {return value / 255.f;}
+		static float uchar2float (int   value) {return value / 255.f;}
 
 	};// Color
 
 
-	Color Color8 (uchar gray = 0,                     uchar alpha = 255);
+	Color Color8 (int gray = 0,                 int alpha = 255);
 
-	Color Color8 (uchar red, uchar green, uchar blue, uchar alpha = 255);
+	Color Color8 (int red, int green, int blue, int alpha = 255);
 
 
 }// Rays

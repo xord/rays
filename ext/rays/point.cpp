@@ -30,21 +30,8 @@ RUCY_DEFN(initialize)
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Point#initialize", argc, 0, 1, 2, 3);
 
-	switch (argc)
-	{
-		case 1:
-			*THIS = Rays::Point(to<coord>(argv[0]));
-			break;
-
-		case 2:
-			*THIS = Rays::Point(to<coord>(argv[0]), to<coord>(argv[1]));
-			break;
-
-		case 3:
-			*THIS = Rays::Point(
-				to<coord>(argv[0]), to<coord>(argv[1]), to<coord>(argv[2]));
-			break;
-	}
+	if (argc >= 1)
+		*THIS = to<Rays::Point>(argc, argv);
 
 	return self;
 }
@@ -129,7 +116,8 @@ static
 RUCY_DEF1(set_x, x)
 {
 	CHECK;
-	return value(THIS->x = to<coord>(x));
+	THIS->x = to<coord>(x);
+	return x;
 }
 RUCY_END
 
@@ -145,7 +133,8 @@ static
 RUCY_DEF1(set_y, y)
 {
 	CHECK;
-	return value(THIS->y = to<coord>(y));
+	THIS->y = to<coord>(y);
+	return y;
 }
 RUCY_END
 
@@ -161,7 +150,8 @@ static
 RUCY_DEF1(set_z, z)
 {
 	CHECK;
-	return value(THIS->z = to<coord>(z));
+	THIS->z = to<coord>(z);
+	return z;
 }
 RUCY_END
 
@@ -174,64 +164,39 @@ RUCY_DEF0(get_z)
 RUCY_END
 
 static
-RUCY_DEF1(add, point)
+RUCY_DEFN(add)
 {
 	CHECK;
-
-	Rays::Point p = *THIS;
-	p += to<Rays::Point&>(point);
-	return value(p);
+	return value(*THIS + to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
 static
-RUCY_DEF1(sub, point)
+RUCY_DEFN(sub)
 {
 	CHECK;
-
-	Rays::Point p = *THIS;
-	p -= to<Rays::Point&>(point);
-	return value(p);
+	return value(*THIS - to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
 static
-RUCY_DEF1(mult, point)
+RUCY_DEFN(mult)
 {
 	CHECK;
-
-	Rays::Point p = *THIS;
-	p *= to<Rays::Point&>(point);
-	return value(p);
+	return value(*THIS * to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
 static
-RUCY_DEF1(div, point)
+RUCY_DEFN(div)
 {
 	CHECK;
-
-	Rays::Point p = *THIS;
-	p /= to<Rays::Point&>(point);
-	return value(p);
+	return value(*THIS / to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
 static
-RUCY_DEF1(array_get, index)
-{
-	CHECK;
-
-	int i = index.as_i();
-	if (i < 0 || 2 < i)
-		index_error(__FILE__, __LINE__);
-
-	return value((*THIS)[i]);
-}
-RUCY_END
-
-static
-RUCY_DEF2(array_set, index, value)
+RUCY_DEF2(set_at, index, value)
 {
 	CHECK;
 
@@ -241,6 +206,19 @@ RUCY_DEF2(array_set, index, value)
 
 	(*THIS)[i] = to<coord>(value);
 	return value;
+}
+RUCY_END
+
+static
+RUCY_DEF1(get_at, index)
+{
+	CHECK;
+
+	int i = index.as_i();
+	if (i < 0 || 2 < i)
+		index_error(__FILE__, __LINE__);
+
+	return value((*THIS)[i]);
 }
 RUCY_END
 
@@ -262,7 +240,7 @@ Init_point ()
 
 	cPoint = mRays.define_class("Point");
 	cPoint.define_alloc_func(alloc);
-	cPoint.define_private_method("initialize", initialize);
+	cPoint.define_private_method("initialize",      initialize);
 	cPoint.define_private_method("initialize_copy", initialize_copy);
 	cPoint.define_method("move_to!", move_to);
 	cPoint.define_method("move_by!", move_by);
@@ -275,12 +253,12 @@ Init_point ()
 	cPoint.define_method("y", get_y);
 	cPoint.define_method("z=", set_z);
 	cPoint.define_method("z", get_z);
-	cPoint.define_method("op_add", add);
-	cPoint.define_method("op_sub", sub);
-	cPoint.define_method("op_mult", mult);
-	cPoint.define_method("op_div", div);
-	cPoint.define_method("[]",  array_get);
-	cPoint.define_method("[]=", array_set);
+	cPoint.define_method("+", add);
+	cPoint.define_method("-", sub);
+	cPoint.define_method("*", mult);
+	cPoint.define_method("/", div);
+	cPoint.define_method("[]=", set_at);
+	cPoint.define_method("[]",  get_at);
 	cPoint.define_method("inspect", inspect);
 }
 
@@ -290,29 +268,21 @@ namespace Rucy
 
 
 	template <> Rays::Point
-	value_to<Rays::Point> (Value value, bool convert)
+	value_to<Rays::Point> (int argc, const Value* argv, bool convert)
 	{
+		if (argc == 1 && argv->is_array())
+		{
+			argc = argv->size();
+			argv = argv->as_array();
+		}
+
+		assert(argc == 0 || (argc > 0 && argv));
+
 		if (convert)
 		{
-			size_t argc = 0;
-			Value* argv = NULL;
-			if (value.is_array())
-			{
-				argc = value.size();
-				argv = value.as_array();
-			}
-			else
-			{
-				argc = 1;
-				argv = &value;
-			}
-
-			if (argc < 1)
-				Rucy::argument_error(__FILE__, __LINE__);
-
-			if (argv[0].is_kind_of(Rays::point_class()))
-				value = argv[0];
-			else if (argv[0].is_i() || argv[0].is_f())
+			if (argc == 0)
+				return Rays::Point();
+			else if (argv->is_i() || argv->is_f())
 			{
 				switch (argc)
 				{
@@ -321,12 +291,15 @@ namespace Rucy
 					case 2: return Rays::Point(V(0), V(1));
 					case 3: return Rays::Point(V(0), V(1), V(2));
 					#undef V
-					default: Rucy::argument_error(__FILE__, __LINE__);
+					default: argument_error(__FILE__, __LINE__);
 				}
 			}
 		}
 
-		return value_to<Rays::Point&>(value, convert);
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Point&>(*argv, convert);
 	}
 
 

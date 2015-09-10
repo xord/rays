@@ -181,6 +181,9 @@ namespace Rays
 	Point&
 	Point::operator /= (const Point& rhs)
 	{
+		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
+			argument_error(__FILE__, __LINE__);
+
 		x /= rhs.x;
 		y /= rhs.y;
 		z /= rhs.z;
@@ -190,6 +193,9 @@ namespace Rays
 	Point&
 	Point::operator /= (coord rhs)
 	{
+		if (rhs == 0)
+			argument_error(__FILE__, __LINE__);
+
 		x /= rhs;
 		y /= rhs;
 		z /= rhs;

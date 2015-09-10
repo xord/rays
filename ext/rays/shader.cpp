@@ -27,10 +27,7 @@ RUCY_DEF1(initialize, source)
 {
 	RUCY_CHECK_OBJ(Rays::Shader, self);
 
-	if (!source.is_s())
-		argument_error(__FILE__, __LINE__);
-
-	*THIS = Rays::Shader(source.c_str());
+	*THIS = to<Rays::Shader>(source);
 	return self;
 }
 RUCY_END
@@ -47,6 +44,37 @@ Init_shader ()
 	cShader.define_alloc_func(alloc);
 	cShader.define_private_method("initialize", initialize);
 }
+
+
+namespace Rucy
+{
+
+
+	template <> Rays::Shader
+	value_to<Rays::Shader> (int argc, const Value* argv, bool convert)
+	{
+		if (argc == 1 && argv->is_array())
+		{
+			argc = argv->size();
+			argv = argv->as_array();
+		}
+
+		assert(argc > 0 && argv);
+
+		if (convert)
+		{
+			if (argv->is_s())
+				return Rays::Shader(argv[0].c_str());
+		}
+
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Shader&>(*argv, convert);
+	}
+
+
+}// Rucy
 
 
 namespace Rays

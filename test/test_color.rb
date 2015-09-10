@@ -14,10 +14,6 @@ class TestColor < Test::Unit::TestCase
     color *[r, g, b, a].map {|n| n / div.to_f}
   end
 
-  def to_color (*args)
-    Rays::Color.color *args
-  end
-
   def test_initialize ()
     assert_equal color(0, 0, 0, 1), color()
     assert_equal color(1, 1, 1, 1), color(1)
@@ -29,21 +25,21 @@ class TestColor < Test::Unit::TestCase
   end
 
   def test_color ()
-    assert_equal color(0, 0, 0, 1), to_color('#000')
-    assert_equal color(0, 0, 0, 1), to_color('#000000')
-    assert_equal color(0, 0, 0, 0), to_color('#0000')
-    assert_equal color(0, 0, 0, 0), to_color('#00000000')
-    assert_equal color8(0x01, 0x23, 0x45, 0x67), to_color('#01234567')
-    assert_equal color8(0x89, 0xab, 0xcd, 0xef), to_color('#89abcdef')
-    assert_equal color8(0x0, 0x2, 0x4, 0x6, 15), to_color('#0246')
-    assert_equal color8(0x9, 0xb, 0xd, 0xf, 15), to_color('#9bdf')
-    assert_equal color(0, 0, 0, 1), to_color(' #000 ')
-    assert_raise(ArgumentError) {to_color '#'}
-    assert_raise(ArgumentError) {to_color '000'}
-    assert_raise(ArgumentError) {to_color '#0'}
-    assert_raise(ArgumentError) {to_color '#00'}
-    assert_raise(ArgumentError) {to_color '#00000'}
-    assert_raise(ArgumentError) {to_color '#0000000'}
+    assert_equal color(0, 0, 0, 1), color('#000')
+    assert_equal color(0, 0, 0, 1), color('#000000')
+    assert_equal color(0, 0, 0, 0), color('#0000')
+    assert_equal color(0, 0, 0, 0), color('#00000000')
+    assert_equal color8(0x01, 0x23, 0x45, 0x67), color('#01234567')
+    assert_equal color8(0x89, 0xab, 0xcd, 0xef), color('#89abcdef')
+    assert_equal color8(0x0, 0x2, 0x4, 0x6, 15), color('#0246')
+    assert_equal color8(0x9, 0xb, 0xd, 0xf, 15), color('#9bdf')
+    assert_equal color(0, 0, 0, 1), color(' #000 ')
+    assert_raise(ArgumentError) {color '#'}
+    assert_raise(ArgumentError) {color '000'}
+    assert_raise(ArgumentError) {color '#0'}
+    assert_raise(ArgumentError) {color '#00'}
+    assert_raise(ArgumentError) {color '#00000'}
+    assert_raise(ArgumentError) {color '#0000000'}
   end
 
   def test_get_rgb ()

@@ -107,19 +107,27 @@ namespace Rays
 
 		coord    front () const;
 
-		void set_center (coord x, coord y, coord z = 0);
+		void set_position (coord x, coord y, coord z = 0);
 
-		void set_center (const Point& point);
-
-		Point    center () const;
+		void set_position (const Point& position);
 
 		      Point& position ();
 
 		const Point& position () const;
 
+		void set_size (coord width, coord height, coord depth = 0);
+
+		void set_size (const Point& size);
+
 		      Point& size ();
 
 		const Point& size () const;
+
+		void set_center (coord x, coord y, coord z = 0);
+
+		void set_center (const Point& center);
+
+		Point    center () const;
 
 		String inspect () const;
 
