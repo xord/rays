@@ -11,8 +11,6 @@ module Rays
 
   class Painter
 
-    extend Xot::UniversalAccessor
-
     universal_accessor :background, :fill, :stroke, :clip, :font
 
     def attach (shader, uniforms = {})
