@@ -226,6 +226,13 @@ namespace Rucy
 	}
 
 
+	template <> Rays::ColorSpaceType
+	value_to<Rays::ColorSpaceType> (Value value, bool convert)
+	{
+		return (Rays::ColorSpaceType) value_to<uint>(value, convert);
+	}
+
+
 }// Rucy
 
 
