@@ -70,37 +70,57 @@ namespace Rays
 
 		coord length () const;
 
-		void  normalize ();
-
 		Point normal () const;
+
+		void  normalize ();
 
 		String inspect () const;
 
 		Point operator - () const;
 
+		Point& operator += (coord        rhs);
+
 		Point& operator += (const Point& rhs);
+
+		Point& operator -= (coord        rhs);
 
 		Point& operator -= (const Point& rhs);
 
+		Point& operator *= (coord        rhs);
+
 		Point& operator *= (const Point& rhs);
 
-		Point& operator /= (const Point& rhs);
+		Point& operator /= (coord        rhs);
 
-		Point& operator /= (coord rhs);
+		Point& operator /= (const Point& rhs);
 
 		friend bool operator == (const Point& lhs, const Point& rhs);
 
 		friend bool operator != (const Point& lhs, const Point& rhs);
 
+		friend Point operator + (coord        lhs, const Point& rhs);
+
+		friend Point operator + (const Point& lhs, coord        rhs);
+
 		friend Point operator + (const Point& lhs, const Point& rhs);
+
+		friend Point operator - (coord        lhs, const Point& rhs);
+
+		friend Point operator - (const Point& lhs, coord        rhs);
 
 		friend Point operator - (const Point& lhs, const Point& rhs);
 
+		friend Point operator * (coord        lhs, const Point& rhs);
+
+		friend Point operator * (const Point& lhs, coord        rhs);
+
 		friend Point operator * (const Point& lhs, const Point& rhs);
 
-		friend Point operator / (const Point& lhs, const Point& rhs);
+		friend Point operator / (coord        lhs, const Point& rhs);
 
 		friend Point operator / (const Point& lhs, coord        rhs);
+
+		friend Point operator / (const Point& lhs, const Point& rhs);
 
 	};// Point
 

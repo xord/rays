@@ -167,7 +167,10 @@ static
 RUCY_DEFN(add)
 {
 	CHECK;
-	return value(*THIS + to<Rays::Point>(argc, argv));
+	if (argc == 1 && argv->is_num())
+		return value(*THIS + argv->as_f(true));
+	else
+		return value(*THIS + to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
@@ -175,7 +178,10 @@ static
 RUCY_DEFN(sub)
 {
 	CHECK;
-	return value(*THIS - to<Rays::Point>(argc, argv));
+	if (argc == 1 && argv->is_num())
+		return value(*THIS - argv->as_f(true));
+	else
+		return value(*THIS - to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
@@ -183,7 +189,10 @@ static
 RUCY_DEFN(mult)
 {
 	CHECK;
-	return value(*THIS * to<Rays::Point>(argc, argv));
+	if (argc == 1 && argv->is_num())
+		return value(*THIS * argv->as_f(true));
+	else
+		return value(*THIS * to<Rays::Point>(argc, argv));
 }
 RUCY_END
 
@@ -191,7 +200,10 @@ static
 RUCY_DEFN(div)
 {
 	CHECK;
-	return value(*THIS / to<Rays::Point>(argc, argv));
+	if (argc == 1 && argv->is_num())
+		return value(*THIS / argv->as_f(true));
+	else
+		return value(*THIS / to<Rays::Point>(argc, argv));
 }
 RUCY_END
 

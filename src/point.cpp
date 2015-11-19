@@ -2,12 +2,29 @@
 
 
 #include <math.h>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/geometric.hpp>
 #include <xot/string.h>
 #include "rays/exception.h"
 
 
 namespace Rays
 {
+
+
+	typedef glm::tvec2<coord> Vec2;
+
+	typedef glm::tvec3<coord> Vec3;
+
+
+	static inline       Vec3&  to_glm(      Point& val) {return *(      Vec3*)  &val;}
+
+	static inline const Vec3&  to_glm(const Point& val) {return *(const Vec3*)  &val;}
+
+	static inline       Point& to_rays(      Vec3& val) {return *(      Point*) &val;}
+
+	static inline const Point& to_rays(const Vec3& val) {return *(const Point*) &val;}
 
 
 	Coord2&
@@ -118,25 +135,22 @@ namespace Rays
 	coord
 	Point::length () const
 	{
-		return sqrt(x * x + y * y + z * z);
-	}
-
-	void
-	Point::normalize ()
-	{
-		coord len = length();
-		if (len == 0)
-			invalid_state_error(__FILE__, __LINE__);
-
-		*this /= len;
+		return glm::length(to_glm(*this));
 	}
 
 	Point
 	Point::normal () const
 	{
-		Point t = *this;
-		t.normalize();
-		return t;
+		if (x == 0 && y == 0 && z == 0)
+			invalid_state_error(__FILE__, __LINE__);
+
+		return to_rays(glm::normalize(to_glm(*this)));
+	}
+
+	void
+	Point::normalize ()
+	{
+		*this = normal();
 	}
 
 	String
@@ -148,45 +162,48 @@ namespace Rays
 	Point
 	Point::operator - () const
 	{
-		return Point(-x, -y, -z);
+		return to_rays(-to_glm(*this));
+	}
+
+	Point&
+	Point::operator += (coord rhs)
+	{
+		to_glm(*this) += rhs;
+		return *this;
 	}
 
 	Point&
 	Point::operator += (const Point& rhs)
 	{
-		x += rhs.x;
-		y += rhs.y;
-		z += rhs.z;
+		to_glm(*this) += to_glm(rhs);
+		return *this;
+	}
+
+	Point&
+	Point::operator -= (coord rhs)
+	{
+		to_glm(*this) -= rhs;
 		return *this;
 	}
 
 	Point&
 	Point::operator -= (const Point& rhs)
 	{
-		x -= rhs.x;
-		y -= rhs.y;
-		z -= rhs.z;
+		to_glm(*this) -= to_glm(rhs);
+		return *this;
+	}
+
+	Point&
+	Point::operator *= (coord rhs)
+	{
+		to_glm(*this) *= rhs;
 		return *this;
 	}
 
 	Point&
 	Point::operator *= (const Point& rhs)
 	{
-		x *= rhs.x;
-		y *= rhs.y;
-		z *= rhs.z;
-		return *this;
-	}
-
-	Point&
-	Point::operator /= (const Point& rhs)
-	{
-		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
-			argument_error(__FILE__, __LINE__);
-
-		x /= rhs.x;
-		y /= rhs.y;
-		z /= rhs.z;
+		to_glm(*this) *= to_glm(rhs);
 		return *this;
 	}
 
@@ -196,65 +213,111 @@ namespace Rays
 		if (rhs == 0)
 			argument_error(__FILE__, __LINE__);
 
-		x /= rhs;
-		y /= rhs;
-		z /= rhs;
+		to_glm(*this) /= rhs;
+		return *this;
+	}
+
+	Point&
+	Point::operator /= (const Point& rhs)
+	{
+		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
+			argument_error(__FILE__, __LINE__);
+
+		to_glm(*this) /= to_glm(rhs);
 		return *this;
 	}
 
 	bool
 	operator == (const Point& lhs, const Point& rhs)
 	{
-		return
-			lhs.x == rhs.x &&
-			lhs.y == rhs.y &&
-			lhs.z == rhs.z;
+		return to_glm(lhs) == to_glm(rhs);
 	}
 
 	bool
 	operator != (const Point& lhs, const Point& rhs)
 	{
-		return !operator==(lhs, rhs);
+		return to_glm(lhs) != to_glm(rhs);
+	}
+
+	Point
+	operator + (coord lhs, const Point& rhs)
+	{
+		return to_rays(lhs + to_glm(rhs));
+	}
+
+	Point
+	operator + (const Point& lhs, coord rhs)
+	{
+		return to_rays(to_glm(lhs) + rhs);
 	}
 
 	Point
 	operator + (const Point& lhs, const Point& rhs)
 	{
-		Point t = lhs;
-		t += rhs;
-		return t;
+		return to_rays(to_glm(lhs) + to_glm(rhs));
+	}
+
+	Point
+	operator - (coord lhs, const Point& rhs)
+	{
+		return to_rays(lhs - to_glm(rhs));
+	}
+
+	Point
+	operator - (const Point& lhs, coord rhs)
+	{
+		return to_rays(to_glm(lhs) - rhs);
 	}
 
 	Point
 	operator - (const Point& lhs, const Point& rhs)
 	{
-		Point t = lhs;
-		t -= rhs;
-		return t;
+		return to_rays(to_glm(lhs) - to_glm(rhs));
+	}
+
+	Point
+	operator * (coord lhs, const Point& rhs)
+	{
+		return to_rays(lhs * to_glm(rhs));
+	}
+
+	Point
+	operator * (const Point& lhs, coord rhs)
+	{
+		return to_rays(to_glm(lhs) * rhs);
 	}
 
 	Point
 	operator * (const Point& lhs, const Point& rhs)
 	{
-		Point t = lhs;
-		t *= rhs;
-		return t;
+		return to_rays(to_glm(lhs) * to_glm(rhs));
 	}
 
 	Point
-	operator / (const Point& lhs, const Point& rhs)
+	operator / (coord lhs, const Point& rhs)
 	{
-		Point t = lhs;
-		t /= rhs;
-		return t;
+		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
+			argument_error(__FILE__, __LINE__);
+
+		return to_rays(lhs / to_glm(rhs));
 	}
 
 	Point
 	operator / (const Point& lhs, coord rhs)
 	{
-		Point t = lhs;
-		t /= rhs;
-		return t;
+		if (rhs == 0)
+			argument_error(__FILE__, __LINE__);
+
+		return to_rays(to_glm(lhs) / rhs);
+	}
+
+	Point
+	operator / (const Point& lhs, const Point& rhs)
+	{
+		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
+			argument_error(__FILE__, __LINE__);
+
+		return to_rays(to_glm(lhs) / to_glm(rhs));
 	}
 
 

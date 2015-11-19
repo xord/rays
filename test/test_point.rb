@@ -95,6 +95,7 @@ class TestPoint < Test::Unit::TestCase
 
   def test_normal ()
     assert_equal point(1, 2, 3).normalize, point(1, 2, 3).normal
+    assert_raise(Rucy::NativeError) {point(0).normal}
   end
 
   def test_to_a ()
@@ -152,10 +153,10 @@ class TestPoint < Test::Unit::TestCase
     assert_equal point( 9, 18, 27), point(10, 20, 30) - [1, 2, 3]
     assert_equal point(10, 40, 90), point(10, 20, 30) * [1, 2, 3]
     assert_equal point(10, 10, 10), point(10, 20, 30) / [1, 2, 3]
-    assert_equal point(12, 22, 30), point(10, 20, 30) + 2
-    assert_equal point( 8, 18, 30), point(10, 20, 30) - 2
-    assert_equal point(20, 40, 0),  point(10, 20, 30) * 2
-    assert_raise(ArgumentError)    {point(10, 20, 30) / 2}
+    assert_equal point(12, 22, 32), point(10, 20, 30) + 2
+    assert_equal point( 8, 18, 28), point(10, 20, 30) - 2
+    assert_equal point(20, 40, 60), point(10, 20, 30) * 2
+    assert_equal point( 5, 10, 15), point(10, 20, 30) / 2
   end
 
 end# TestPoint

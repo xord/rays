@@ -23,4 +23,4 @@ task :default => :build
 task :build => :ext
 
 
-MODULES.each {|m| m.load_tasks :lib, :ext, :test, :doc, :gem}
+MODULES.each {|m| m.load_tasks :lib, :ext, :test, :doc, :gem, :glm}

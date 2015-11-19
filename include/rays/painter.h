@@ -13,10 +13,6 @@ namespace Rays
 {
 
 
-	struct Coord2;
-
-	struct Coord3;
-
 	struct Point;
 
 	struct Bounds;
@@ -75,13 +71,9 @@ namespace Rays
 
 			void line (const Point& p1, const Point& p2);
 
-			void lines   (const Coord2* points, size_t size);
+			void lines   (const Point* points, size_t size);
 
-			void lines   (const Coord3* points, size_t size);
-
-			void polygon (const Coord2* points, size_t size);
-
-			void polygon (const Coord3* points, size_t size);
+			void polygon (const Point* points, size_t size);
 
 			void rect (
 				coord x, coord y, coord width, coord height,

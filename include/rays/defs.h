@@ -4,6 +4,9 @@
 #define __RAYS_DEFS_H__
 
 
+#define GLM_FORCE_CXX03
+
+
 #include <xot/defs.h>
 #include <xot/string.h>
 

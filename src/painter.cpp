@@ -124,7 +124,7 @@ namespace Rays
 		void draw_shape (
 			GLenum mode,
 			int nindices, const uint* indices,
-			int vertex_size, const coord* vertices,
+			int vertex_size, int vertex_stride, const coord* vertices,
 			const coord* tex_coords = NULL, const Texture* texture = NULL)
 		{
 			if (nindices <= 0 || !indices || !vertices)
@@ -159,7 +159,7 @@ namespace Rays
 			}
 
 			glEnableClientState(GL_VERTEX_ARRAY);
-			glVertexPointer(vertex_size, GL_FLOAT, 0, vertices);
+			glVertexPointer(vertex_size, GL_FLOAT, vertex_stride, vertices);
 
 			glDrawElements(mode, nindices, GL_UNSIGNED_INT, indices);
 
@@ -177,8 +177,7 @@ namespace Rays
 	void
 	set_painter_scale_factor (Painter* painter, float factor)
 	{
-		if (!painter)
-			argument_error(__FILE__, __LINE__, "invalid texture.");
+		assert(painter);
 
 		painter->self->scale_factor = factor;
 	}
@@ -386,7 +385,7 @@ namespace Rays
 			x2, y2
 		};
 
-		pself->draw_shape(GL_LINES, 2, INDICES, 2, vertices);
+		pself->draw_shape(GL_LINES, 2, INDICES, 2, 0, vertices);
 	}
 
 	void
@@ -396,9 +395,13 @@ namespace Rays
 	}
 
 	void
-	Painter::lines (const Coord2* points, size_t size)
+	draw_lines (
+		Painter* painter, const coord* points, size_t npoints,
+		size_t vertex_size, size_t vertex_stride = 0)
 	{
-		Data* pself = self.get();
+		assert(painter);
+
+		Painter::Data* pself = painter->self.get();
 
 		if (!pself->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
@@ -406,46 +409,35 @@ namespace Rays
 		if (!pself->use_color(STROKE))
 			return;
 
-		boost::scoped_array<uint> indices(new uint[size]);
-		for (size_t i = 0; i < size; ++i)
+		boost::scoped_array<uint> indices(new uint[npoints]);
+		for (size_t i = 0; i < npoints; ++i)
 			indices[i] = (uint) i;
-
-		pself->draw_shape(GL_LINES, (int) size, indices.get(), 2, (coord*) points);
-	}
-
-	void
-	Painter::lines (const Coord3* points, size_t size)
-	{
-		Data* pself = self.get();
-
-		if (!pself->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
-
-		if (!pself->use_color(STROKE))
-			return;
-
-		boost::scoped_array<uint>   indices(new uint[size]);
-		boost::scoped_array<Coord2> vertices(new Coord2[size]);
-		for (size_t i = 0; i < size; ++i)
-		{
-			indices[i] = (uint) i;
-			vertices[i].reset(points[i].x, points[i].y);
-		}
 
 		pself->draw_shape(
-			GL_LINES, (int) size, indices.get(), 2, (coord*) vertices.get());
+			GL_LINES, (int) npoints, indices.get(),
+			(int) vertex_size, (int) vertex_stride, points);
 	}
 
 	void
-	Painter::polygon (const Coord2* points, size_t size)
+	Painter::lines (const Point* points, size_t size)
 	{
-		Data* pself = self.get();
+		draw_lines(this, (const coord*) points, size, 2, sizeof(Point));
+	}
+
+	void
+	draw_polygon (
+		Painter* painter, const coord* points, size_t npoints,
+		size_t vertex_size, size_t vertex_stride = 0)
+	{
+		assert(painter);
+
+		Painter::Data* pself = painter->self.get();
 
 		if (!pself->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
 		GLenum modes[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		boost::scoped_array<uint>   indices;
+		boost::scoped_array<uint> indices;
 
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
@@ -453,49 +445,21 @@ namespace Rays
 
 			if (!indices.get())
 			{
-				indices.reset(new uint[size]);
-				for (size_t i = 0; i < size; ++i)
+				indices.reset(new uint[npoints]);
+				for (size_t i = 0; i < npoints; ++i)
 					indices[i] = (uint) i;
 			}
 
 			pself->draw_shape(
-				modes[type], (int) size, indices.get(), 2, (coord*) points);
+				modes[type], (int) npoints, indices.get(),
+				(int) vertex_size, (int) vertex_stride, points);
 		}
 	}
 
 	void
-	Painter::polygon (const Coord3* points, size_t size)
+	Painter::polygon (const Point* points, size_t size)
 	{
-		Data* pself = self.get();
-
-		if (!pself->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
-
-		GLenum modes[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		boost::scoped_array<uint>   indices;
-		boost::scoped_array<Coord2> vertices;
-
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!pself->use_color((ColorType) type)) continue;
-
-			if (!indices.get())
-			{
-				indices.reset(new uint[size]);
-				for (size_t i = 0; i < size; ++i)
-					indices[i] = (uint) i;
-			}
-
-			if (!vertices.get())
-			{
-				vertices.reset(new Coord2[size]);
-				for (size_t i = 0; i < size; ++i)
-					vertices[i].reset(points[i].x, points[i].y);
-			}
-
-			pself->draw_shape(
-				modes[type], (int) size, indices.get(), 2, (coord*) vertices.get());
-		}
+		draw_polygon(this, (const coord*) points, size, 2, sizeof(Point));
 	}
 
 	void
@@ -539,7 +503,7 @@ namespace Rays
 				xx, y
 			};
 
-			pself->draw_shape(MODES[type], 4, INDICES, 2, vertices);
+			pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
 		}
 	}
 
@@ -566,8 +530,7 @@ namespace Rays
 		float angle_from, float angle_to, coord radius_min,
 		uint nsegment)
 	{
-		if (!painter)
-			argument_error(__FILE__, __LINE__);
+		assert(painter);
 
 		Painter::Data* pself = painter->self.get();
 
@@ -625,7 +588,8 @@ namespace Rays
 				vertex  ->reset(x + xx * radius_x,     y + yy * radius_y);
 			}
 
-			pself->draw_shape(modes[type], nvertices, indices.get(), 2, (coord*) vertices.get());
+			pself->draw_shape(
+				modes[type], nvertices, indices.get(), 2, 0, (coord*) vertices.get());
 		}
 	}
 
@@ -695,10 +659,7 @@ namespace Rays
 			0, 1, 2, 3
 		};
 
-		assert(tex);
-
-		if (!painter)
-			argument_error(__FILE__, __LINE__);
+		assert(painter && tex);
 
 		Painter::Data* pself = painter->self.get();
 
@@ -733,10 +694,10 @@ namespace Rays
 					s_max, t_max,
 					s_max, t_min
 				};
-				pself->draw_shape(MODES[type], 4, INDICES, 2, vertices, tex_coords, &tex);
+				pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices, tex_coords, &tex);
 			}
 			else
-				pself->draw_shape(MODES[type], 4, INDICES, 2, vertices);
+				pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
 		}
 	}
 
@@ -854,10 +815,7 @@ namespace Rays
 		coord x, coord y, coord width, coord height,
 		const Font& font)
 	{
-		assert(str && *str != '\0' && font);
-
-		if (!painter)
-			argument_error(__FILE__, __LINE__);
+		assert(painter && str && *str != '\0' && font);
 
 		if (!painter->self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
