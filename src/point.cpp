@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <glm/geometric.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <xot/string.h>
 #include "rays/exception.h"
 
@@ -115,6 +116,12 @@ namespace Rays
 	{
 		reset(this->x + point.x, this->y + point.y, this->z + point.z);
 		return *this;
+	}
+
+	void
+	Point::rotate (float angle)
+	{
+		to_glm(*this) = glm::rotateZ(to_glm(*this), angle);
 	}
 
 	coord

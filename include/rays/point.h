@@ -68,6 +68,8 @@ namespace Rays
 
 		Point& move_by (const Point& point);
 
+		void rotate (float angle);
+
 		coord length () const;
 
 		Point normal () const;
