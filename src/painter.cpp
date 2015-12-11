@@ -414,7 +414,7 @@ namespace Rays
 			indices[i] = (uint) i;
 
 		pself->draw_shape(
-			GL_LINES, (int) npoints, indices.get(),
+			GL_LINE_STRIP, (int) npoints, indices.get(),
 			(int) vertex_size, (int) vertex_stride, points);
 	}
 

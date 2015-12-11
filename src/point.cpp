@@ -1,9 +1,8 @@
 #include "rays/point.h"
+#include "point.h"
 
 
 #include <math.h>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 #include <glm/geometric.hpp>
 #include <xot/string.h>
 #include "rays/exception.h"
@@ -11,20 +10,6 @@
 
 namespace Rays
 {
-
-
-	typedef glm::tvec2<coord> Vec2;
-
-	typedef glm::tvec3<coord> Vec3;
-
-
-	static inline       Vec3&  to_glm(      Point& val) {return *(      Vec3*)  &val;}
-
-	static inline const Vec3&  to_glm(const Point& val) {return *(const Vec3*)  &val;}
-
-	static inline       Point& to_rays(      Vec3& val) {return *(      Point*) &val;}
-
-	static inline const Point& to_rays(const Vec3& val) {return *(const Point*) &val;}
 
 
 	Coord2&

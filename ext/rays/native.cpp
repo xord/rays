@@ -20,6 +20,8 @@ void Init_shader ();
 
 void Init_painter ();
 
+void Init_noise ();
+
 
 extern "C" void
 #ifdef COCOAPODS
@@ -46,6 +48,8 @@ extern "C" void
 	Init_shader();
 
 	Init_painter();
+
+	Init_noise();
 
 	RUCY_CATCH
 }

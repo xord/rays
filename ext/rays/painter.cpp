@@ -113,7 +113,7 @@ RUCY_DEFN(lines)
 	std::vector<Rays::Coord3> points;
 	points.reserve(argc);
 	for (int i = 0; i < argc; ++i)
-		points.push_back(to<Rays::Point&>(argv[i]));
+		points.push_back(to<Rays::Point>(argv[i]));
 
 	THIS->lines((Rays::Point*) &points[0], points.size());
 	return self;
