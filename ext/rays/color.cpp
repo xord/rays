@@ -9,7 +9,7 @@
 using namespace Rucy;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Color)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Color)
 
 #define THIS  to<Rays::Color*>(self)
 

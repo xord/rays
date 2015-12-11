@@ -22,7 +22,7 @@ namespace Rays
 }// Rays
 
 
-RUCY_DECLARE_VALUE_FROM_TO(Rays::Point)
+RUCY_DECLARE_VALUE_OR_ARRAY_FROM_TO(Rays::Point)
 
 
 namespace Rucy

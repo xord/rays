@@ -23,7 +23,7 @@ namespace Rays
 }// Rays
 
 
-RUCY_DECLARE_VALUE_FROM_TO(Rays::Bounds)
+RUCY_DECLARE_VALUE_OR_ARRAY_FROM_TO(Rays::Bounds)
 
 
 namespace Rucy

@@ -8,7 +8,7 @@
 using namespace Rucy;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Matrix)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Matrix)
 
 #define THIS  to<Rays::Matrix*>(self)
 

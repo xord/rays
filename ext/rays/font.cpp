@@ -10,7 +10,7 @@ using namespace Rucy;
 using Rays::coord;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Font)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Font)
 
 #define THIS  to<Rays::Font*>(self)
 

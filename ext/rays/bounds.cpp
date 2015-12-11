@@ -11,7 +11,7 @@ using namespace Rucy;
 using Rays::coord;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Bounds)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Bounds)
 
 #define THIS  to<Rays::Bounds*>(self)
 

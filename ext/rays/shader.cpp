@@ -8,7 +8,7 @@
 using namespace Rucy;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Shader)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Shader)
 
 #define THIS  to<Rays::Shader*>(self)
 

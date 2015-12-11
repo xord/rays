@@ -10,7 +10,7 @@ using namespace Rucy;
 using Rays::coord;
 
 
-RUCY_DEFINE_VALUE_FROM_TO(Rays::Point)
+RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Point)
 
 #define THIS  to<Rays::Point*>(self)
 
