@@ -6,6 +6,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <xot/string.h>
+#include <xot/util.h>
 #include "rays/exception.h"
 
 
@@ -119,9 +120,9 @@ namespace Rays
 	}
 
 	void
-	Point::rotate (float angle)
+	Point::rotate (float degree)
 	{
-		to_glm(*this) = glm::rotateZ(to_glm(*this), angle);
+		to_glm(*this) = glm::rotateZ(to_glm(*this), Xot::deg2rad(degree));
 	}
 
 	coord

@@ -88,21 +88,20 @@ RUCY_DEFN(move_by)
 RUCY_END
 
 static
-RUCY_DEF1(rotate, angle)
+RUCY_DEF1(rotate, degree)
 {
 	CHECK;
 	Rays::Point p = *THIS;
-	p.rotate(to<float>(angle));
+	p.rotate(to<float>(degree));
 	return value(p);
 }
 RUCY_END
 
 static
-RUCY_DEF1(rotate_self, angle)
+RUCY_DEF1(rotate_self, degree)
 {
 	CHECK;
-	THIS->rotate(to<float>(angle));
-	return angle;
+	THIS->rotate(to<float>(degree));
 }
 RUCY_END
 
