@@ -2,6 +2,7 @@
 
 
 #include <rucy.h>
+#include "rays/ruby/point.h"
 #include "defs.h"
 
 
@@ -45,23 +46,23 @@ RUCY_DEF1(initialize_copy, obj)
 RUCY_END
 
 static
-RUCY_DEFN(set)
+RUCY_DEFN(reset)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Matrix#initialize", argc, 0, 1, 16);
+	check_arg_count(__FILE__, __LINE__, "Matrix#reset", argc, 0, 1, 16);
 
 	switch (argc)
 	{
 		case 0:
-			*THIS = Rays::Matrix();
+			THIS->reset();
 			break;
 
 		case 1:
-			*THIS = Rays::Matrix(to<float>(argv[0]));
+			THIS->reset(to<float>(argv[0]));
 			break;
 
 		case 16:
-			*THIS = Rays::Matrix(
+			THIS->reset(
 				to<float>(argv[0]),  to<float>(argv[1]),  to<float>(argv[2]),  to<float>(argv[3]),
 				to<float>(argv[4]),  to<float>(argv[5]),  to<float>(argv[6]),  to<float>(argv[7]),
 				to<float>(argv[8]),  to<float>(argv[9]),  to<float>(argv[10]), to<float>(argv[11]),
@@ -74,10 +75,86 @@ RUCY_DEFN(set)
 RUCY_END
 
 static
-RUCY_DEF2(at, row, column)
+RUCY_DEF1(mult, val)
+{
+	CHECK;
+
+	if (val.is_kind_of(Rays::matrix_class()))
+		return value(*THIS * to<Rays::Matrix&>(val));
+
+	if (val.is_kind_of(Rays::point_class()))
+		return value(*THIS * to<Rays::Point&>(val));
+
+	if (val.is_array())
+	{
+		if (val.size() == 16)
+			return value(*THIS * to<Rays::Matrix>(val));
+		else
+			return value(*THIS * to<Rays::Point>(val));
+	}
+
+	argument_error(__FILE__, __LINE__);
+}
+RUCY_END
+
+static
+RUCY_DEF3(set_at, row, column, val)
+{
+	CHECK;
+	return value(THIS->at(row.as_i(), column.as_i()) = to<float>(val));
+}
+RUCY_END
+
+static
+RUCY_DEF2(get_at, row, column)
 {
 	CHECK;
 	return value(THIS->at(row.as_i(), column.as_i()));
+}
+RUCY_END
+
+static
+RUCY_DEF1(compare, other)
+{
+	CHECK;
+
+	const Rays::Matrix& a = *THIS;
+	const Rays::Matrix& b = to<const Rays::Matrix&>(other);
+	for (int i = 0; i < Rays::Matrix::NELEM; ++i)
+	{
+		if (a[i] == b[i]) continue;
+		return value(a[i] < b[i] ? -1 : +1);
+	}
+	return value(0);
+}
+RUCY_END
+
+static
+RUCY_DEF0(inspect)
+{
+	CHECK;
+	return value(Xot::stringf("#<Rays::Matrix %s>", THIS->inspect().c_str()));
+}
+RUCY_END
+
+static
+RUCY_DEFN(translate)
+{
+	return value(Rays::translate(to<Rays::Point>(argc, argv)));
+}
+RUCY_END
+
+static
+RUCY_DEF1(rotate, degree)
+{
+	return value(Rays::rotate(to<float>(degree)));
+}
+RUCY_END
+
+static
+RUCY_DEFN(scale)
+{
+	return value(Rays::scale(to<Rays::Point>(argc, argv)));
 }
 RUCY_END
 
@@ -93,8 +170,16 @@ Init_matrix ()
 	cMatrix.define_alloc_func(alloc);
 	cMatrix.define_private_method("initialize",      initialize);
 	cMatrix.define_private_method("initialize_copy", initialize_copy);
-	cMatrix.define_method("set", set);
-	cMatrix.define_method("at", at);
+	cMatrix.define_method("reset", reset);
+	cMatrix.define_method("*", mult);
+	cMatrix.define_method("[]=", set_at);
+	cMatrix.define_method("[]",  get_at);
+	cMatrix.define_method("<=>", compare);
+	cMatrix.define_method("inspect", inspect);
+
+	cMatrix.define_function("translate", translate);
+	cMatrix.define_function("rotate",    rotate);
+	cMatrix.define_function("scale",     scale);
 }
 
 

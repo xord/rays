@@ -5,6 +5,8 @@ require 'rays/autoinit'
 require 'rays/module'
 
 require 'rays/point'
+require 'rays/matrix'
+
 require 'rays/bounds'
 require 'rays/color'
 require 'rays/bitmap'

@@ -51,6 +51,26 @@ namespace Rays
 	};// Coord3
 
 
+	struct Coord4
+	{
+
+		union
+		{
+			struct {coord x, y, z, w;};
+			coord array[4];
+		};
+
+		Coord4& reset (coord value = 0);
+
+		Coord4& reset (coord x, coord y, coord z = 0, coord w = 1);
+
+		      coord& operator [] (size_t index);
+
+		const coord& operator [] (size_t index) const;
+
+	};// Coord4
+
+
 	struct Point : public Coord3
 	{
 

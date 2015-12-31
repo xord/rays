@@ -13,9 +13,9 @@ namespace Rays
 {	
 
 
-	typedef glm::tvec2<coord> Vec2;
-
 	typedef glm::tvec3<coord> Vec3;
+
+	typedef glm::tvec4<coord> Vec4;
 
 
 	inline       Vec3&  to_glm(      Point& val) {return *(      Vec3*)  &val;}

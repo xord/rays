@@ -1,5 +1,4 @@
 #include "rays/point.h"
-#include "point.h"
 
 
 #include <math.h>
@@ -8,6 +7,7 @@
 #include <xot/string.h>
 #include <xot/util.h>
 #include "rays/exception.h"
+#include "point.h"
 
 
 namespace Rays
@@ -47,7 +47,7 @@ namespace Rays
 	Coord3&
 	Coord3::reset (coord value)
 	{
-		return reset(value, value, 0);
+		return reset(value, value);
 	}
 
 	Coord3&
@@ -72,6 +72,38 @@ namespace Rays
 	Coord3::operator [] (size_t index) const
 	{
 		return const_cast<Coord3*>(this)->operator[](index);
+	}
+
+
+	Coord4&
+	Coord4::reset (coord value)
+	{
+		return reset(value, value);
+	}
+
+	Coord4&
+	Coord4::reset (coord x, coord y, coord z, coord w)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->w = w;
+		return *this;
+	}
+
+	coord&
+	Coord4::operator [] (size_t index)
+	{
+		if (index >= 4)
+			argument_error(__FILE__, __LINE__);
+
+		return array[index];
+	}
+
+	const coord&
+	Coord4::operator [] (size_t index) const
+	{
+		return const_cast<Coord4*>(this)->operator[](index);
 	}
 
 

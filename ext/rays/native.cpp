@@ -8,6 +8,8 @@ using namespace Rucy;
 void Init_rays ();
 
 void Init_point ();
+void Init_matrix ();
+
 void Init_bounds ();
 void Init_color ();
 void Init_color_space ();
@@ -37,6 +39,8 @@ extern "C" void
 	Init_rays();
 
 	Init_point();
+	Init_matrix();
+
 	Init_bounds();
 	Init_color();
 	Init_color_space();
