@@ -166,7 +166,7 @@ namespace Rays
 	Point
 	Point::normal () const
 	{
-		if (x == 0 && y == 0 && z == 0)
+		if (dot(*this, *this) == 0)
 			invalid_state_error(__FILE__, __LINE__);
 
 		return to_rays(glm::normalize(to_glm(*this)));
@@ -343,6 +343,19 @@ namespace Rays
 			argument_error(__FILE__, __LINE__);
 
 		return to_rays(to_glm(lhs) / to_glm(rhs));
+	}
+
+
+	coord
+	dot (const Point& p1, const Point& p2)
+	{
+		return glm::dot(to_glm(p1), to_glm(p2));
+	}
+
+	Point
+	cross (const Point& p1, const Point& p2)
+	{
+		return to_rays(glm::cross(to_glm(p1), to_glm(p2)));
 	}
 
 

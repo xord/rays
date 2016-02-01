@@ -19,6 +19,10 @@ module Rays
       dup.move_by! *args
     end
 
+    def zero? ()
+      length == 0
+    end
+
     def to_a (dimension = 2)
       case dimension
       when 1 then [x]

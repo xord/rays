@@ -147,6 +147,11 @@ namespace Rays
 	};// Point
 
 
+	coord dot (const Point& p1, const Point& p2);
+
+	Point cross (const Point& p1, const Point& p2);
+
+
 }// Rays
 
 
