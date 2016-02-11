@@ -31,9 +31,6 @@ namespace Rays
 	void clear_error ();
 
 
-	void init_offscreen_context ();
-
-
 }// Rays
 
 

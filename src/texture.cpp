@@ -4,6 +4,7 @@
 #include "rays/exception.h"
 #include "rays/bitmap.h"
 #include "rays/opengl.h"
+#include "opengl.h"
 #include "frame_buffer.h"
 
 
@@ -20,8 +21,10 @@ namespace Rays
 
 		bool alpha_only, dirty;
 
+		Context context;
+
 		Data ()
-		:	id(-1)
+		:	id(-1), context(NULL)
 		{
 			clear();
 		}
@@ -33,17 +36,36 @@ namespace Rays
 
 		void clear ()
 		{
-			if (id >= 0)
-			{
-				GLuint id_ = id;
-				glDeleteTextures(1, &id_);
-			}
+			delete_texture();
 
 			id = -1;
 			width = height = width_pow2 = height_pow2 = 0;
 			color_space = COLORSPACE_UNKNOWN;
 			alpha_only = dirty = false;
+			context = NULL;
 		}
+
+		bool has_id () const
+		{
+			return id >= 0;
+		}
+
+		private:
+
+			void delete_texture ()
+			{
+				if (!has_id()) return;
+
+				Context current_context = get_context();
+
+				assert(context);
+				set_context(context);
+
+				GLuint id_ = id;
+				glDeleteTextures(1, &id_);
+
+				set_context(current_context);
+			}
 
 	};// Texture::Data
 
@@ -52,8 +74,17 @@ namespace Rays
 	create_texture (
 		Texture::Data* self, const Bitmap* bitmap, GLenum format, GLenum type)
 	{
-		if (!self || (bitmap && !*bitmap))
+		assert(self && !self->has_id());
+
+		if (bitmap && !*bitmap)
 			argument_error(__FILE__, __LINE__);
+
+		if (self->context)
+			invalid_state_error(__FILE__, __LINE__);
+
+		self->context = get_context();
+		if (!self->context)
+			opengl_error(__FILE__, __LINE__);
 
 		GLuint id = 0;
 		glGenTextures(1, &id);
@@ -197,13 +228,13 @@ namespace Rays
 		Texture::Data* self, int width, int height, const ColorSpace& cs,
 		const Bitmap* bitmap, bool alpha_only)
 	{
+		assert(self && !self->has_id());
+
 		if (!self || width <= 0 || height <= 0 || !cs || (bitmap && !*bitmap))
 			argument_error(__FILE__, __LINE__);
 
 		GLenum format, type;
 		cs.get_gl_enums(&format, &type, alpha_only);
-
-		self->clear();
 
 		self->width       = width;
 		self->height      = height;
@@ -238,6 +269,13 @@ namespace Rays
 		}
 
 		create_texture(self, bitmap, format, type);
+	}
+
+
+	Context
+	get_context_for_texture (const Texture& texture)
+	{
+		return texture.self->context;
 	}
 
 
@@ -331,7 +369,7 @@ namespace Rays
 
 	Texture::operator bool () const
 	{
-		return self->id >= 0 && self->width > 0 && self->height > 0;
+		return self->has_id() && self->width > 0 && self->height > 0;
 	}
 
 	bool

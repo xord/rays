@@ -4,6 +4,7 @@
 #include "rays/exception.h"
 #include "rays/bitmap.h"
 #include "rays/texture.h"
+#include "opengl.h"
 
 
 namespace Rays
@@ -119,9 +120,34 @@ namespace Rays
 		return const_cast<This*>(this)->bitmap();
 	}
 
+	static void
+	invalidate_texture_for_another_context (Image* image)
+	{
+		assert(image);
+
+		const Texture& tex = image->self->texture;
+		if (!tex) return;
+
+		Context get_context_for_texture (const Texture&);
+		Context tex_context = get_context_for_texture(tex);
+		if (!tex_context) return;
+
+		Context current_context = get_context();
+		if (tex_context == current_context)
+			return;
+
+		set_context(tex_context);
+		image->bitmap();
+		image->self->texture = Texture();
+
+		set_context(current_context);
+	}
+
 	Texture&
 	Image::texture ()
 	{
+		invalidate_texture_for_another_context(this);
+
 		if (!self->texture)
 		{
 			if (self->bitmap)

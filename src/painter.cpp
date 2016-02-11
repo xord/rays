@@ -647,7 +647,7 @@ namespace Rays
 	}
 
 	static void
-	draw_image (
+	draw_texture (
 		Painter* painter, const Texture& tex,
 		float s_min, float t_min, float s_max, float t_max,
 		coord x, coord y, coord width, coord height,
@@ -711,7 +711,7 @@ namespace Rays
 		if (!tex)
 			argument_error(__FILE__, __LINE__);
 
-		draw_image(
+		draw_texture(
 			this, tex,
 			0, 0, tex.s_max(), tex.t_max(),
 			x, y, tex.width(), tex.height());
@@ -734,7 +734,7 @@ namespace Rays
 		if (!tex)
 			argument_error(__FILE__, __LINE__);
 
-		draw_image(
+		draw_texture(
 			this, tex,
 			0, 0, tex.s_max(), tex.t_max(),
 			x, y, width,       height);
@@ -762,7 +762,7 @@ namespace Rays
 
 		coord dest_width = tex.width(), dest_height = tex.height();
 		float s = tex.s_max() / dest_width, t = tex.t_max() / dest_height;
-		draw_image(
+		draw_texture(
 			this, tex,
 			 src_x * s,  src_y * t,  src_width * s,  src_height * t,
 			dest_x,     dest_y,     dest_width,     dest_height);
@@ -793,7 +793,7 @@ namespace Rays
 
 		float s = tex.s_max() / tex.width();
 		float t = tex.t_max() / tex.height();
-		draw_image(
+		draw_texture(
 			this, tex,
 			 src_x * s,  src_y * t,  src_width * s,  src_height * t,
 			dest_x,     dest_y,     dest_width,     dest_height);
@@ -872,7 +872,7 @@ namespace Rays
 			painter->pop_attr();
 		#endif
 
-		draw_image(
+		draw_texture(
 			painter, tex,
 			0, 0, tex.s(str_width - 1), tex.t(str_height - 1),
 			x, y, width,                height,

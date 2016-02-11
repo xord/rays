@@ -23,14 +23,6 @@ RUCY_DEF0(fin)
 }
 RUCY_END
 
-static
-RUCY_DEF0(init_offscreen_context)
-{
-	Rays::init_offscreen_context();
-	return self;
-}
-RUCY_END
-
 
 static Module mRays;
 
@@ -40,7 +32,6 @@ Init_rays ()
 	mRays = define_module("Rays");
 	mRays.define_singleton_method("init!", init);
 	mRays.define_singleton_method("fin!", fin);
-	mRays.define_singleton_method("init_offscreen_context", init_offscreen_context);
 }
 
 

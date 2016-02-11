@@ -27,6 +27,9 @@ namespace Rays
 			rays_error(__FILE__, __LINE__, "Rays::init(): already initialized.");
 
 		global::pool = [[NSAutoreleasePool alloc] init];
+
+		void init_offscreen_context ();
+		init_offscreen_context();
 	}
 
 	void

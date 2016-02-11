@@ -15,6 +15,3 @@ include Xot::Test
 unless $RAYS_NOAUTOINIT
   def Rays.fin! () end
 end
-
-
-Rays.init_offscreen_context
