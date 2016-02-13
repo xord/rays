@@ -38,7 +38,9 @@ namespace Rays
 			enum
 			{
 
-				ELLIPSE_NSEGMENT = 32
+				NSEGMENT_ROUND   = 8,
+
+				NSEGMENT_ELLIPSE = NSEGMENT_ROUND * 4
 
 			};
 
@@ -77,19 +79,23 @@ namespace Rays
 
 			void rect (
 				coord x, coord y, coord width, coord height,
-				coord round = 0);
+				coord round = 0, uint nsegment = 0);
 
 			void rect (
 				coord x, coord y, coord width, coord height,
-				coord round_width, coord round_height);
+				coord round_left_top,    coord round_right_top,
+				coord round_left_bottom, coord round_right_bottom,
+				uint nsegment = 0);
 
 			void rect (
 				const Bounds& bounds,
-				coord round = 0);
+				coord round = 0, uint nsegment = 0);
 
 			void rect (
 				const Bounds& bounds,
-				coord round_width, coord round_height);
+				coord round_left_top,    coord round_right_top,
+				coord round_left_bottom, coord round_right_bottom,
+				uint nsegment = 0);
 
 			void ellipse (
 				coord x, coord y, coord width, coord height = 0,

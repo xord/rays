@@ -35,9 +35,11 @@ namespace Rays
 	};// ColorType
 
 
-	static const float PI   = M_PI;
+	static const float PI      = M_PI;
 
-	static const float PI_2 = PI * 2;
+	static const float PI_2    = PI * 2;
+
+	static const float PI_HALF = PI / 2;
 
 
 	struct Attributes
@@ -119,6 +121,13 @@ namespace Rays
 
 			glColor4f(c.red, c.green, c.blue, c.alpha);
 			return true;
+		}
+
+		bool has_color ()
+		{
+			return
+				attrs.colors[FILL]  .alpha > 0 ||
+				attrs.colors[STROKE].alpha > 0;
 		}
 
 		void draw_shape (
@@ -401,19 +410,19 @@ namespace Rays
 	{
 		assert(painter);
 
-		Painter::Data* pself = painter->self.get();
+		Painter::Data* self = painter->self.get();
 
-		if (!pself->painting)
+		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
-		if (!pself->use_color(STROKE))
+		if (!self->use_color(STROKE))
 			return;
 
 		boost::scoped_array<uint> indices(new uint[npoints]);
 		for (size_t i = 0; i < npoints; ++i)
 			indices[i] = (uint) i;
 
-		pself->draw_shape(
+		self->draw_shape(
 			GL_LINE_STRIP, (int) npoints, indices.get(),
 			(int) vertex_size, (int) vertex_stride, points);
 	}
@@ -431,26 +440,25 @@ namespace Rays
 	{
 		assert(painter);
 
-		Painter::Data* pself = painter->self.get();
+		Painter::Data* self = painter->self.get();
 
-		if (!pself->painting)
+		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
+		if (!self->has_color()) return;
+
 		GLenum modes[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		boost::scoped_array<uint> indices;
+
+		boost::scoped_array<uint> indices(new uint[npoints]);
+		for (size_t i = 0; i < npoints; ++i)
+			indices[i] = (uint) i;
 
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!pself->use_color((ColorType) type)) continue;
+			if (!self->use_color((ColorType) type))
+				continue;
 
-			if (!indices.get())
-			{
-				indices.reset(new uint[npoints]);
-				for (size_t i = 0; i < npoints; ++i)
-					indices[i] = (uint) i;
-			}
-
-			pself->draw_shape(
+			self->draw_shape(
 				modes[type], (int) npoints, indices.get(),
 				(int) vertex_size, (int) vertex_stride, points);
 		}
@@ -462,16 +470,8 @@ namespace Rays
 		draw_polygon(this, (const coord*) points, size, 2, sizeof(Point));
 	}
 
-	void
-	Painter::rect (coord x, coord y, coord width, coord height, coord round)
-	{
-		rect(x, y, width, height, round, round);
-	}
-
-	void
-	Painter::rect (
-		coord x, coord y, coord width, coord height,
-		coord round_width, coord round_height)
+	static void
+	draw_rect (Painter* painter, coord x, coord y, coord width, coord height)
 	{
 		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
 		static const uint INDICES[] =
@@ -479,19 +479,23 @@ namespace Rays
 			0, 1, 2, 3
 		};
 
-		Data* pself = self.get();
+		assert(painter);
 
-		if (!pself->painting)
+		Painter::Data* self = painter->self.get();
+
+		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
-		if (width <= 0 || height <= 0) return;
+		if (!self->has_color())
+			return;
 
 		coord x2 = x + width  - 1;
 		coord y2 = y + height - 1;
 
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!pself->use_color((ColorType) type)) continue;
+			if (!self->use_color((ColorType) type))
+				continue;
 
 			coord xx = x2 + 1 - type;
 			coord yy = y2 + 1 - type;
@@ -503,24 +507,192 @@ namespace Rays
 				xx, y
 			};
 
-			pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
+			self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
+		}
+	}
+
+	static void
+	fix_rounds (
+		coord* left_top, coord* right_top, coord* left_bottom, coord* right_bottom,
+		coord width, coord height)
+	{
+		assert(left_top && right_top && left_bottom && right_bottom);
+
+		if (width  < 0) width  = -width;
+		if (height < 0) height = -height;
+
+		coord* rounds[] = {left_top, right_top, right_bottom, left_bottom, left_top};
+		coord sizes[]   = {width, height, width, height};
+
+		for (int i = 0; i < 4; ++i)
+		{
+			const coord& size = sizes[i];
+
+			coord* a = rounds[i];
+			coord* b = rounds[i + 1];
+			if (*a + *b <= size)
+				continue;
+
+			if (*a > *b)
+				std::swap(a, b);
+
+			if (*a * 2 > size)
+				*a = *b = size / 2;
+			else
+				*b = size - *a;
+		}
+	}
+
+	struct RoundedCorner
+	{
+		coord x, y, offset_sign_x, offset_sign_y, round;
+	};
+
+	static int
+	draw_round (
+		Coord2* vertex, const RoundedCorner& corner,
+		coord sign_x, coord sign_y, float radian_offset, uint nsegment)
+	{
+		if (corner.round <= 0)
+		{
+			vertex->reset(corner.x, corner.y);
+			return 1;
+		}
+
+		coord x = corner.x + corner.round * corner.offset_sign_x * sign_x;
+		coord y = corner.y + corner.round * corner.offset_sign_y * sign_y;
+
+		for (uint seg = 0; seg <= nsegment; ++seg, ++vertex)
+		{
+			float pos    = (float) seg / (float) nsegment;
+			float radian = radian_offset + pos * PI_HALF;
+			float xx     =  cos(radian);
+			float yy     = -sin(radian);
+			vertex->reset(
+				x + xx * corner.round * sign_x,
+				y + yy * corner.round * sign_y);
+		}
+		return nsegment + 1;
+	}
+
+	static void
+	draw_round_rect (
+		Painter* painter,
+		coord x, coord y, coord width, coord height,
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom,
+		uint nsegment)
+	{
+		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
+
+		assert(painter);
+
+		Painter::Data* self = painter->self.get();
+
+		if (!self->painting)
+			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+
+		if (!self->has_color())
+			return;
+
+		if (nsegment <= 0)
+			nsegment = Painter::NSEGMENT_ROUND;
+
+		fix_rounds(
+			&round_left_top,    &round_right_top,
+			&round_left_bottom, &round_right_bottom,
+			width, height);
+
+		coord xx     = x + width;
+		coord yy     = y + height;
+		coord sign_x = width  >= 0 ? +1 : -1;
+		coord sign_y = height >= 0 ? +1 : -1;
+
+		RoundedCorner corners[] =
+		{
+			{xx, y,  -1, +1, round_right_top},
+			{x,  y,  +1, +1, round_left_top},
+			{x,  yy, +1, -1, round_left_bottom},
+			{xx, yy, -1, -1, round_right_bottom}
+		};
+
+		int nvertices = 0;
+		for (int i = 0; i < 4; ++i)
+			nvertices += corners[i].round > 0 ? nsegment + 1 : 1;
+
+		boost::scoped_array<uint> indices(new uint[nvertices]);
+		for (int i = 0; i < nvertices; ++i)
+			indices[i] = i;
+
+		boost::scoped_array<Coord2> vertices(new Coord2[nvertices]);
+		Coord2* vertex = vertices.get();
+		assert(vertex);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			vertex += draw_round(
+				vertex, corners[i], sign_x, sign_y, PI_HALF * i, nsegment);
+		}
+
+		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
+		{
+			if (!self->use_color((ColorType) type))
+				continue;
+
+			self->draw_shape(
+				MODES[type], nvertices, indices.get(), 2, 0, (coord*) vertices.get());
 		}
 	}
 
 	void
-	Painter::rect (const Bounds& bounds, coord round)
+	Painter::rect (
+		coord x, coord y, coord width, coord height,
+		coord round, uint nsegment)
 	{
-		rect(
-			bounds.x, bounds.y, bounds.width, bounds.height,
-			round);
+		rect(x, y, width, height, round, round, round, round, nsegment);
 	}
 
 	void
-	Painter::rect (const Bounds& bounds, coord round_width, coord round_height)
+	Painter::rect (
+		coord x, coord y, coord width, coord height,
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom,
+		uint nsegment)
+	{
+		if (
+			round_left_top    == 0 && round_right_top    == 0 &&
+			round_left_bottom == 0 && round_right_bottom == 0)
+		{
+			draw_rect(this, x, y, width, height);
+		}
+		else
+		{
+			draw_round_rect(
+				this, x, y, width, height,
+				round_left_top, round_right_top, round_left_bottom, round_right_bottom,
+				nsegment);
+		}
+	}
+
+	void
+	Painter::rect (const Bounds& bounds, coord round, uint nsegment)
 	{
 		rect(
 			bounds.x, bounds.y, bounds.width, bounds.height,
-			round_width, round_height);
+			round, nsegment);
+	}
+
+	void
+	Painter::rect (
+		const Bounds& bounds,
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom,
+		uint nsegment)
+	{
+		rect(
+			bounds.x, bounds.y, bounds.width, bounds.height,
+			round_left_top, round_right_top, round_left_bottom, round_right_bottom,
+			nsegment);
 	}
 
 	static void
@@ -532,13 +704,13 @@ namespace Rays
 	{
 		assert(painter);
 
-		Painter::Data* pself = painter->self.get();
+		Painter::Data* self = painter->self.get();
 
-		if (!pself->painting)
+		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
-		if (height   == 0) height   = width;
-		if (nsegment <= 0) nsegment = Painter::ELLIPSE_NSEGMENT;
+		if (nsegment <= 0)
+			nsegment = Painter::NSEGMENT_ELLIPSE;
 
 		coord radius_x     = width  / 2;
 		coord radius_y     = height / 2;
@@ -553,42 +725,36 @@ namespace Rays
 			(GLenum) (hole ? GL_TRIANGLE_STRIP : GL_TRIANGLE_FAN),
 			GL_LINE_LOOP
 		};
-		boost::scoped_array<uint>   indices;
-		boost::scoped_array<Coord2> vertices;
 
 		x += radius_x;
 		y += radius_y;
 
+		boost::scoped_array<uint> indices(new uint[nvertices]);
+		for (int i = 0; i < nvertices; ++i)
+			indices[i] = i;
+
+		boost::scoped_array<Coord2> vertices(new Coord2[nvertices]);
+		Coord2* vertex = vertices.get();
+		assert(vertex);
+
+		for (uint seg = 0; seg < nsegment; ++seg, ++vertex)
+		{
+			float pos    = (float) seg / (float) nsegment;
+			float radian = (from + (to - from) * pos) * PI_2;
+			float xx     = cos(radian);
+			float yy     = -sin(radian);
+
+			if (hole)
+				vertex->reset(x + xx * radius_x_min, y + yy * radius_y_min);
+			vertex  ->reset(x + xx * radius_x,     y + yy * radius_y);
+		}
+
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!pself->use_color((ColorType) type)) continue;
+			if (!self->use_color((ColorType) type))
+				continue;
 
-			if (!indices.get())
-			{
-				indices.reset(new uint[nvertices]);
-				for (int i = 0; i < nvertices; ++i)
-					indices[i] = i;
-			}
-
-			if (!vertices.get())
-				vertices.reset(new Coord2[nvertices]);
-
-			Coord2* vertex = vertices.get();
-			assert(vertex);
-
-			for (uint seg = 0; seg < nsegment; ++seg, ++vertex)
-			{
-				float pos    = (float) seg / (float) nsegment;
-				float radian = (from + (to - from) * pos) * PI_2;
-				float xx     = cos(radian);
-				float yy     = -sin(radian);
-
-				if (hole)
-					vertex->reset(x + xx * radius_x_min, y + yy * radius_y_min);
-				vertex  ->reset(x + xx * radius_x,     y + yy * radius_y);
-			}
-
-			pself->draw_shape(
+			self->draw_shape(
 				modes[type], nvertices, indices.get(), 2, 0, (coord*) vertices.get());
 		}
 	}
@@ -661,9 +827,9 @@ namespace Rays
 
 		assert(painter && tex);
 
-		Painter::Data* pself = painter->self.get();
+		Painter::Data* self = painter->self.get();
 
-		if (!pself->painting)
+		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
 
 		coord x2 = x + width  - 1;
@@ -680,7 +846,7 @@ namespace Rays
 		{
 			if (
 				(nostroke && type == STROKE) ||
-				!pself->use_color((ColorType) type))
+				!self->use_color((ColorType) type))
 			{
 				continue;
 			}
@@ -694,10 +860,10 @@ namespace Rays
 					s_max, t_max,
 					s_max, t_min
 				};
-				pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices, tex_coords, &tex);
+				self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices, tex_coords, &tex);
 			}
 			else
-				pself->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
+				self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
 		}
 	}
 

@@ -141,24 +141,31 @@ static
 RUCY_DEFN(rect)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#rect", argc, 1, 2, 3, 4, 5, 6);
+	check_arg_count(
+		__FILE__, __LINE__, "Painter#rect", argc, 1, 2, 4, 5, 6, 8, 9);
 
-	if (argc <= 3)
+	if (argv[0].is_kind_of(Rays::bounds_class()))
 	{
 		Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		coord rw        = argc >= 2 ? to<coord>(argv[1]) : 0;
-		coord rh        = argc >= 3 ? to<coord>(argv[2]) : rw;
-		THIS->rect(b, rw, rh);
+		coord lt        = argc >= 2 ? to<coord>(argv[1]) : 0;
+		coord rt        = argc >= 3 ? to<coord>(argv[2]) : lt;
+		coord lb        = argc >= 4 ? to<coord>(argv[3]) : lt;
+		coord rb        = argc >= 5 ? to<coord>(argv[4]) : lt;
+		uint nsegment   = argc >= 6 ? to<uint>(argv[5])  : 0;
+		THIS->rect(b, lt, rt, lb, rb, nsegment);
 	}
 	else
 	{
-		coord x  = to<coord>(argv[0]);
-		coord y  = to<coord>(argv[1]);
-		coord w  = to<coord>(argv[2]);
-		coord h  = to<coord>(argv[3]);
-		coord rw = argc >= 5 ? to<coord>(argv[4]) : 0;
-		coord rh = argc >= 6 ? to<coord>(argv[5]) : rw;
-		THIS->rect(x, y, w, h, rw, rh);
+		coord x       = to<coord>(argv[0]);
+		coord y       = to<coord>(argv[1]);
+		coord w       = to<coord>(argv[2]);
+		coord h       = to<coord>(argv[3]);
+		coord lt      = argc >= 5 ? to<coord>(argv[4]) : 0;
+		coord rt      = argc >= 6 ? to<coord>(argv[5]) : lt;
+		coord lb      = argc >= 7 ? to<coord>(argv[6]) : lt;
+		coord rb      = argc >= 8 ? to<coord>(argv[7]) : lt;
+		uint nsegment = argc >= 9 ? to<uint>(argv[8])  : 0;
+		THIS->rect(x, y, w, h, lt, rt, lb, rb, nsegment);
 	}
 
 	return self;
