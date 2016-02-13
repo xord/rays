@@ -9,7 +9,7 @@
 
 
 namespace Rays
-{	
+{
 
 
 	typedef glm::tmat4x4<coord> Mat4;

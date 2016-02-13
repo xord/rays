@@ -5,20 +5,23 @@
 
 
 #include <rays/defs.h>
+#include <rays/opengl.h>
 #include <rays/rays.h>
 #include <rays/exception.h>
+#include <rays/debug.h>
+
 #include <rays/point.h>
 #include <rays/matrix.h>
 #include <rays/bounds.h>
 #include <rays/color.h>
 #include <rays/color_space.h>
+
 #include <rays/bitmap.h>
 #include <rays/texture.h>
 #include <rays/image.h>
 #include <rays/font.h>
 #include <rays/shader.h>
 #include <rays/painter.h>
-#include <rays/opengl.h>
 
 
 #endif//EOH

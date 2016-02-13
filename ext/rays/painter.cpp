@@ -176,56 +176,47 @@ static
 RUCY_DEFN(ellipse)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#ellipse", argc, 1, 2, 3, 4, 5, 6);
 
 	if (argv[0].is_kind_of(Rays::bounds_class()))
 	{
+		check_arg_count(
+			__FILE__, __LINE__, "Painter#ellipse(Bounds, ...)", argc, 1, 2, 3, 4, 5);
+
 		const Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		coord min_ = (argc >= 2) ? to<coord>(argv[1]) : 0;
-		uint nseg  = (argc >= 3) ? to<uint> (argv[2]) : 0;
-		THIS->ellipse(b, min_, nseg);
+		float from = (argc >= 2) ? to<float>(argv[1]) : 0;
+		float to_  = (argc >= 3) ? to<float>(argv[2]) : 360;
+		coord min_ = (argc >= 4) ? to<coord>(argv[3]) : 0;
+		uint nseg  = (argc >= 5) ? to<uint> (argv[4]) : 0;
+		THIS->ellipse(b, from, to_, min_, nseg);
+	}
+	else if (argv[0].is_kind_of(Rays::point_class()))
+	{
+		check_arg_count(
+			__FILE__, __LINE__, "Painter#ellipse(Point, ...)", argc, 2, 3, 4, 5, 6);
+
+		const Rays::Point& p = to<Rays::Point&>(argv[0]);
+		coord radius = to<coord>(argv[1]);
+		float from   = (argc >= 3) ? to<float>(argv[2]) : 0;
+		float to_    = (argc >= 4) ? to<float>(argv[3]) : 360;
+		coord min_   = (argc >= 5) ? to<coord>(argv[4]) : 0;
+		uint nseg    = (argc >= 6) ? to<uint> (argv[5]) : 0;
+		THIS->ellipse(p, radius, from, to_, min_, nseg);
 	}
 	else
 	{
+		check_arg_count(
+			__FILE__, __LINE__,
+			"Painter#ellipse(Number, ...)", argc, 3, 4, 5, 6, 7, 8);
+
 		coord x    = to<coord>(argv[0]);
 		coord y    = to<coord>(argv[1]);
 		coord w    = to<coord>(argv[2]);
-		coord h    = (argc >= 4) ? to<coord>(argv[3]) : 0;
-		coord min_ = (argc >= 5) ? to<coord>(argv[4]) : 0;
-		uint nseg  = (argc >= 6) ? to<uint> (argv[5]) : 0;
-		THIS->ellipse(x, y, w, h, min_, nseg);
-	}
-
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(arc)
-{
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#ellipse", argc, 1, 2, 3, 4, 5, 6, 7, 8);
-
-	if (argv[0].is_kind_of(Rays::bounds_class()))
-	{
-		const Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		float begin = (argc >= 2) ? to<float>(argv[1]) : 0;
-		float end   = (argc >= 3) ? to<float>(argv[2]) : 360;
-		coord min_  = (argc >= 4) ? to<coord>(argv[3]) : 0;
-		uint nseg   = (argc >= 5) ? to<uint> (argv[4]) : 0;
-		THIS->arc(b, begin, end, min_, nseg);
-	}
-	else
-	{
-		coord x     = to<coord>(argv[0]);
-		coord y     = to<coord>(argv[1]);
-		coord w     = to<coord>(argv[2]);
-		coord h     = (argc >= 4) ? to<coord>(argv[3]) : 0;
-		float begin = (argc >= 5) ? to<float>(argv[4]) : 0;
-		float end   = (argc >= 6) ? to<float>(argv[5]) : 360;
-		coord min_  = (argc >= 7) ? to<coord>(argv[6]) : 0;
-		uint nseg   = (argc >= 8) ? to<uint> (argv[7]) : 0;
-		THIS->arc(x, y, w, h, begin, end, min_, nseg);
+		coord h    = (argc >= 4) ? to<coord>(argv[3]) : w;
+		float from = (argc >= 5) ? to<float>(argv[4]) : 0;
+		float to_  = (argc >= 6) ? to<float>(argv[5]) : 360;
+		coord min_ = (argc >= 7) ? to<coord>(argv[6]) : 0;
+		uint nseg  = (argc >= 8) ? to<uint> (argv[7]) : 0;
+		THIS->ellipse(x, y, w, h, from, to_, min_, nseg);
 	}
 
 	return self;
@@ -646,7 +637,6 @@ Init_painter ()
 	cPainter.define_method("polygon", polygon);
 	cPainter.define_method("rect",    rect);
 	cPainter.define_method("ellipse", ellipse);
-	cPainter.define_method("arc",     arc);
 	cPainter.define_method("image",   image);
 	cPainter.define_method("text",    text);
 

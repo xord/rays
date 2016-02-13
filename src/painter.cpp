@@ -763,30 +763,6 @@ namespace Rays
 	void
 	Painter::ellipse (
 		coord x, coord y, coord width, coord height,
-		coord radius_min, uint nsegment)
-	{
-		draw_ellipse(this, x, y, width, height, 0, 360, radius_min, nsegment);
-	}
-
-	void
-	Painter::ellipse (const Bounds& bounds, coord radius_min, uint nsegment)
-	{
-		ellipse(
-			bounds.x, bounds.y, bounds.width, bounds.height, radius_min, nsegment);
-	}
-
-	void
-	Painter::ellipse (
-		const Point& center, coord radius, coord radius_min, uint nsegment)
-	{
-		ellipse(
-			center.x - radius, center.y - radius, radius * 2, radius * 2,
-			radius_min, nsegment);
-	}
-
-	void
-	Painter::arc (
-		coord x, coord y, coord width, coord height,
 		float angle_from, float angle_to, coord radius_min, uint nsegment)
 	{
 		draw_ellipse(
@@ -794,22 +770,22 @@ namespace Rays
 	}
 
 	void
-	Painter::arc (
+	Painter::ellipse (
 		const Bounds& bounds,
 		float angle_from, float angle_to, coord radius_min, uint nsegment)
 	{
-		arc(
+		ellipse(
 			bounds.x, bounds.y, bounds.width, bounds.height,
 			angle_from, angle_to, radius_min, nsegment);
 	}
 
 	void
-	Painter::arc (
+	Painter::ellipse (
 		const Point& center, coord radius,
 		float angle_from, float angle_to, coord radius_min, uint nsegment)
 	{
-		arc(
-			center.x, center.y, radius * 2, radius * 2,
+		ellipse(
+			center.x - radius, center.y - radius, radius * 2, radius * 2,
 			angle_from, angle_to, radius_min, nsegment);
 	}
 

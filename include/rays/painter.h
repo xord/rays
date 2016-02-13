@@ -14,19 +14,13 @@ namespace Rays
 
 
 	struct Point;
-
 	struct Bounds;
-
 	struct Color;
-
 	struct Matrix;
 
 	class Font;
-
 	class Image;
-
 	class Texture;
-
 	class Shader;
 
 
@@ -99,27 +93,15 @@ namespace Rays
 
 			void ellipse (
 				coord x, coord y, coord width, coord height = 0,
+				float angle_from = 0, float angle_to = 360,
 				coord radius_min = 0, uint nsegment = 0);
 
 			void ellipse (
 				const Bounds& bounds,
+				float angle_from = 0, float angle_to = 360,
 				coord radius_min = 0, uint nsegment = 0);
 
 			void ellipse (
-				const Point& center, coord radius,
-				coord radius_min = 0, uint nsegment = 0);
-
-			void arc (
-				coord x, coord y, coord width, coord height = 0,
-				float angle_from = 0, float angle_to = 360,
-				coord radius_min = 0, uint nsegment = 0);
-
-			void arc (
-				const Bounds& bounds,
-				float angle_from = 0, float angle_to = 360,
-				coord radius_min = 0, uint nsegment = 0);
-
-			void arc (
 				const Point& center, coord radius,
 				float angle_from = 0, float angle_to = 360,
 				coord radius_min = 0, uint nsegment = 0);

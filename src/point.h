@@ -10,7 +10,7 @@
 
 
 namespace Rays
-{	
+{
 
 
 	typedef glm::tvec3<coord> Vec3;
