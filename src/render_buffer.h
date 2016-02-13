@@ -36,7 +36,7 @@ namespace Rays
 
 			struct Data;
 
-			Xot::PImpl<Data, true> self;
+			Xot::PSharedImpl<Data> self;
 
 	};// RenderBuffer
 

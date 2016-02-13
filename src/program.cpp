@@ -114,7 +114,7 @@ namespace Rays
 
 		};// Data
 
-		Xot::PImpl<Data, true> self;
+		Xot::PSharedImpl<Data> self;
 
 		Uniform (const char* name, const UniformValue* value)
 		{

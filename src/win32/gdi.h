@@ -38,7 +38,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// Pen
 
@@ -64,7 +64,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// Brush
 
@@ -95,7 +95,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// Font
 
@@ -123,7 +123,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// Bitmap
 
@@ -181,7 +181,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// DC
 
@@ -209,7 +209,7 @@ namespace Rays
 
 				struct Data;
 
-				Xot::PImpl<Data, true> self;
+				Xot::PSharedImpl<Data> self;
 
 		};// MemoryDC
 
