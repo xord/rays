@@ -1,6 +1,7 @@
 #include "rays/image.h"
 
 
+#include <assert.h>
 #include "rays/exception.h"
 #include "rays/bitmap.h"
 #include "rays/texture.h"

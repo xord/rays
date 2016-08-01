@@ -2,9 +2,10 @@
 
 
 #include <math.h>
+#include <assert.h>
+#include <memory>
 #include <list>
 #include <algorithm>
-#include <boost/scoped_array.hpp>
 #include "rays/exception.h"
 #include "rays/point.h"
 #include "rays/bounds.h"
@@ -418,7 +419,7 @@ namespace Rays
 		if (!self->use_color(STROKE))
 			return;
 
-		boost::scoped_array<uint> indices(new uint[npoints]);
+		std::unique_ptr<uint[]> indices(new uint[npoints]);
 		for (size_t i = 0; i < npoints; ++i)
 			indices[i] = (uint) i;
 
@@ -449,7 +450,7 @@ namespace Rays
 
 		GLenum modes[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
 
-		boost::scoped_array<uint> indices(new uint[npoints]);
+		std::unique_ptr<uint[]> indices(new uint[npoints]);
 		for (size_t i = 0; i < npoints; ++i)
 			indices[i] = (uint) i;
 
@@ -620,11 +621,11 @@ namespace Rays
 		for (int i = 0; i < 4; ++i)
 			nvertices += corners[i].round > 0 ? nsegment + 1 : 1;
 
-		boost::scoped_array<uint> indices(new uint[nvertices]);
+		std::unique_ptr<uint[]> indices(new uint[nvertices]);
 		for (int i = 0; i < nvertices; ++i)
 			indices[i] = i;
 
-		boost::scoped_array<Coord2> vertices(new Coord2[nvertices]);
+		std::unique_ptr<Coord2[]> vertices(new Coord2[nvertices]);
 		Coord2* vertex = vertices.get();
 		assert(vertex);
 
@@ -729,11 +730,11 @@ namespace Rays
 		x += radius_x;
 		y += radius_y;
 
-		boost::scoped_array<uint> indices(new uint[nvertices]);
+		std::unique_ptr<uint[]> indices(new uint[nvertices]);
 		for (int i = 0; i < nvertices; ++i)
 			indices[i] = i;
 
-		boost::scoped_array<Coord2> vertices(new Coord2[nvertices]);
+		std::unique_ptr<Coord2[]> vertices(new Coord2[nvertices]);
 		Coord2* vertex = vertices.get();
 		assert(vertex);
 

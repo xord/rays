@@ -9,7 +9,7 @@
 #ifdef USE_SHADER
 
 
-#include <boost/scoped_array.hpp>
+#include <memory>
 #include "rays/exception.h"
 
 
@@ -68,7 +68,7 @@ namespace Rays
 			int len = 0;
 			glGetShaderiv(self->id, GL_INFO_LOG_LENGTH, &len);
 
-			boost::scoped_array<char> buffer(new char[len]);
+			std::unique_ptr<char[]> buffer(new char[len]);
 			int written = 0;
 			glGetShaderInfoLog(self->id, len, &written, &buffer[0]);
 

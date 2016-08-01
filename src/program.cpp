@@ -9,10 +9,10 @@
 #ifdef USE_SHADER
 
 
+#include <assert.h>
 #include <vector>
+#include <memory>
 #include <algorithm>
-#include <boost/scoped_ptr.hpp>
-#include <boost/scoped_array.hpp>
 #include "rays/exception.h"
 #include "rays/shader.h"
 
@@ -110,7 +110,7 @@ namespace Rays
 
 			String name;
 
-			boost::scoped_ptr<const UniformValue> value;
+			std::unique_ptr<const UniformValue> value;
 
 		};// Data
 
@@ -270,7 +270,7 @@ namespace Rays
 					int len = 0;
 					glGetProgramiv(id, GL_INFO_LOG_LENGTH, &len);
 
-					boost::scoped_array<char> buffer(new char[len]);
+					std::unique_ptr<char[]> buffer(new char[len]);
 					int written = 0;
 					glGetProgramInfoLog(id, len, &written, &buffer[0]);
 

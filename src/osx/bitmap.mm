@@ -3,7 +3,7 @@
 
 
 #include <assert.h>
-#include <boost/scoped_array.hpp>
+#include <memory>
 #import <Cocoa/Cocoa.h>
 #include "rays/exception.h"
 #include "rays/texture.h"
@@ -298,7 +298,7 @@ namespace Rays
 	void
 	save_bitmap (const Bitmap& bmp, const char* path_)
 	{
-		boost::shared_ptr<CGImage> img(
+		std::shared_ptr<CGImage> img(
 			bmp.self->get_image(), CGImageRelease);
 		if (!img)
 			rays_error(__FILE__, __LINE__, "getting CGImage failed.");
@@ -308,7 +308,7 @@ namespace Rays
 		if (!url)
 			rays_error(__FILE__, __LINE__, "creating NSURL failed.");
 
-		boost::shared_ptr<CGImageDestination> dest(
+		std::shared_ptr<CGImageDestination> dest(
 			CGImageDestinationCreateWithURL((CFURLRef) url, kUTTypePNG, 1, NULL),
 			safe_cfrelease);
 		if (!dest)
