@@ -29,7 +29,7 @@ module Rays
     end
 
     def to_s ()
-      to_a.map {|o| o.to_s}
+      to_a.to_s
     end
 
     def [] (index)
