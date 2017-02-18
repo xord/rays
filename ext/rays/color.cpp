@@ -252,15 +252,23 @@ namespace Rucy
 			colors["transp"]      =
 			colors["transparent"] = Rays::Color(0, 0);
 
-			colors["black"]   = Rays::Color(0);
-			colors["gray"]    = Rays::Color(0.5);
-			colors["white"]   = Rays::Color(1);
-			colors["red"]     = Rays::Color(1, 0, 0);
-			colors["green"]   = Rays::Color(0, 1, 0);
-			colors["blue"]    = Rays::Color(0, 0, 1);
-			colors["yellow"]  = Rays::Color(1, 1, 0);
-			colors["cyan"]    = Rays::Color(0, 1, 1);
-			colors["magenta"] = Rays::Color(1, 0, 1);
+			colors["black"]      = Rays::Color8(  0,   0,   0);
+			colors["white"]      = Rays::Color8(255, 241, 232);
+			colors["gray"]       =
+			colors["lightgray"]  = Rays::Color8(194, 195, 199);
+			colors["darkgray"]   = Rays::Color8( 95,  87,  79);
+			colors["brown"]      = Rays::Color8(171,  82,  54);
+			colors["red"]        = Rays::Color8(255,   0,  77);
+			colors["orange"]     = Rays::Color8(255, 163,   0);
+			colors["yellow"]     = Rays::Color8(255, 236,  39);
+			colors["green"]      = Rays::Color8(  0, 228,  54);
+			colors["darkgreen"]  = Rays::Color8(  0, 135,  81);
+			colors["blue"]       = Rays::Color8( 41, 173, 255);
+			colors["darkblue"]   = Rays::Color8( 29,  43,  83);
+			colors["indigo"]     = Rays::Color8(131, 118, 156);
+			colors["pink"]       = Rays::Color8(255, 119, 168);
+			colors["peach"]      = Rays::Color8(255, 204, 170);
+			colors["darkpurple"] = Rays::Color8(126,  37,  83);
 		}
 
 		assert(name);
