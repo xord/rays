@@ -1,4 +1,4 @@
-#include "rays/matrix.h"
+#include "matrix.h"
 
 
 #include <glm/mat4x4.hpp>
@@ -6,7 +6,6 @@
 #include "xot/util.h"
 #include "rays/exception.h"
 #include "point.h"
-#include "matrix.h"
 
 
 namespace Rays
@@ -76,6 +75,50 @@ namespace Rays
 		return *this;
 	}
 
+	Matrix&
+	Matrix::translate (coord x, coord y, coord z)
+	{
+		to_glm(*this) = glm::translate(to_glm(*this), Vec3(x, y, z));
+		return *this;
+	}
+
+	Matrix&
+	Matrix::translate (const Coord3& translate)
+	{
+		to_glm(*this) = glm::translate(to_glm(*this), to_glm(translate));
+		return *this;
+	}
+
+	Matrix&
+	Matrix::scale (coord x, coord y, coord z)
+	{
+		to_glm(*this) = glm::scale(to_glm(*this), Vec3(x, y, z));
+		return *this;
+	}
+
+	Matrix&
+	Matrix::scale (const Coord3& scale)
+	{
+		to_glm(*this) = glm::scale(to_glm(*this), to_glm(scale));
+		return *this;
+	}
+
+	Matrix&
+	Matrix::rotate (float degree, coord x, coord y, coord z)
+	{
+		to_glm(*this) = glm::rotate(
+			to_glm(*this), Xot::deg2rad(degree), Vec3(x, y, z));
+		return *this;
+	}
+
+	Matrix&
+	Matrix::rotate (float degree, const Coord3& axis)
+	{
+		to_glm(*this) = glm::rotate(
+			to_glm(*this), Xot::deg2rad(degree), to_glm(axis));
+		return *this;
+	}
+
 	coord&
 	Matrix::at (int row, int column)
 	{
@@ -126,37 +169,6 @@ namespace Rays
 	Matrix::operator * (const Matrix& rhs) const
 	{
 		return to_rays(to_glm(*this) * to_glm(rhs));
-	}
-
-
-	Matrix
-	translate (coord x, coord y, coord z)
-	{
-		return to_rays(glm::translate(Mat4(1), Vec3(x, y, z)));
-	}
-
-	Matrix
-	translate (const Point& translate)
-	{
-		return to_rays(glm::translate(Mat4(1), to_glm(translate)));
-	}
-
-	Matrix
-	rotate (float degree)
-	{
-		return to_rays(glm::rotate(Mat4(1), Xot::deg2rad(degree), Vec3(0, 0, 1)));
-	}
-
-	Matrix
-	scale (coord x, coord y, coord z)
-	{
-		return to_rays(glm::scale(Mat4(1), Vec3(x, y, z)));
-	}
-
-	Matrix
-	scale (const Point& scale)
-	{
-		return to_rays(glm::scale(Mat4(1), to_glm(scale)));
 	}
 
 

@@ -75,6 +75,45 @@ RUCY_DEFN(reset)
 RUCY_END
 
 static
+RUCY_DEFN(translate)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Matrix#translate", argc, 1, 2, 3);
+
+	THIS->translate(to<Rays::Point>(argc, argv));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEFN(scale)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Matrix#scale", argc, 1, 2, 3);
+
+	THIS->scale(to<Rays::Point>(argc, argv));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEFN(rotate)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Matrix#rotate", argc, 1, 2, 4);
+
+	float degree = to<float>(argv[0]);
+
+	if (argc == 1)
+		THIS->rotate(degree);
+	else
+		THIS->rotate(degree, to<Rays::Point>(argc - 1, argv + 1));
+
+	return self;
+}
+RUCY_END
+
+static
 RUCY_DEF1(mult, val)
 {
 	CHECK;
@@ -138,23 +177,23 @@ RUCY_DEF0(inspect)
 RUCY_END
 
 static
-RUCY_DEFN(translate)
+RUCY_DEFN(s_translate)
 {
-	return value(Rays::translate(to<Rays::Point>(argc, argv)));
+	return translate(argc, argv, value(Rays::Matrix()));
 }
 RUCY_END
 
 static
-RUCY_DEF1(rotate, degree)
+RUCY_DEFN(s_scale)
 {
-	return value(Rays::rotate(to<float>(degree)));
+	return scale(argc, argv, value(Rays::Matrix()));
 }
 RUCY_END
 
 static
-RUCY_DEFN(scale)
+RUCY_DEFN(s_rotate)
 {
-	return value(Rays::scale(to<Rays::Point>(argc, argv)));
+	return rotate(argc, argv, value(Rays::Matrix()));
 }
 RUCY_END
 
@@ -171,15 +210,18 @@ Init_matrix ()
 	cMatrix.define_private_method("initialize",      initialize);
 	cMatrix.define_private_method("initialize_copy", initialize_copy);
 	cMatrix.define_method("reset", reset);
+	cMatrix.define_method("translate", translate);
+	cMatrix.define_method("scale",     scale);
+	cMatrix.define_method("rotate",    rotate);
 	cMatrix.define_method("*", mult);
 	cMatrix.define_method("[]=", set_at);
 	cMatrix.define_method("[]",  get_at);
 	cMatrix.define_method("<=>", compare);
 	cMatrix.define_method("inspect", inspect);
 
-	cMatrix.define_function("translate", translate);
-	cMatrix.define_function("rotate",    rotate);
-	cMatrix.define_function("scale",     scale);
+	cMatrix.define_singleton_method("translate", s_translate);
+	cMatrix.define_singleton_method("scale",     s_scale);
+	cMatrix.define_singleton_method("rotate",    s_rotate);
 }
 
 
@@ -202,7 +244,7 @@ namespace Rucy
 		{
 			if (argc == 0)
 				return Rays::Matrix();
-			else if (argv->is_i() || argv->is_f())
+			else if (argv->is_num())
 			{
 				switch (argc)
 				{

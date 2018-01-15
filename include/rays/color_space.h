@@ -5,7 +5,6 @@
 
 
 #include <rays/defs.h>
-#include <rays/opengl.h>
 
 
 namespace Rays
@@ -17,7 +16,9 @@ namespace Rays
 
 		COLORSPACE_UNKNOWN = Xot::UNKNOWN,
 
-		GRAY_8, GRAY_16, GRAY_24, GRAY_32, GRAY_float,
+		 GRAY_8,  GRAY_16,  GRAY_24,  GRAY_32,  GRAY_float,
+
+		ALPHA_8, ALPHA_16, ALPHA_24, ALPHA_32, ALPHA_float,
 
 		RGB_888, RGBA_8888, RGBX_8888, ARGB_8888, XRGB_8888,
 
@@ -29,13 +30,15 @@ namespace Rays
 
 		COLORSPACE_LAST,
 
-		GRAY = GRAY_8,
+		GRAY  =  GRAY_8,
 
-		RGB  = RGB_888,   BGR  = BGR_888,
+		ALPHA = ALPHA_8,
 
-		RGBA = RGBA_8888, RGBX = RGBX_8888, ARGB = ARGB_8888, XRGB = XRGB_8888,
+		RGB   =  RGB_888,  BGR  =  BGR_888,
 
-		BGRA = BGRA_8888, BGRX = BGRX_8888, ABGR = ABGR_8888, XBGR = XBGR_8888,
+		RGBA  = RGBA_8888, RGBX = RGBX_8888, ARGB = ARGB_8888, XRGB = XRGB_8888,
+
+		BGRA  = BGRA_8888, BGRX = BGRX_8888, ABGR = ABGR_8888, XBGR = XBGR_8888,
 
 	};// ColorSpaceType
 
@@ -63,6 +66,8 @@ namespace Rays
 
 			bool is_gray () const;
 
+			bool is_alpha () const;
+
 			bool is_rgb () const;
 
 			bool is_bgr () const;
@@ -82,8 +87,6 @@ namespace Rays
 			bool is_skip_last () const;
 
 			bool is_premult () const;
-
-			void get_gl_enums (GLenum* format, GLenum* type, bool alpha_only) const;
 
 			operator bool () const;
 

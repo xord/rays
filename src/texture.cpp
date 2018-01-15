@@ -1,11 +1,12 @@
-#include "rays/texture.h"
+#include "texture.h"
 
 
 #include <assert.h>
 #include "rays/exception.h"
 #include "rays/bitmap.h"
-#include "rays/opengl.h"
+#include "rays/debug.h"
 #include "opengl.h"
+#include "color_space.h"
 #include "frame_buffer.h"
 
 
@@ -16,16 +17,17 @@ namespace Rays
 	struct Texture::Data
 	{
 
-		int id, width, height, width_pow2, height_pow2;
+		Context context = NULL;
+
+		GLuint id = 0;
+
+		int width, height, width_pow2, height_pow2;
 
 		ColorSpace color_space;
 
-		bool alpha_only, dirty;
-
-		Context context;
+		bool modified;
 
 		Data ()
-		:	id(-1), context(NULL)
 		{
 			clear();
 		}
@@ -39,16 +41,16 @@ namespace Rays
 		{
 			delete_texture();
 
-			id = -1;
+			context = NULL;
+			id = 0;
 			width = height = width_pow2 = height_pow2 = 0;
 			color_space = COLORSPACE_UNKNOWN;
-			alpha_only = dirty = false;
-			context = NULL;
+			modified = false;
 		}
 
 		bool has_id () const
 		{
-			return id >= 0;
+			return id > 0;
 		}
 
 		private:
@@ -57,55 +59,18 @@ namespace Rays
 			{
 				if (!has_id()) return;
 
-				Context current_context = get_context();
+				Context current_context = OpenGL_get_context();
 
 				assert(context);
-				set_context(context);
+				OpenGL_set_context(context);
 
-				GLuint id_ = id;
-				glDeleteTextures(1, &id_);
+				glDeleteTextures(1, &id);
 
-				set_context(current_context);
+				OpenGL_set_context(current_context);
 			}
 
 	};// Texture::Data
 
-
-	static void
-	create_texture (
-		Texture::Data* self, const Bitmap* bitmap, GLenum format, GLenum type)
-	{
-		assert(self && !self->has_id());
-
-		if (bitmap && !*bitmap)
-			argument_error(__FILE__, __LINE__);
-
-		if (self->context)
-			invalid_state_error(__FILE__, __LINE__);
-
-		self->context = get_context();
-		if (!self->context)
-			opengl_error(__FILE__, __LINE__);
-
-		GLuint id = 0;
-		glGenTextures(1, &id);
-		glBindTexture(GL_TEXTURE_2D, id);
-		if (glIsTexture(id) == GL_FALSE)
-			opengl_error(__FILE__, __LINE__, "failed to create texture.");
-
-		self->id = id;
-
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);//GL_LINEAR);
-
-		glTexImage2D(
-			GL_TEXTURE_2D, 0, format, self->width_pow2, self->height_pow2, 0,
-			format, type, bitmap ? bitmap->pixels() : NULL);
-
-		check_error(__FILE__, __LINE__);
-	}
 
 	static int
 	min_pow2 (int num)
@@ -116,26 +81,35 @@ namespace Rays
 	}
 
 	static void
-	colorspace_for_alphabitmap (ColorSpace* result, ColorSpace cs)
+	setup_texture (Texture::Data* self, const void* pixels = NULL)
 	{
-		if (!result || !cs)
-			argument_error(__FILE__, __LINE__);
+		assert(self && !self->has_id());
 
-		*result = COLORSPACE_UNKNOWN;
+		if (self->context)
+			invalid_state_error(__FILE__, __LINE__);
 
-		if (cs.is_float())
-			*result = GRAY_float;
-		else
-		{
-			switch (cs.bpc())
-			{
-				case 8:  *result = GRAY_8;  break;
-				case 16: *result = GRAY_16; break;
-				case 24: *result = GRAY_24; break;
-				case 32: *result = GRAY_32; break;
-				default: rays_error(__FILE__, __LINE__, "invalid bpc.");
-			}
-		}
+		self->context = OpenGL_get_context();
+		if (!self->context)
+			opengl_error(__FILE__, __LINE__);
+
+		glGenTextures(1, &self->id);
+		glBindTexture(GL_TEXTURE_2D, self->id);
+		if (glIsTexture(self->id) == GL_FALSE)
+			opengl_error(__FILE__, __LINE__, "failed to create texture.");
+
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);//GL_LINEAR);
+
+		GLenum format, type;
+		ColorSpace_get_gl_format_and_type(&format, &type, self->color_space);
+
+		glTexImage2D(
+			GL_TEXTURE_2D, 0, format, self->width_pow2, self->height_pow2, 0,
+			format, type, pixels);
+
+		check_error(__FILE__, __LINE__);
 	}
 
 	template <int BytesPerPixel>
@@ -173,110 +147,51 @@ namespace Rays
 	static inline void
 	copy_pixels (
 		size_t width,
-		uchar* dest, size_t dest_offset, const uchar* src, size_t src_offset)
+		uchar* dest, size_t dest_stride, const uchar* src, size_t src_stride)
 	{
-		if (!dest || !src || dest_offset <= 0 || src_offset <= 0)
+		if (!dest || !src || dest_stride <= 0 || src_stride <= 0)
 			argument_error(__FILE__, __LINE__);
 
 		while (width--)
 		{
 			copy_pixel<BytesPerPixel>(dest, src);
-			dest += dest_offset;
-			src  += src_offset;
+			dest += dest_stride;
+			src  += src_stride;
 		}
 	}
 
 	static inline void
 	copy_pixels (
 		size_t Bpp, size_t width,
-		uchar* dest, size_t dest_offset, const uchar* src, size_t src_offset)
+		uchar* dest, size_t dest_stride, const uchar* src, size_t src_stride)
 	{
 		switch (Bpp)
 		{
-			case 1: copy_pixels<1>(width, dest, dest_offset, src, src_offset); break;
-			case 2: copy_pixels<2>(width, dest, dest_offset, src, src_offset); break;
-			case 3: copy_pixels<3>(width, dest, dest_offset, src, src_offset); break;
-			case 4: copy_pixels<4>(width, dest, dest_offset, src, src_offset); break;
+			case 1: copy_pixels<1>(width, dest, dest_stride, src, src_stride); break;
+			case 2: copy_pixels<2>(width, dest, dest_stride, src, src_stride); break;
+			case 3: copy_pixels<3>(width, dest, dest_stride, src, src_stride); break;
+			case 4: copy_pixels<4>(width, dest, dest_stride, src, src_stride); break;
 		}
 	}
 
 	static void
-	copy_bitmap (Bitmap* dest, const Bitmap& src, int src_offset = 0)
+	copy_bitmap (Bitmap* dest, const Bitmap& src)
 	{
-		if (!dest || !src || src_offset < 0)
+		if (!dest || !src)
 			argument_error(__FILE__, __LINE__);
 
+		int width    = std::min(src.width(),  dest->width());
+		int height   = std::min(src.height(), dest->height());
 		int src_Bpp  = src.color_space().Bpp();
-		int src_Bpc  = src.color_space().Bpc();
 		int dest_Bpp = dest->color_space().Bpp();
-
-		if (src_offset >= (src_Bpp / src_Bpc))
-			rays_error(__FILE__, __LINE__, "invalid src_offset.");
-
-		int width  = std::min(src.width(),  dest->width());
-		int height = std::min(src.height(), dest->height());
 
 		for (int y = 0; y < height; ++y)
 		{
-			const uchar* s = src.  at<uchar>(0, y) + src_offset * src_Bpc;
-			      uchar* d = dest->at<uchar>(0, y);
-			copy_pixels(src_Bpp, width, d, dest_Bpp, s, src_Bpp);
+			copy_pixels(
+				src_Bpp, width,
+				dest->at<uchar>(0, y), dest_Bpp,
+				src.  at<uchar>(0, y),  src_Bpp);
 		}
-	}
-
-	static void
-	setup_texture (
-		Texture::Data* self, int width, int height, const ColorSpace& cs,
-		const Bitmap* bitmap, bool alpha_only)
-	{
-		assert(self && !self->has_id());
-
-		if (!self || width <= 0 || height <= 0 || !cs || (bitmap && !*bitmap))
-			argument_error(__FILE__, __LINE__);
-
-		GLenum format, type;
-		cs.get_gl_enums(&format, &type, alpha_only);
-
-		self->width       = width;
-		self->height      = height;
-		self->width_pow2  = min_pow2(width);
-		self->height_pow2 = min_pow2(height);
-		self->color_space = cs;
-		self->alpha_only  = alpha_only;
-		self->dirty       = true;
-
-		if (alpha_only)
-		{
-			colorspace_for_alphabitmap(&self->color_space, cs);
-			if (!self->color_space.is_gray())
-				rays_error(__FILE__, __LINE__, "alpha_only takes only gray color-space.");
-		}
-
-		Bitmap bmp;
-		if (bitmap)
-		{
-			if (
-				self->color_space != cs ||
-				self->width_pow2  != self->width ||
-				self->height_pow2 != self->height)
-			{
-				bmp = Bitmap(self->width_pow2, self->height_pow2, self->color_space);
-				if (!bmp)
-					rays_error(__FILE__, __LINE__, "creating bitmap failed.");
-
-				copy_bitmap(&bmp, *bitmap, alpha_only ? self->color_space.alpha_pos() : 0);
-				bitmap = &bmp;
-			}
-		}
-
-		create_texture(self, bitmap, format, type);
-	}
-
-
-	Context
-	get_context_for_texture (const Texture& texture)
-	{
-		return texture.self->context;
 	}
 
 
@@ -284,28 +199,50 @@ namespace Rays
 	{
 	}
 
-	Texture::Texture (int width, int height, const ColorSpace& cs, bool alpha_only)
+	Texture::Texture (int width, int height, const ColorSpace& cs)
 	{
-		setup_texture(
-			self.get(), width, height, cs,
-			NULL, alpha_only);
+		if (width <= 0 || height <= 0 || !cs)
+			argument_error(__FILE__, __LINE__);
+
+		self->width       = width;
+		self->height      = height;
+		self->width_pow2  = min_pow2(width);
+		self->height_pow2 = min_pow2(height);
+		self->color_space = cs;
+		self->modified    = true;
+
+		setup_texture(self.get());
 	}
 
-	Texture::Texture (const Bitmap& bitmap, bool alpha_only)
+	Texture::Texture (const Bitmap& bitmap)
 	{
-		setup_texture(
-			self.get(), bitmap.width(), bitmap.height(), bitmap.color_space(),
-			&bitmap, alpha_only);
+		if (!bitmap)
+			argument_error(__FILE__, __LINE__);
+
+		self->width       = bitmap.width();
+		self->height      = bitmap.height();
+		self->width_pow2  = min_pow2(self->width);
+		self->height_pow2 = min_pow2(self->height);
+		self->color_space = bitmap.color_space();
+		self->modified    = true;
+
+		Bitmap bmp = bitmap;
+		if (
+			self->width_pow2  != self->width ||
+			self->height_pow2 != self->height)
+		{
+			bmp = Bitmap(self->width_pow2, self->height_pow2, self->color_space);
+			if (!bmp)
+				rays_error(__FILE__, __LINE__);
+
+			copy_bitmap(&bmp, bitmap);
+		}
+
+		setup_texture(self.get(), bmp.pixels());
 	}
 
 	Texture::~Texture ()
 	{
-	}
-
-	GLuint
-	Texture::id () const
-	{
-		return self->id;
 	}
 
 	int
@@ -315,9 +252,21 @@ namespace Rays
 	}
 
 	int
+	Texture::reserved_width () const
+	{
+		return self->width_pow2;
+	}
+
+	int
 	Texture::height () const
 	{
 		return self->height;
+	}
+
+	int
+	Texture::reserved_height () const
+	{
+		return self->height_pow2;
 	}
 
 	const ColorSpace&
@@ -326,46 +275,28 @@ namespace Rays
 		return self->color_space;
 	}
 
-	bool
-	Texture::alpha_only () const
+	Context
+	Texture::context () const
 	{
-		return self->alpha_only;
+		return self->context;
 	}
 
-	float
-	Texture::s (float x) const
+	GLuint
+	Texture::id () const
 	{
-		return x / (float) self->width_pow2;
-	}
-
-	float
-	Texture::t (float y) const
-	{
-		return y / (float) self->height_pow2;
-	}
-
-	float
-	Texture::s_max () const
-	{
-		return s(self->width);
-	}
-
-	float
-	Texture::t_max () const
-	{
-		return t(self->height);
-	}
-
-	bool
-	Texture::dirty () const
-	{
-		return self->dirty;
+		return self->id;
 	}
 
 	void
-	Texture::set_dirty (bool b)
+	Texture::set_modified (bool modified)
 	{
-		self->dirty = b;
+		self->modified = modified;
+	}
+
+	bool
+	Texture::modified () const
+	{
+		return self->modified;
 	}
 
 	Texture::operator bool () const

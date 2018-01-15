@@ -18,12 +18,12 @@ class TestMatrix < Test::Unit::TestCase
     Rays::Matrix.translate *args
   end
 
-  def rotate (*args)
-    Rays::Matrix.rotate *args
-  end
-
   def scale (*args)
     Rays::Matrix.scale *args
+  end
+
+  def rotate (*args)
+    Rays::Matrix.rotate *args
   end
 
   def point (*args)
@@ -91,10 +91,16 @@ class TestMatrix < Test::Unit::TestCase
   end
 
   def test_transform ()
+    assert_equal mat_str('1001 0102 0013 0001'), translate(1, 2, 3)
+    assert_equal mat_str('2000 0300 0040 0001'), scale(2, 3, 4)
+
     assert_equal point(2, 3, 3), translate(1, 2, 3) * point(1, 1)
     assert_equal point(2, 2, 0), scale(2, 2)        * point(1, 1)
 
-    assert (rotate(90) * point(1, 0)).y > 0.99
+    assert (rotate(90)          * point(1, 0, 0)).y > 0.99
+    assert (rotate(90, 0, 0, 1) * point(1, 0, 0)).y > 0.99
+    assert (rotate(90, 0, 1, 0) * point(0, 0, 1)).x > 0.99
+    assert (rotate(90, 1, 0, 0) * point(0, 1, 0)).z > 0.99
   end
 
 end# TestMatrix

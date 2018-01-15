@@ -15,8 +15,6 @@ namespace Rays
 
 	class Bitmap;
 
-	class Texture;
-
 
 	class Image
 	{
@@ -29,31 +27,27 @@ namespace Rays
 
 			Image (
 				int width, int height, const ColorSpace& cs = RGBA,
-				bool alpha_only = false);
+				float pixel_density = 1);
 
-			Image (const Bitmap& bitmap, bool alpha_only = false);
+			Image (const Bitmap& bitmap, float pixel_density = 1);
 
 			~Image ();
 
 			Image copy () const;
 
-			Painter painter ();
+			coord width () const;
 
-			int width () const;
-
-			int height () const;
+			coord height () const;
 
 			const ColorSpace& color_space () const;
 
-			bool alpha_only () const;
+			float pixel_density () const;
+
+			Painter painter ();
 
 			      Bitmap& bitmap ();
 
 			const Bitmap& bitmap () const;
-
-			      Texture& texture ();
-
-			const Texture& texture () const;
 
 			operator bool () const;
 
@@ -66,9 +60,9 @@ namespace Rays
 	};// Image
 
 
-	Image load_image (const char* path, bool alphatexture = false);
-
 	void save_image (const Image& image, const char* path);
+
+	Image load_image (const char* path);
 
 
 }// Rays

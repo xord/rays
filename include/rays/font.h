@@ -32,7 +32,9 @@ namespace Rays
 			coord get_width (const char* str) const;
 
 			coord get_height (
-				coord* ascent = NULL, coord* descent = NULL, coord* leading = NULL) const;
+				coord* ascent  = NULL,
+				coord* descent = NULL,
+				coord* leading = NULL) const;
 
 			operator bool () const;
 

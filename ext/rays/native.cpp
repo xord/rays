@@ -15,7 +15,6 @@ void Init_color ();
 void Init_color_space ();
 
 void Init_bitmap ();
-void Init_texture ();
 void Init_image ();
 void Init_font ();
 void Init_shader ();
@@ -46,7 +45,6 @@ extern "C" void
 	Init_color_space();
 
 	Init_bitmap();
-	Init_texture();
 	Init_image();
 	Init_font();
 	Init_shader();

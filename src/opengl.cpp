@@ -1,4 +1,4 @@
-#include "rays/opengl.h"
+#include "opengl.h"
 
 
 #include "rays/exception.h"
@@ -35,11 +35,11 @@ namespace Rays
 			case GL_INVALID_ENUM:      return "GL_INVALID_ENUM";
 			case GL_INVALID_VALUE:     return "GL_INVALID_VALUE";
 			case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
-		#ifndef IOS
-			case GL_STACK_OVERFLOW:    return "GL_STACK_OVERFLOW";
-			case GL_STACK_UNDERFLOW:   return "GL_STACK_UNDERFLOW";
-		#endif
 			case GL_OUT_OF_MEMORY:     return "GL_OUT_OF_MEMORY";
+			#ifndef IOS
+				case GL_STACK_OVERFLOW:  return "GL_STACK_OVERFLOW";
+				case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
+			#endif
 			case 0x506:                return "GL_INVALID_FRAMEBUFFER_OPERATION";
 			case 0x8031:               return "GL_TABLE_TOO_LARGE";
 		}

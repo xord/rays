@@ -4,7 +4,6 @@
 #include <rucy.h>
 #include "rays/ruby/color_space.h"
 #include "rays/ruby/bitmap.h"
-#include "rays/ruby/texture.h"
 #include "rays/ruby/painter.h"
 #include "defs.h"
 
@@ -42,8 +41,8 @@ RUCY_DEFN(initialize)
 		if (!bitmap)
 			argument_error(__FILE__, __LINE__);
 
-		bool alpha_only = (argc >= 2) ? to<bool>(argv[1]) : false;
-		*THIS = Rays::Image(*bitmap, alpha_only);
+		float pixel_density = (argc >= 2) ? to<float>(argv[1]) : 1;
+		*THIS = Rays::Image(*bitmap, pixel_density);
 	}
 	else
 	{
@@ -52,8 +51,8 @@ RUCY_DEFN(initialize)
 		int width           = to<int>(argv[0]);
 		int height          = to<int>(argv[1]);
 		Rays::ColorSpace cs = (argc >= 3) ? to<Rays::ColorSpace>(argv[2]) : Rays::RGBA;
-		bool alpha_only     = (argc >= 4) ? to<bool>(argv[3])             : false;
-		*THIS = Rays::Image(width, height, cs, alpha_only);
+		float pixel_density = (argc >= 4) ? to<float>(argv[3]) : 1;
+		*THIS = Rays::Image(width, height, cs, pixel_density);
 	}
 
 	return self;
@@ -67,14 +66,6 @@ RUCY_DEF1(initialize_copy, obj)
 
 	*THIS = to<Rays::Image&>(obj).copy();
 	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF0(painter)
-{
-	CHECK;
-	return value(THIS->painter());
 }
 RUCY_END
 
@@ -103,10 +94,18 @@ RUCY_DEF0(color_space)
 RUCY_END
 
 static
-RUCY_DEF0(alpha_only)
+RUCY_DEF0(pixel_density)
 {
 	CHECK;
-	return value(THIS->alpha_only());
+	return value(THIS->pixel_density());
+}
+RUCY_END
+
+static
+RUCY_DEF0(painter)
+{
+	CHECK;
+	return value(THIS->painter());
 }
 RUCY_END
 
@@ -115,14 +114,6 @@ RUCY_DEF0(bitmap)
 {
 	CHECK;
 	return value(THIS->bitmap());
-}
-RUCY_END
-
-static
-RUCY_DEF0(texture)
-{
-	CHECK;
-	return value(THIS->texture());
 }
 RUCY_END
 
@@ -137,9 +128,11 @@ RUCY_END
 
 
 static
-RUCY_DEF2(load, path, alpha_only)
+RUCY_DEFN(load)
 {
-	return value(Rays::load_image(path.c_str(), to<bool>(alpha_only)));
+	check_arg_count(__FILE__, __LINE__, "Image.load", argc, 1);
+
+	return value(Rays::load_image(argv[0].c_str()));
 }
 RUCY_END
 
@@ -155,15 +148,14 @@ Init_image ()
 	cImage.define_alloc_func(alloc);
 	cImage.define_private_method("initialize",      initialize);
 	cImage.define_private_method("initialize_copy", initialize_copy);
-	cImage.define_method("painter", painter);
 	cImage.define_method("width", width);
 	cImage.define_method("height", height);
 	cImage.define_method("color_space", color_space);
-	cImage.define_method("alpha_only", alpha_only);
+	cImage.define_method("pixel_density", pixel_density);
+	cImage.define_method("painter", painter);
 	cImage.define_method("bitmap", bitmap);
-	cImage.define_method("texture", texture);
 	cImage.define_method("save", save);
-	cImage.define_function("load_image", load);
+	cImage.define_function("load", load);
 }
 
 

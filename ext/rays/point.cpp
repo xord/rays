@@ -314,7 +314,7 @@ namespace Rucy
 		{
 			if (argc == 0)
 				return Rays::Point();
-			else if (argv->is_i() || argv->is_f())
+			else if (argv->is_num())
 			{
 				switch (argc)
 				{

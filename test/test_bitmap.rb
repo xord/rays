@@ -18,10 +18,4 @@ class TestBitmap < Test::Unit::TestCase
     assert_equal H, bmp.height
   end
 
-  def test_to_texture ()
-    assert_equal Rays::Texture, bmp.to_texture.class
-    assert_equal W, bmp.to_texture.width
-    assert_equal H, bmp.to_texture.height
-  end
-
 end# TestBitmap

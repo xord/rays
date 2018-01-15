@@ -15,6 +15,8 @@ namespace Rays
 	struct Matrix
 	{
 
+		typedef Matrix This;
+
 		enum {NROW = 4, NCOLUMN = 4, NELEM = NROW * NCOLUMN};
 
 		union
@@ -41,17 +43,29 @@ namespace Rays
 
 		Matrix (const coord* elements, size_t size);
 
-		Matrix dup () const;
+		This dup () const;
 
-		Matrix& reset (coord value = 1);
+		This& reset (coord value = 1);
 
-		Matrix& reset (
+		This& reset (
 			coord x0, coord x1, coord x2, coord x3,
 			coord y0, coord y1, coord y2, coord y3,
 			coord z0, coord z1, coord z2, coord z3,
 			coord w0, coord w1, coord w2, coord w3);
 
-		Matrix& reset (const coord* elements, size_t size);
+		This& reset (const coord* elements, size_t size);
+
+		This& translate (coord x, coord y, coord z = 0);
+
+		This& translate (const Coord3& translate);
+
+		This& scale (coord x, coord y, coord z = 1);
+
+		This& scale (const Coord3& scale);
+
+		This& rotate (float degree, coord x = 0, coord y = 0, coord z = 1);
+
+		This& rotate (float degree, const Coord3& normalized_axis);
 
 		coord& at (int row, int column);
 
@@ -63,24 +77,13 @@ namespace Rays
 
 		coord  operator [] (int index) const;
 
-		Matrix& operator *= (const Matrix& rhs);
+		This&   operator *= (const This&    rhs);
 
-		Point  operator * (const Point&  rhs) const;
+		Point   operator *  (const Point&   rhs) const;
 
-		Matrix operator * (const Matrix& rhs) const;
+		This    operator *  (const This&    rhs) const;
 
 	};// Matrix
-
-
-	Matrix translate (coord x, coord y, coord z = 0);
-
-	Matrix translate (const Point& translate);
-
-	Matrix rotate (float degree);
-
-	Matrix scale (coord x, coord y, coord z = 1);
-
-	Matrix scale (const Point& scale);
 
 
 }// Rays

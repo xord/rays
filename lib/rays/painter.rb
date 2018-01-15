@@ -11,22 +11,11 @@ module Rays
 
   class Painter
 
-    universal_accessor :background, :fill, :stroke, :clip, :font
-
-    def attach (shader, uniforms = {})
-      attach_shader shader
-      uniforms.each {|name, args| set_uniform name, *args}
-      shader
-    end
-
-    alias detach detach_shader
-
     def push (*types, **attributes, &block)
       each_types types do |type|
         case type
+        when :state   then push_state
         when :matrix  then push_matrix
-        when :attrs   then push_attrs
-        when :shaders then push_shaders
         else raise ArgumentError, "invalid push/pop type '#{type}'."
         end
       end
@@ -51,26 +40,37 @@ module Rays
     end
 
     def pop (*types)
-      each_types types, true do |type|
+      each_types types, reverse: true do |type|
         case type
+        when :state   then pop_state
         when :matrix  then pop_matrix
-        when :attrs   then pop_attrs
-        when :shaders then pop_shaders
         else raise ArgumentError, "invalid push/pop type '#{type}'."
         end
       end
     end
 
-    def begin (*args, &block)
+    def paint (*args, &block)
       begin_paint
       Xot::BlockUtil.instance_eval_or_block_call self, *args, &block
       end_paint
+      self
     end
+
+    def line (*args, loop: false)
+      loop ? line_loop(*args) : line_strip(*args)
+    end
+
+    def shader= (shader, **uniforms)
+      shader.uniform **uniforms if shader && !uniforms.empty?
+      set_shader shader
+    end
+
+    universal_accessor :background, :fill, :stroke, :shader, :clip, :font
 
     private
 
-      def each_types (types, reverse = false, &block)
-        types = [:matrix, :attrs, :shaders] if types.include?(:all)
+      def each_types (types, reverse: false, &block)
+        types = [:state, :matrix] if types.include?(:all)
         types = types.reverse if reverse
         types.each &block
       end

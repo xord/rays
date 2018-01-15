@@ -7,8 +7,8 @@
 #include "rays/ruby/bounds.h"
 #include "rays/ruby/color.h"
 #include "rays/ruby/matrix.h"
-#include "rays/ruby/font.h"
 #include "rays/ruby/image.h"
+#include "rays/ruby/font.h"
 #include "rays/ruby/shader.h"
 #include "defs.h"
 
@@ -82,57 +82,58 @@ RUCY_DEF0(clear)
 }
 RUCY_END
 
-static
-RUCY_DEFN(line)
+static void
+make_line_points (
+	std::vector<Rays::Coord3>* points, int argc, const Rucy::Value* argv)
 {
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#line", argc, 2, 4);
+	assert(points && argv);
 
-	if (argc == 2)
-		THIS->line(to<Rays::Point&>(argv[0]), to<Rays::Point&>(argv[1]));
+	points->clear();
+
+	if (argv[0].is_num())
+	{
+		points->reserve(argc / 2);
+		for (int i = 0; i < argc; i += 2)
+		{
+			coord x = to<coord>(argv[i + 0]);
+			coord y = to<coord>(argv[i + 1]);
+			points->emplace_back(Rays::Point(x, y));
+		}
+	}
 	else
 	{
-		coord x1 = to<coord>(argv[0]);
-		coord y1 = to<coord>(argv[1]);
-		coord x2 = to<coord>(argv[2]);
-		coord y2 = to<coord>(argv[3]);
-		THIS->line(x1, y1, x2, y2);
+		points->reserve(argc);
+		for (int i = 0; i < argc; ++i)
+			points->emplace_back(to<Rays::Point>(argv[i]));
 	}
+}
 
+static
+RUCY_DEFN(line_strip)
+{
+	CHECK;
+	if (argc <= 0)
+		argument_error(__FILE__, __LINE__);
+
+	std::vector<Rays::Coord3> points;
+	make_line_points(&points, argc, argv);
+
+	THIS->line((Rays::Point*) &points[0], points.size(), false);
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEFN(lines)
+RUCY_DEFN(line_loop)
 {
 	CHECK;
 	if (argc <= 0)
-		argument_error(__FILE__, __LINE__, "Painter#lines");
+		argument_error(__FILE__, __LINE__);
 
 	std::vector<Rays::Coord3> points;
-	points.reserve(argc);
-	for (int i = 0; i < argc; ++i)
-		points.push_back(to<Rays::Point>(argv[i]));
+	make_line_points(&points, argc, argv);
 
-	THIS->lines((Rays::Point*) &points[0], points.size());
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(polygon)
-{
-	CHECK;
-	if (argc <= 0)
-		argument_error(__FILE__, __LINE__, "Painter#polygon");
-
-	std::vector<Rays::Coord3> points;
-	points.reserve(argc);
-	for (int i = 0; i < argc; ++i)
-		points.push_back(to<Rays::Point&>(argv[i]));
-
-	THIS->polygon((Rays::Point*) &points[0], points.size());
+	THIS->line((Rays::Point*) &points[0], points.size(), true);
 	return self;
 }
 RUCY_END
@@ -183,11 +184,11 @@ RUCY_DEFN(ellipse)
 			__FILE__, __LINE__, "Painter#ellipse(Bounds, ...)", argc, 1, 2, 3, 4, 5);
 
 		const Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		float from = (argc >= 2) ? to<float>(argv[1]) : 0;
-		float to_  = (argc >= 3) ? to<float>(argv[2]) : 360;
-		coord min_ = (argc >= 4) ? to<coord>(argv[3]) : 0;
-		uint nseg  = (argc >= 5) ? to<uint> (argv[4]) : 0;
-		THIS->ellipse(b, from, to_, min_, nseg);
+		float from       = (argc >= 2) ? to<float>(argv[1])       : 0;
+		float to_        = (argc >= 3) ? to<float>(argv[2])       : 360;
+		Rays::Point hole = (argc >= 4) ? to<Rays::Point>(argv[3]) : 0;
+		uint nseg        = (argc >= 5) ? to<uint> (argv[4])       : 0;
+		THIS->ellipse(b, from, to_, hole, nseg);
 	}
 	else if (argv[0].is_kind_of(Rays::point_class()))
 	{
@@ -198,9 +199,9 @@ RUCY_DEFN(ellipse)
 		coord radius = to<coord>(argv[1]);
 		float from   = (argc >= 3) ? to<float>(argv[2]) : 0;
 		float to_    = (argc >= 4) ? to<float>(argv[3]) : 360;
-		coord min_   = (argc >= 5) ? to<coord>(argv[4]) : 0;
+		coord hole   = (argc >= 5) ? to<coord>(argv[4]) : 0;
 		uint nseg    = (argc >= 6) ? to<uint> (argv[5]) : 0;
-		THIS->ellipse(p, radius, from, to_, min_, nseg);
+		THIS->ellipse(p, radius, from, to_, hole, nseg);
 	}
 	else
 	{
@@ -208,15 +209,15 @@ RUCY_DEFN(ellipse)
 			__FILE__, __LINE__,
 			"Painter#ellipse(Number, ...)", argc, 3, 4, 5, 6, 7, 8);
 
-		coord x    = to<coord>(argv[0]);
-		coord y    = to<coord>(argv[1]);
-		coord w    = to<coord>(argv[2]);
-		coord h    = (argc >= 4) ? to<coord>(argv[3]) : w;
-		float from = (argc >= 5) ? to<float>(argv[4]) : 0;
-		float to_  = (argc >= 6) ? to<float>(argv[5]) : 360;
-		coord min_ = (argc >= 7) ? to<coord>(argv[6]) : 0;
-		uint nseg  = (argc >= 8) ? to<uint> (argv[7]) : 0;
-		THIS->ellipse(x, y, w, h, from, to_, min_, nseg);
+		coord x          = to<coord>(argv[0]);
+		coord y          = to<coord>(argv[1]);
+		coord w          = to<coord>(argv[2]);
+		coord h          = (argc >= 4) ? to<coord>(argv[3])       : w;
+		float from       = (argc >= 5) ? to<float>(argv[4])       : 0;
+		float to_        = (argc >= 6) ? to<float>(argv[5])       : 360;
+		Rays::Point hole = (argc >= 7) ? to<Rays::Point>(argv[6]) : 0;
+		uint nseg        = (argc >= 8) ? to<uint> (argv[7])       : 0;
+		THIS->ellipse(x, y, w, h, from, to_, hole, nseg);
 	}
 
 	return self;
@@ -271,7 +272,7 @@ static
 RUCY_DEFN(text)
 {
 	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#text", argc, 1, 3, 4, 5, 7);
+	check_arg_count(__FILE__, __LINE__, "Painter#text", argc, 1, 3, 5);
 
 	if (argc == 1)
 		THIS->text(argv[0].c_str());
@@ -280,30 +281,11 @@ RUCY_DEFN(text)
 		coord x = to<coord>(argv[1]), y = to<coord>(argv[2]);
 		THIS->text(argv[0].c_str(), x, y);
 	}
-	else if (argc == 4)
-	{
-		const Rays::Font* font = to<Rays::Font*>(argv[3]);
-		if (!font || !*font)
-			rays_error(__FILE__, __LINE__, "Painter#text: invalid font.");
-
-		coord x = to<coord>(argv[1]), y = to<coord>(argv[2]);
-		THIS->text(argv[0].c_str(), x, y, font);
-	}
 	else if (argc == 5)
 	{
 		coord x = to<coord>(argv[1]), w = to<coord>(argv[3]);
 		coord y = to<coord>(argv[2]), h = to<coord>(argv[4]);
 		THIS->text(argv[0].c_str(), x, y, w, h);
-	}
-	else if (argc == 7)
-	{
-		const Rays::Font* font = to<Rays::Font*>(argv[3]);
-		if (!font || !*font)
-			rays_error(__FILE__, __LINE__, "Painter#text: invalid font.");
-
-		coord x = to<coord>(argv[1]), w = to<coord>(argv[3]);
-		coord y = to<coord>(argv[2]), h = to<coord>(argv[4]);
-		THIS->text(argv[0].c_str(), x, y, w, h, font);
 	}
 
 	return self;
@@ -389,6 +371,34 @@ RUCY_DEF0(no_stroke)
 RUCY_END
 
 static
+RUCY_DEFN(set_shader)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Painter#set_shader", argc, 1);
+
+	THIS->set_shader(to<Rays::Shader>(argc, argv));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_shader)
+{
+	CHECK;
+	return value(THIS->shader());
+}
+RUCY_END
+
+static
+RUCY_DEF0(no_shader)
+{
+	CHECK;
+	THIS->no_shader();
+	return self;
+}
+RUCY_END
+
+static
 RUCY_DEFN(set_clip)
 {
 	CHECK;
@@ -434,97 +444,19 @@ RUCY_DEF0(get_font)
 RUCY_END
 
 static
-RUCY_DEF0(push_attrs)
+RUCY_DEF0(push_state)
 {
 	CHECK;
-	THIS->push_attrs();
+	THIS->push_state();
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEF0(pop_attrs)
+RUCY_DEF0(pop_state)
 {
 	CHECK;
-	THIS->pop_attrs();
-	return self;
-}
-RUCY_END
-
-
-static
-RUCY_DEF1(attach_shader, shader)
-{
-	CHECK;
-	Rays::Shader t = to<Rays::Shader>(shader);
-	THIS->attach(t);
-	return value(t);
-}
-RUCY_END
-
-static
-RUCY_DEF1(detach_shader, shader)
-{
-	CHECK;
-	THIS->detach(to<Rays::Shader&>(shader));
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(set_uniform)
-{
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_uniform", argc, 2, 3, 4, 5);
-
-	#define Ai(n) (argv[n].as_i())
-	#define Af(n) ((float) argv[n].as_f())
-
-	const char* name = argv[0].c_str();
-	if (argv[1].is_i())
-	{
-		switch (argc)
-		{
-			case 2: THIS->set_uniform(name, Ai(1)); break;
-			case 3: THIS->set_uniform(name, Ai(1), Ai(2)); break;
-			case 4: THIS->set_uniform(name, Ai(1), Ai(2), Ai(3)); break;
-			case 5: THIS->set_uniform(name, Ai(1), Ai(2), Ai(3), Ai(4)); break;
-		}
-	}
-	else if (argv[1].is_f())
-	{
-		switch (argc)
-		{
-			case 2: THIS->set_uniform(name, Af(1)); break;
-			case 3: THIS->set_uniform(name, Af(1), Af(2)); break;
-			case 4: THIS->set_uniform(name, Af(1), Af(2), Af(3)); break;
-			case 5: THIS->set_uniform(name, Af(1), Af(2), Af(3), Af(4)); break;
-		}
-	}
-	else
-		argument_error(__FILE__, __LINE__);
-
-	#undef Ai
-	#undef Af
-
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF0(push_shaders)
-{
-	CHECK;
-	THIS->push_shaders();
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF0(pop_shaders)
-{
-	CHECK;
-	THIS->pop_shaders();
+	THIS->pop_state();
 	return self;
 }
 RUCY_END
@@ -632,9 +564,8 @@ Init_painter ()
 	cPainter.define_private_method("begin_paint", begin_paint);
 	cPainter.define_private_method(  "end_paint",   end_paint);
 	cPainter.define_method("clear",   clear);
-	cPainter.define_method("line",    line);
-	cPainter.define_method("lines",   lines);
-	cPainter.define_method("polygon", polygon);
+	cPainter.define_private_method("line_strip", line_strip);
+	cPainter.define_private_method("line_loop",  line_loop);
 	cPainter.define_method("rect",    rect);
 	cPainter.define_method("ellipse", ellipse);
 	cPainter.define_method("image",   image);
@@ -649,25 +580,22 @@ Init_painter ()
 	cPainter.define_method(   "stroke=", set_stroke);
 	cPainter.define_method(   "stroke",  get_stroke);
 	cPainter.define_method("no_stroke",   no_stroke);
+	cPainter.define_private_method("set_shader", set_shader);
+	cPainter.define_method(            "shader", get_shader);
+	cPainter.define_method(         "no_shader",  no_shader);
 	cPainter.define_method(   "clip=", set_clip);
 	cPainter.define_method(   "clip",  get_clip);
 	cPainter.define_method("no_clip",   no_clip);
 	cPainter.define_method("font=", set_font);
 	cPainter.define_method("font",  get_font);
-	cPainter.define_method("push_attrs", push_attrs);
-	cPainter.define_method( "pop_attrs",  pop_attrs);
-
-	cPainter.define_private_method("attach_shader", attach_shader);
-	cPainter.define_private_method("detach_shader", detach_shader);
-	cPainter.define_private_method("set_uniform", set_uniform);
-	cPainter.define_method("push_shaders", push_shaders);
-	cPainter.define_method( "pop_shaders",  pop_shaders);
+	cPainter.define_method("push_state", push_state);
+	cPainter.define_method( "pop_state",  pop_state);
 
 	cPainter.define_method("translate", translate);
 	cPainter.define_method("scale",     scale);
 	cPainter.define_method("rotate",    rotate);
-	cPainter.define_private_method("matrix=", set_matrix);
-	cPainter.define_private_method("matrix",  get_matrix);
+	cPainter.define_method("matrix=", set_matrix);
+	cPainter.define_method("matrix",  get_matrix);
 	cPainter.define_method("push_matrix", push_matrix);
 	cPainter.define_method( "pop_matrix",  pop_matrix);
 }

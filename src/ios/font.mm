@@ -1,7 +1,8 @@
 // -*- objc -*-
-#include "rays/font.h"
+#include "../font.h"
 
 
+#import <CoreGraphics/CGContext.h>
 #import <CoreText/CoreText.h>
 #include "rays/exception.h"
 #include "helper.h"
@@ -11,7 +12,7 @@ namespace Rays
 {
 
 
-	struct Font::Data
+	struct RawFont::Data
 	{
 
 		CTFontRef font;
@@ -30,7 +31,7 @@ namespace Rays
 			}
 		}
 
-	};// Font::Data
+	};// RawFont::Data
 
 
 	static CTLineRef
@@ -64,29 +65,61 @@ namespace Rays
 	}
 
 
-	Font::Font ()
+	RawFont::RawFont ()
 	{
 	}
 
-	Font::Font (const char* name, coord size)
+	RawFont::RawFont (const char* name, coord size)
 	{
 		self->font = name
 			? CTFontCreateWithName(cfstring(name).get(), size, NULL)
 			: CTFontCreateUIFontForLanguage(kCTFontSystemFontType, size, NULL);
 	}
 
-	Font::~Font ()
+	RawFont::~RawFont ()
 	{
 	}
 
-	Font
-	Font::copy () const
+	void
+	RawFont::draw_string (
+		void* context_, coord context_height,
+		const char* str, coord x, coord y) const
 	{
-		return Font(name(), size());
+		CGContextRef context = (CGContextRef) context_;
+
+		if (!*this || !context || !str)
+			argument_error(__FILE__, __LINE__);
+
+		if (*str == '\0') return;
+
+		CTLineRef line = make_line(self->font, str);
+		if (!line)
+			rays_error(__FILE__, __LINE__, "creating CTLineRef failed.");
+
+		coord width = 0, height = 0, ascent = 0;
+		width  = get_width(str);
+		height = get_height(&ascent);
+
+		height = ceil(height);
+		ascent = floor(ascent);
+
+		CGRect rect = CGRectMake(x, context_height - height - y, width, height);
+		CGContextClearRect(context, rect);
+		//CGContextSetRGBFillColor(context, 0, 0, 0, 1);
+		//CGContextFillRect(context, rect);
+		CGContextSetRGBFillColor(context, 1, 1, 1, 1);
+
+		CGContextSaveGState(context);
+		CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+		CGContextSetTextPosition(context, x, context_height - ascent - y);
+		CTLineDraw(line, context);
+		CGContextRestoreGState(context);
+
+		CFRelease(line);
 	}
 
 	String
-	Font::name () const
+	RawFont::name () const
 	{
 		if (!*this) return "";
 
@@ -102,14 +135,14 @@ namespace Rays
 	}
 
 	coord
-	Font::size () const
+	RawFont::size () const
 	{
 		if (!*this) return 0;
 		return CTFontGetSize(self->font);
 	}
 
 	coord
-	Font::get_width (const char* str) const
+	RawFont::get_width (const char* str) const
 	{
 		if (!str)
 			argument_error(__FILE__, __LINE__);
@@ -130,7 +163,7 @@ namespace Rays
 	}
 
 	coord
-	Font::get_height (coord* ascent, coord* descent, coord* leading) const
+	RawFont::get_height (coord* ascent, coord* descent, coord* leading) const
 	{
 		if (!*this)
 			invalid_state_error(__FILE__, __LINE__);
@@ -146,60 +179,15 @@ namespace Rays
 		return asc + desc + lead;
 	}
 
-	Font::operator bool () const
+	RawFont::operator bool () const
 	{
 		return !!self->font;
 	}
 
 	bool
-	Font::operator ! () const
+	RawFont::operator ! () const
 	{
 		return !operator bool();
-	}
-
-
-	const Font&
-	default_font ()
-	{
-		static const Font FONT(NULL);
-		return FONT;
-	}
-
-
-	void
-	draw_string (
-		CGContextRef context, coord context_height,
-		const char* str, coord x, coord y, const Font& font)
-	{
-		if (!context || !str || !font)
-			argument_error(__FILE__, __LINE__);
-
-		if (*str == '\0') return;
-
-		CTLineRef line = make_line(font.self->font, str);
-		if (!line)
-			rays_error(__FILE__, __LINE__, "creating CTLineRef failed.");
-
-		coord width = 0, height = 0, ascent = 0;
-		width  = font.get_width(str);
-		height = font.get_height(&ascent);
-
-		height = ceil(height);
-		ascent = floor(ascent);
-
-		CGRect rect = CGRectMake(x, context_height - height - y, width, height);
-		CGContextClearRect(context, rect);
-		//CGContextSetRGBFillColor(context, 0, 0, 0, 1);
-		//CGContextFillRect(context, rect);
-		CGContextSetRGBFillColor(context, 1, 1, 1, 1);
-
-		CGContextSaveGState(context);
-		CGContextSetTextMatrix(context, CGAffineTransformIdentity);
-		CGContextSetTextPosition(context, x, context_height - ascent - y);
-		CTLineDraw(line, context);
-		CGContextRestoreGState(context);
-
-		CFRelease(line);
 	}
 
 

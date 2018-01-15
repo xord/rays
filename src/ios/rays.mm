@@ -4,6 +4,7 @@
 
 #import <Foundation/Foundation.h>
 #include "rays/exception.h"
+#include "../opengl.h"
 
 
 namespace Rays
@@ -27,6 +28,8 @@ namespace Rays
 			rays_error(__FILE__, __LINE__, "Rays::init(): already initialized.");
 
 		global::pool = [[NSAutoreleasePool alloc] init];
+
+		OpenGL_set_context(get_offscreen_context());
 	}
 
 	void

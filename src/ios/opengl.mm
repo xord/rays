@@ -1,5 +1,5 @@
 // -*- objc -*-
-#include "rays/opengl.h"
+#include "../opengl.h"
 
 
 #include <vector>
@@ -11,10 +11,25 @@ namespace Rays
 
 
 	void
-	init_offscreen_context ()
+	OpenGL_set_context (Context context)
 	{
-		EAGLContext* c = [[EAGLContext alloc] initWithAPI: kEAGLRenderingAPIOpenGLES1];
-		[EAGLContext setCurrentContext: c];
+		[EAGLContext setCurrentContext: (EAGLContext*) context];
+	}
+
+	Context
+	OpenGL_get_context ()
+	{
+		return [EAGLContext currentContext];
+	}
+
+
+	Context
+	get_offscreen_context ()
+	{
+		static Context context = NULL;
+		if (!context)
+			context = [[EAGLContext alloc] initWithAPI: kEAGLRenderingAPIOpenGLES3];
+		return context;
 	}
 
 

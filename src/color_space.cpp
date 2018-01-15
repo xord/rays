@@ -1,4 +1,4 @@
-#include "rays/color_space.h"
+#include "color_space.h"
 
 
 #include <assert.h>
@@ -13,13 +13,15 @@ namespace Rays
 	enum
 	{
 
-		FIRST        = GRAY_8,    LAST       = ABGR_float,
+		          FIRST = GRAY_8,              LAST = ABGR_float,
 
-		GRAY_FIRST   = GRAY_8,    GRAY_LAST  = GRAY_float,
+		     GRAY_FIRST = GRAY_8,         GRAY_LAST = GRAY_float,
 
-		RGB_FIRST    = RGB_888,   RGB_LAST   = ABGR_float,
+		    ALPHA_FIRST = ALPHA_8,       ALPHA_LAST = ALPHA_float,
 
-		FLOAT_SECOND = RGB_float, FLOAT_LAST = ABGR_float,
+		      RGB_FIRST = RGB_888,         RGB_LAST = ABGR_float,
+
+		RGB_FLOAT_FIRST = RGB_float, RGB_FLOAT_LAST = ABGR_float,
 
 	};
 
@@ -45,10 +47,13 @@ namespace Rays
 	{
 		static const int BPPS[] =
 		{
-			0,                            // UNKNOWN
-			8, 16, 24, 32, 32,            // GRAY
-			8, 8, 8, 8, 8, 8, 8, 8, 8, 8, // RGB(A), BGR(A)
-			32, 32, 32, 32, 32, 32,       // RGB(A), BGR(A) float
+			0,                 // UNKNOWN
+			8, 16, 24, 32, 32, // GRAY
+			8, 16, 24, 32, 32, // ALPHA
+			8, 8, 8, 8, 8,     // RGB(A),
+			8, 8, 8, 8, 8,     // BGR(A)
+			32, 32, 32,        // RGB(A) float
+			32, 32, 32,        // BGR(A) float
 		};
 		if (type_ < 0 || COLORSPACE_LAST <= type_) return BPPS[COLORSPACE_UNKNOWN];
 		return BPPS[type_];
@@ -67,6 +72,7 @@ namespace Rays
 		{
 			0,                     // UNKNOWN
 			8,  16, 24,  32,  32,  // GRAY
+			8,  16, 24,  32,  32,  // ALPHA
 			24, 32,  32,  32,  32, // RGB(A)
 			24, 32,  32,  32,  32, // BGR(A)
 			96, 128, 128,          // RGB(A) float
@@ -91,7 +97,13 @@ namespace Rays
 	bool
 	ColorSpace::is_gray () const
 	{
-		return GRAY_FIRST <= (int) type_ && (int) type_ <= GRAY_LAST;
+		return GRAY_FIRST  <= (int) type_ && (int) type_ <= GRAY_LAST;
+	}
+
+	bool
+	ColorSpace::is_alpha () const
+	{
+		return ALPHA_FIRST <= (int) type_ && (int) type_ <= ALPHA_LAST;
 	}
 
 	bool
@@ -114,14 +126,15 @@ namespace Rays
 	ColorSpace::is_float () const
 	{
 		return
-			type_ == GRAY_float ||
-			(FLOAT_SECOND <= (int) type_ && (int) type_ <= FLOAT_LAST);
+			type_ == GRAY_float || type_ == ALPHA_float ||
+			(RGB_FLOAT_FIRST <= (int) type_ && (int) type_ <= RGB_FLOAT_LAST);
 	}
 
 	bool
 	ColorSpace::has_alpha () const
 	{
 		return
+			(ALPHA_FIRST <= type_ && type_ <= ALPHA_LAST) ||
 			type_ == RGBA_8888  || type_ == ARGB_8888  ||
 			type_ == BGRA_8888  || type_ == ABGR_8888  ||
 			type_ == RGBA_float || type_ == ARGB_float ||
@@ -170,41 +183,6 @@ namespace Rays
 		return premult;
 	}
 
-	void
-	ColorSpace::get_gl_enums (GLenum* format, GLenum* type, bool alpha_only) const
-	{
-		if (!format && !type)
-			argument_error(__FILE__, __LINE__);
-
-		if (!*this)
-			invalid_state_error(__FILE__, __LINE__);
-
-		if (format)
-		{
-			     if (is_rgb())  *format = has_alpha() ? GL_RGBA  : GL_RGB;
-		#ifndef IOS
-			else if (is_bgr())  *format = has_alpha() ? GL_BGRA  : GL_BGR;
-		#endif
-			else if (is_gray()) *format = alpha_only  ? GL_ALPHA : GL_LUMINANCE;
-			else rays_error(__FILE__, __LINE__, "invalid color space.");
-		}
-
-		if (type)
-		{
-			if (is_float())
-				*type = GL_FLOAT;
-			else switch (bpc())
-			{
-				case 8:  *type = GL_UNSIGNED_BYTE; break;
-				case 16: *type = GL_UNSIGNED_SHORT; break;
-			#ifndef IOS
-				case 32: *type = GL_UNSIGNED_INT; break;
-			#endif
-				default: rays_error(__FILE__, __LINE__, "invalid bpc.");
-			}
-		}
-	}
-
 	ColorSpace::operator bool () const
 	{
 		return FIRST <= (int) type_ && (int) type_ <= LAST;
@@ -214,6 +192,46 @@ namespace Rays
 	ColorSpace::operator ! () const
 	{
 		return !operator bool();
+	}
+
+
+	void
+	ColorSpace_get_gl_format_and_type (
+		GLenum* format, GLenum* type, const ColorSpace& cs)
+	{
+		if (!format && !type)
+			argument_error(__FILE__, __LINE__);
+
+		if (!cs)
+			invalid_state_error(__FILE__, __LINE__);
+
+		if (format)
+		{
+			     if (cs.is_rgb())   *format = cs.has_alpha() ? GL_RGBA  : GL_RGB;
+		#ifndef IOS
+			else if (cs.is_bgr())   *format = cs.has_alpha() ? GL_BGRA  : GL_BGR;
+		#endif
+			else if (cs.is_gray())  *format = GL_LUMINANCE;
+			else if (cs.is_alpha()) *format = GL_ALPHA;
+			else
+				rays_error(__FILE__, __LINE__, "invalid color space.");
+		}
+
+		if (type)
+		{
+			if (cs.is_float())
+				*type = GL_FLOAT;
+			else switch (cs.bpc())
+			{
+				case 8:  *type = GL_UNSIGNED_BYTE; break;
+				case 16: *type = GL_UNSIGNED_SHORT; break;
+			#ifndef IOS
+				case 32: *type = GL_UNSIGNED_INT; break;
+			#endif
+				default:
+					rays_error(__FILE__, __LINE__, "invalid bpc.");
+			}
+		}
 	}
 
 

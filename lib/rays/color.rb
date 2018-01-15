@@ -59,6 +59,10 @@ module Rays
             alpha <=> o.alpha
     end
 
+    def hash ()
+      red.hash + green.hash + blue.hash + alpha.hash
+    end
+
     def eql? (o)
       self == o
     end

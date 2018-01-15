@@ -1,7 +1,4 @@
-#include "rays/font.h"
-
-
-#include "gdi.h"
+#include "font.h"
 
 
 namespace Rays
@@ -67,23 +64,23 @@ namespace Rays
 	}
 
 
-	bool
-	draw_string (
-		HDC hdc, coord context_height,
-		const char* str, coord x, coord y, const Font& font)
+	void
+	Font_draw_string (
+		const Font& font, HDC hdc, coord context_height,
+		const char* str, coord x, coord y)
 	{
 		using namespace Win32;
 
-		if (!hdc || !str || !font) return false;
+		if (!font || !hdc || !str)
+			argument_error(__FILE__, __LINE__);
 
-		if (*str == '\0') return true;
+		if (*str == '\0') return;
 
 		coord width = 0, height = 0;
 		if (!font.get_extent(&width, &height, str))
-			return false;
+			rays_error(__FILE__, __LINE__, "getting font extent failed.");
 
 		DC dc = hdc;
-
 		RECT rect = {x, y, x + (int) width, y + (int) height};
 		FillRect(dc.handle(), &rect, Brush(0, 0, 0).handle());
 
@@ -92,7 +89,8 @@ namespace Rays
 		BOOL ret = TextOutA(dc.handle(), x, y, str, strlen(str));
 		dc.set_font(old);
 
-		return ret != FALSE;
+		if (ret == FALSE)
+			rays_error(__FILE__, __LINE__, "drawing text failed.");
 	}
 
 

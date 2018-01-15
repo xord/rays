@@ -1,34 +1,37 @@
 // -*- c++ -*-
 #pragma once
-#ifndef __RAYS_SRC_PROGRAM_H__
-#define __RAYS_SRC_PROGRAM_H__
+#ifndef __RAYS_SRC_SHADER_PROGRAM_H__
+#define __RAYS_SRC_SHADER_PROGRAM_H__
 
 
 #include <xot/pimpl.h>
-#include <rays/opengl.h>
+#include <rays/defs.h>
+#include <rays/coord.h>
+#include "opengl.h"
 
 
 namespace Rays
 {
 
 
-	class Shader;
+	class ShaderSource;
+	class Texture;
 
 
-	class Program
+	class ShaderProgram
 	{
 
-		typedef Program This;
+		typedef ShaderProgram This;
 
 		public:
 
-			Program ();
+			ShaderProgram ();
 
-			~Program ();
+			~ShaderProgram ();
 
-			void attach (const Shader& shader);
+			void add_source (const ShaderSource& source);
 
-			void detach (const Shader& shader);
+			void remove_source (const ShaderSource& source);
 
 			void set_uniform (const char* name, int arg1);
 
@@ -50,9 +53,13 @@ namespace Rays
 
 			void set_uniform (const char* name, const float* args, size_t size);
 
-			void push ();
+			void set_uniform (const char* name, const Coord2& vec2);
 
-			void pop ();
+			void set_uniform (const char* name, const Coord3& vec3);
+
+			void set_uniform (const char* name, const Coord4& vec4);
+
+			void set_uniform (const char* name, const Texture& texture);
 
 			GLuint id () const;
 
@@ -60,11 +67,20 @@ namespace Rays
 
 			bool operator ! () const;
 
+			friend bool operator == (const This& lhs, const This& rhs);
+
+			friend bool operator != (const This& lhs, const This& rhs);
+
 			struct Data;
 
 			Xot::PSharedImpl<Data> self;
 
-	};// Program
+	};// ShaderProgram
+
+
+	void ShaderProgram_activate(const ShaderProgram& program);
+
+	void ShaderProgram_deactivate();
 
 
 }// Rays

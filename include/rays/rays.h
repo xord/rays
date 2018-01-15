@@ -4,6 +4,9 @@
 #define __RAYS_RAYS_H__
 
 
+#include <rays/defs.h>
+
+
 namespace Rays
 {
 

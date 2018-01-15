@@ -1,14 +1,14 @@
 // -*- objc -*-
-#import "rays/bitmap.h"
+#import "../bitmap.h"
 
 
-#include <assert.h>
-#include <memory>
-#import <ImageIO/ImageIO.h>
+#import <ImageIO/CGImageDestination.h>
 #import <MobileCoreServices/UTCoreTypes.h>
 #include "rays/exception.h"
-#include "rays/texture.h"
+#include "../color_space.h"
+#include "../texture.h"
 #include "../frame_buffer.h"
+#include "font.h"
 #include "helper.h"
 
 
@@ -60,14 +60,13 @@ namespace Rays
 
 		ColorSpace color_space;
 
-		void* pixels;
+		void* pixels = NULL;
 
-		CGContextRef context;
+		CGContextRef context = NULL;
 
-		bool dirty;
+		bool modified;
 
 		Data ()
-		:	pixels(NULL), context(NULL)
 		{
 			clear();
 		}
@@ -86,7 +85,7 @@ namespace Rays
 			if (bpc <= 0 || pitch <= 0) return NULL;
 
 			CGColorSpaceRef cgcs = NULL;
-			if (color_space.is_gray())
+			if (color_space.is_gray() || color_space.is_alpha())
 				cgcs = CGColorSpaceCreateDeviceGray();
 			else if (color_space.is_rgb() || color_space.is_bgr())
 				cgcs = CGColorSpaceCreateDeviceRGB();
@@ -115,7 +114,7 @@ namespace Rays
 			color_space = COLORSPACE_UNKNOWN;
 			pixels      = NULL;
 			context     = NULL;
-			dirty       = false;
+			modified    = false;
 		}
 
 	};// Bitmap::Data
@@ -135,7 +134,7 @@ namespace Rays
 		this_->self->width       = w;
 		this_->self->height      = h;
 		this_->self->color_space = cs;
-		this_->self->dirty       = true;
+		this_->self->modified    = true;
 
 		size_t size = w * h * cs.Bpp();
 		this_->self->pixels = new uchar[size];
@@ -152,16 +151,108 @@ namespace Rays
 		if (!this_ || !tex)
 			argument_error(__FILE__, __LINE__);
 
-		setup_bitmap(this_, tex.width(), tex.height(), tex.color_space(), NULL, false);
+		setup_bitmap(
+			this_, tex.width(), tex.height(), tex.color_space(), NULL, false);
 
 		GLenum format, type;
-		tex.color_space().get_gl_enums(&format, &type, tex.alpha_only());
+		ColorSpace_get_gl_format_and_type(&format, &type, tex.color_space());
 
 		FrameBuffer fb(tex);
 		FrameBufferBinder binder(fb.id());
 
 		for (int y = 0; y < this_->height(); ++y)
-			glReadPixels(0, y, this_->width(), 1, format, type, (GLvoid*) this_->at<uchar>(0, y));
+		{
+			GLvoid* ptr = (GLvoid*) this_->at<uchar>(0, y);
+			glReadPixels(0, y, this_->width(), 1, format, type, ptr);
+		}
+	}
+
+	Bitmap
+	Bitmap_from (const Texture& texture)
+	{
+		Bitmap bmp;
+		setup_bitmap(&bmp, texture);
+		return bmp;
+	}
+
+	void
+	Bitmap_draw_string (
+		Bitmap* bitmap, const RawFont& font, const char* str, coord x, coord y)
+	{
+		if (!bitmap || !*bitmap || !font || !str)
+			argument_error(__FILE__, __LINE__);
+
+		if (*str == '\0') return;
+
+		font.draw_string(bitmap->self->get_context(), bitmap->height(), str, x, y);
+		Bitmap_set_modified(bitmap);
+	}
+
+	void
+	Bitmap_set_modified (Bitmap* bitmap, bool modified)
+	{
+		assert(bitmap);
+
+		bitmap->self->modified = modified;
+	}
+
+	bool
+	Bitmap_get_modified (const Bitmap& bitmap)
+	{
+		return bitmap.self->modified;
+	}
+
+	void
+	Bitmap_save (const Bitmap& bmp, const char* path_)
+	{
+		std::shared_ptr<CGImage> img(bmp.self->get_image(), CGImageRelease);
+		if (!img)
+			rays_error(__FILE__, __LINE__, "getting CGImage failed.");
+
+		NSString* path = [NSString stringWithUTF8String: path_];
+		NSURL* url = [NSURL fileURLWithPath: path];
+		if (!url)
+			rays_error(__FILE__, __LINE__, "creating NSURL failed.");
+
+		std::shared_ptr<CGImageDestination> dest(
+			CGImageDestinationCreateWithURL((CFURLRef) url, kUTTypePNG, 1, NULL),
+			safe_cfrelease);
+		if (!dest)
+			rays_error(__FILE__, __LINE__, "CGImageDestinationCreateWithURL() failed.");
+
+		CGImageDestinationAddImage(dest.get(), img.get(), NULL);
+		if (!CGImageDestinationFinalize(dest.get()))
+			rays_error(__FILE__, __LINE__, "CGImageDestinationFinalize() failed.");
+	}
+
+	Bitmap
+	Bitmap_load (const char* path_)
+	{
+		if (!path_ || path_[0] == '\0')
+			argument_error(__FILE__, __LINE__);
+
+		NSString* path = [NSString stringWithUTF8String: path_];
+		UIImage* uiimage = [UIImage imageWithContentsOfFile: path];
+		if (!uiimage)
+			rays_error(__FILE__, __LINE__, "[UIImage imageWithContentsOfFile:] failed.");
+
+		CGImageRef image = [uiimage CGImage];
+		if (!image)
+			rays_error(__FILE__, __LINE__, "[imagerep CGImage] failed.");
+
+		size_t width  = CGImageGetWidth(image);
+		size_t height = CGImageGetHeight(image);
+
+		Bitmap bmp((int) width, (int) height, RGBA);
+		if (!bmp)
+			rays_error(__FILE__, __LINE__, "invalid bitmap.");
+
+		CGContextRef context = bmp.self->get_context();
+		if (!context)
+			rays_error(__FILE__, __LINE__, "creating CGContext failed.");
+
+		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+		return bmp;
 	}
 
 
@@ -173,11 +264,6 @@ namespace Rays
 		int width, int height, const ColorSpace& color_space, const void* pixels)
 	{
 		setup_bitmap(this, width, height, color_space, pixels);
-	}
-
-	Bitmap::Bitmap (const Texture& texture)
-	{
-		setup_bitmap(this, texture);
 	}
 
 	Bitmap::~Bitmap ()
@@ -240,18 +326,6 @@ namespace Rays
 		return const_cast<This*>(this)->pixels();
 	}
 
-	bool
-	Bitmap::dirty () const
-	{
-		return self->dirty;
-	}
-
-	void
-	Bitmap::set_dirty (bool b)
-	{
-		self->dirty = b;
-	}
-
 	Bitmap::operator bool () const
 	{
 		return
@@ -262,78 +336,6 @@ namespace Rays
 	Bitmap::operator ! () const
 	{
 		return !operator bool();
-	}
-
-
-	Bitmap
-	load_bitmap (const char* path_)
-	{
-		if (!path_ || path_[0] == '\0')
-			argument_error(__FILE__, __LINE__);
-
-		NSString* path = [NSString stringWithUTF8String: path_];
-		UIImage* uiimage = [UIImage imageWithContentsOfFile: path];
-		if (!uiimage)
-			rays_error(__FILE__, __LINE__, "[UIImage imageWithContentsOfFile:] failed.");
-
-		CGImageRef image = [uiimage CGImage];
-		if (!image)
-			rays_error(__FILE__, __LINE__, "[imagerep CGImage] failed.");
-
-		size_t width  = CGImageGetWidth(image);
-		size_t height = CGImageGetHeight(image);
-
-		Bitmap bmp((int) width, (int) height, RGBA);
-		if (!bmp)
-			rays_error(__FILE__, __LINE__, "invalid bitmap.");
-
-		CGContextRef context = bmp.self->get_context();
-		if (!context)
-			rays_error(__FILE__, __LINE__, "creating CGContext failed.");
-
-		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
-		return bmp;
-	}
-
-	void
-	save_bitmap (const Bitmap& bmp, const char* path_)
-	{
-		std::shared_ptr<CGImage> img(
-			bmp.self->get_image(), CGImageRelease);
-		if (!img)
-			rays_error(__FILE__, __LINE__, "getting CGImage failed.");
-
-		NSString* path = [NSString stringWithUTF8String: path_];
-		NSURL* url = [NSURL fileURLWithPath: path];
-		if (!url)
-			rays_error(__FILE__, __LINE__, "creating NSURL failed.");
-
-		std::shared_ptr<CGImageDestination> dest(
-			CGImageDestinationCreateWithURL((CFURLRef) url, kUTTypePNG, 1, NULL),
-			safe_cfrelease);
-		if (!dest)
-			rays_error(__FILE__, __LINE__, "CGImageDestinationCreateWithURL() failed.");
-
-		CGImageDestinationAddImage(dest.get(), img.get(), NULL);
-		if (!CGImageDestinationFinalize(dest.get()))
-			rays_error(__FILE__, __LINE__, "CGImageDestinationFinalize() failed.");
-	}
-
-
-	void draw_string (
-		CGContextRef, coord, const char*, coord, coord, const Font&);
-
-	void
-	draw_string (
-		Bitmap* bmp, const char* str, coord x, coord y, const Font& font)
-	{
-		if (!bmp || !*bmp || !str || !font)
-			argument_error(__FILE__, __LINE__);
-
-		if (*str == '\0') return;
-
-		draw_string(bmp->self->get_context(), bmp->height(), str, x, y, font);
-		bmp->set_dirty();
 	}
 
 

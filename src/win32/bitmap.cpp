@@ -1,6 +1,7 @@
-#include "rays/bitmap.h"
+#include "../bitmap.h"
 
 
+#include "font.h"
 #include "gdi.h"
 
 
@@ -19,10 +20,10 @@ namespace Rays
 
 		Win32::MemoryDC memdc;
 
-		bool dirty;
+		bool modified;
 
 		Data ()
-		:	pixels(NULL), dirty(true)
+		:	pixels(NULL), modified(true)
 		{
 		}
 
@@ -56,7 +57,7 @@ namespace Rays
 	}
 
 	static bool
-	setup (Bitmap* bmp, int w, int h, const ColorSpace& cs, HDC hdc = NULL)
+	setup_bitmap (Bitmap* bmp, int w, int h, const ColorSpace& cs, HDC hdc = NULL)
 	{
 		if (w <= 0 || h <= 0 || !cs || !bmp || *bmp)
 			return false;
@@ -94,6 +95,59 @@ namespace Rays
 		return init_bitmap_pixels(bmp);
 	}
 
+	static void
+	setup_bitmap (Bitmap* this_, const Texture& tex)
+	{
+		not_implement_error(__FILE__, __LINE__);
+	}
+
+	Bitmap
+	Bitmap_from (const Texture& texture)
+	{
+		Bitmap bmp;
+		setup_bitmap(&bmp, texture);
+		return bmp;
+	}
+
+	void
+	Bitmap_draw_string (
+		Bitmap* bitmap, const RawFont& font, const char* str, coord x, coord y)
+	{
+		if (!bitmap || !*bitmap || !font || !str)
+			argument_error(__FILE__, __LINE__);
+
+		if (*str == '\0') return;
+
+		font.draw_string(bitmap->self->memdc.handle(), bitmap->height(), str, x, y);
+		Bitmap_set_modified(bitmap);
+	}
+
+	void
+	Bitmap_set_modified (Bitmap* bitmap, bool modified)
+	{
+		assert(bitmap);
+
+		bitmap->self->modified = modified;
+	}
+
+	bool
+	Bitmap_get_modified (const Bitmap& bitmap)
+	{
+		return bitmap.self->modified;
+	}
+
+	bool
+	Bitmap_save (const Bitmap& bitmap, const char* path)
+	{
+		return false;
+	}
+
+	bool
+	Bitmap_load (Bitmap* bitmap, const char* path)
+	{
+		return false;
+	}
+
 
 	Bitmap::Bitmap ()
 	{
@@ -101,7 +155,7 @@ namespace Rays
 
 	Bitmap::Bitmap (int width, int height, const ColorSpace& cs)
 	{
-		setup(this, width, height, cs);
+		setup_bitmap(this, width, height, cs);
 	}
 
 	Bitmap::~Bitmap ()
@@ -138,28 +192,16 @@ namespace Rays
 		return pitch() * height();
 	}
 
-	bool
-	Bitmap::dirty () const
-	{
-		return self->dirty;
-	}
-
-	void
-	Bitmap::set_dirty (bool b)
-	{
-		self->dirty = b;
-	}
-
 	void*
-	Bitmap::data ()
+	Bitmap::pixels ()
 	{
 		return self->pixels;
 	}
 
 	const void*
-	Bitmap::data () const
+	Bitmap::pixels () const
 	{
-		return const_cast<This*>(this)->data();
+		return const_cast<This*>(this)->pixels();
 	}
 
 	Bitmap::operator bool () const
@@ -174,38 +216,6 @@ namespace Rays
 	Bitmap::operator ! () const
 	{
 		return !operator bool();
-	}
-
-
-	bool
-	load_bitmap (Bitmap* bitmap, const char* path)
-	{
-		return false;
-	}
-
-	bool
-	save_bitmap (const Bitmap& bitmap, const char* path)
-	{
-		return false;
-	}
-
-
-	bool draw_string (
-		HDC, coord, const char*, coord, coord, const Font&);
-
-	bool
-	draw_string (
-		Bitmap* bmp, const char* str, coord x, coord y, const Font& font)
-	{
-		if (!bmp || !*bmp || !str || !font) return false;
-
-		if (*str == '\0') return true;
-
-		if (!draw_string(bmp->self->memdc.handle(), bmp->height(), str, x, y, font))
-			return false;
-
-		bmp->set_dirty();
-		return true;
 	}
 
 

@@ -2,7 +2,7 @@
 
 
 #include <glm/gtc/noise.hpp>
-#include "point.h"
+#include "coord.h"
 
 
 namespace Rays
@@ -34,9 +34,9 @@ namespace Rays
 	}
 
 	coord
-	perlin (const Point& point)
+	perlin (const Coord3& position)
 	{
-		return (coord) glm::perlin(to_glm(point));
+		return (coord) glm::perlin(to_glm(position));
 	}
 
 
@@ -65,9 +65,9 @@ namespace Rays
 	}
 
 	coord
-	simplex (const Point& point)
+	simplex (const Coord3& position)
 	{
-		return (coord) glm::simplex(to_glm(point));
+		return (coord) glm::simplex(to_glm(position));
 	}
 
 

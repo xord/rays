@@ -1,16 +1,11 @@
-#include "rays/shader.h"
+#include "shader.h"
 
 
-#ifndef IOS
-#define USE_SHADER
-#endif
-
-
-#ifdef USE_SHADER
-
-
-#include <memory>
 #include "rays/exception.h"
+#include "opengl.h"
+#include "image.h"
+#include "shader_program.h"
+#include "shader_source.h"
 
 
 namespace Rays
@@ -20,94 +15,122 @@ namespace Rays
 	struct Shader::Data
 	{
 
-		int id;
+		std::unique_ptr<ShaderProgram> pprogram;
 
-		Data ()
-		:	id(-1)
+		ShaderProgram& program ()
 		{
-		}
-
-		~Data ()
-		{
-			clear();
-		}
-
-		void clear ()
-		{
-			if (id >= 0) glDeleteShader((GLuint) id);
-
-			id = -1;
+			if (!pprogram) pprogram.reset(new ShaderProgram());
+			return *pprogram;
 		}
 
 		bool is_valid () const
 		{
-			return id >= 0;
+			return pprogram && *pprogram;
 		}
 
 	};// Shader::Data
 
 
-	void
-	compile_shader (Shader* this_, const char* source)
+	const ShaderProgram*
+	Shader_get_program (const Shader& shader)
 	{
-		if (!this_ || !source)
-			argument_error(__FILE__, __LINE__);
-
-		Shader::Data* self = this_->self.get();
-		if (self->is_valid())
-			invalid_state_error(__FILE__, __LINE__);
-
-		self->id = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(self->id, 1, &source, NULL);
-		glCompileShader(self->id);
-
-		GLint status = GL_FALSE;
-		glGetShaderiv(self->id, GL_COMPILE_STATUS, &status);
-		if (status == GL_FALSE)
-		{
-			int len = 0;
-			glGetShaderiv(self->id, GL_INFO_LOG_LENGTH, &len);
-
-			std::unique_ptr<char[]> buffer(new char[len]);
-			int written = 0;
-			glGetShaderInfoLog(self->id, len, &written, &buffer[0]);
-
-			opengl_error(__FILE__, __LINE__, &buffer[0]);
-		}
-
-		check_error(__FILE__, __LINE__);
+		return shader.self->pprogram ? shader.self->pprogram.get() : NULL;
 	}
 
-
-	Shader::Shader ()
-	{
-	}
 
 	Shader::Shader (const char* source)
 	{
-		compile_shader(this, source);
+		if (source)
+			self->program().add_source(ShaderSource(GL_FRAGMENT_SHADER, source));
 	}
 
 	Shader::~Shader ()
 	{
 	}
 
-	GLuint
-	Shader::id () const
+	void
+	Shader::set_uniform (const char* name, int arg1)
 	{
-		return self->id;
+		self->program().set_uniform(name, arg1);
 	}
 
-	bool
-	Shader::operator == (const Shader& rhs) const
+	void
+	Shader::set_uniform (const char* name, int arg1, int arg2)
 	{
-		return self->id == rhs.self->id;
+		self->program().set_uniform(name, arg1, arg2);
 	}
 
-	bool
-	Shader::operator != (const Shader& rhs) const
+	void
+	Shader::set_uniform (const char* name, int arg1, int arg2, int arg3)
 	{
-		return !operator==(rhs);
+		self->program().set_uniform(name, arg1, arg2, arg3);
+	}
+
+	void
+	Shader::set_uniform (const char* name, int arg1, int arg2, int arg3, int arg4)
+	{
+		self->program().set_uniform(name, arg1, arg2, arg3, arg4);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const int* args, size_t size)
+	{
+		self->program().set_uniform(name, args, size);
+	}
+
+	void
+	Shader::set_uniform (const char* name, float arg1)
+	{
+		self->program().set_uniform(name, arg1);
+	}
+
+	void
+	Shader::set_uniform (const char* name, float arg1, float arg2)
+	{
+		self->program().set_uniform(name, arg1, arg2);
+	}
+
+	void
+	Shader::set_uniform (const char* name, float arg1, float arg2, float arg3)
+	{
+		self->program().set_uniform(name, arg1, arg2, arg3);
+	}
+
+	void
+	Shader::set_uniform (
+		const char* name, float arg1, float arg2, float arg3, float arg4)
+	{
+		self->program().set_uniform(name, arg1, arg2, arg3, arg4);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const float* args, size_t size)
+	{
+		self->program().set_uniform(name, args, size);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const Coord2& vec2)
+	{
+		self->program().set_uniform(name, vec2);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const Coord3& vec3)
+	{
+		self->program().set_uniform(name, vec3);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const Coord4& vec4)
+	{
+		self->program().set_uniform(name, vec4);
+	}
+
+	void
+	Shader::set_uniform (const char* name, const Image& texture)
+	{
+		self->program().set_uniform(name, Image_get_texture(texture));
 	}
 
 	Shader::operator bool () const
@@ -121,67 +144,17 @@ namespace Rays
 		return !operator bool();
 	}
 
-
-}// Rays
-
-
-#else// USE_SHADER
-
-
-#include "rays/exception.h"
-
-
-namespace Rays
-{
-
-
-	struct Shader::Data {};
-
-
-	Shader::Shader ()
+	bool
+	operator == (const Shader& lhs, const Shader& rhs)
 	{
-	}
-
-	Shader::Shader (const char* source)
-	{
-		not_implemented_error(__FILE__, __LINE__);
-	}
-
-	Shader::~Shader ()
-	{
-	}
-
-	GLuint
-	Shader::id () const
-	{
-		return 0;
+		return (!lhs && !rhs) || lhs.self->pprogram == rhs.self->pprogram;
 	}
 
 	bool
-	Shader::operator == (const Shader& rhs) const
+	operator != (const Shader& lhs, const Shader& rhs)
 	{
-		return false;
-	}
-
-	bool
-	Shader::operator != (const Shader& rhs) const
-	{
-		return !operator==(rhs);
-	}
-
-	Shader::operator bool () const
-	{
-		return false;
-	}
-
-	bool
-	Shader::operator ! () const
-	{
-		return !operator bool();
+		return !operator==(lhs, rhs);
 	}
 
 
 }// Rays
-
-
-#endif// USE_SHADER

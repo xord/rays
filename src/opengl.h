@@ -11,12 +11,9 @@ namespace Rays
 {
 
 
-	typedef void* Context;
+	void OpenGL_set_context (Context context);
 
-
-	void set_context (Context context);
-
-	Context get_context ();
+	Context OpenGL_get_context ();
 
 
 }// Rays

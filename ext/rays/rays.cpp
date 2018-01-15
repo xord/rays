@@ -1,6 +1,5 @@
 #include <rucy.h>
 #include "rays/rays.h"
-#include "rays/opengl.h"
 #include "defs.h"
 
 

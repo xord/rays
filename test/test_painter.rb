@@ -18,6 +18,10 @@ class TestPainter < Test::Unit::TestCase
     Rays::Color.new *args
   end
 
+  def setup ()
+    Rays::Color.set_palette_color :rgb001, rgb(0, 0, 1)
+  end
+
   def test_background_accessor ()
     pa = painter
     pa.background = 1
@@ -102,9 +106,7 @@ class TestPainter < Test::Unit::TestCase
 
   def test_color_by_name ()
     pa = painter
-    pa.fill =        :green
-    assert_equal rgb(0, 1, 0), pa.fill
-    pa.fill          :blue
+    pa.fill =       :rgb001
     assert_equal rgb(0, 0, 1), pa.fill
     pa.fill =       [1, 0, 0]
     assert_equal rgb(1, 0, 0), pa.fill
@@ -132,7 +134,7 @@ class TestPainter < Test::Unit::TestCase
     end
     assert_equal   rgb(1, 0, 0), pa.fill
 
-    pa.push :attrs do |_|
+    pa.push :state do |_|
       assert_equal rgb(1, 0, 0), pa.fill
       pa.fill =       [0, 1, 0]
       assert_equal rgb(0, 1, 0), pa.fill
@@ -159,6 +161,15 @@ class TestPainter < Test::Unit::TestCase
       assert_equal rgb(0, 0, 1), pa.fill
     end
     assert_equal   rgb(0, 0, 1), pa.fill
+  end
+
+  def test_shader ()
+    img = Rays::Image.new(10, 10).paint {
+      shader "void main() {gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);}"
+      fill   1, 0, 0
+      rect   bounds
+    }
+    assert_equal [0.0, 0.0, 1.0, 1.0], img[0, 0].to_a
   end
 
 end# TestPainter

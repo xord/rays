@@ -118,6 +118,69 @@ RUCY_DEF0(get_alpha)
 RUCY_END
 
 
+typedef std::map<Rays::String, Rays::Color> ColorMap;
+
+static ColorMap&
+get_color_map ()
+{
+	static ColorMap map;
+	if (map.empty())
+	{
+		map["no"]          =
+		map["none"]        =
+		map["transp"]      =
+		map["transparent"] = Rays::Color(0, 0);
+
+		map["black"]      = Rays::color8(  0,   0,   0);
+		map["white"]      = Rays::color8(255, 241, 232);
+		map["gray"]       =
+		map["lightgray"]  = Rays::color8(194, 195, 199);
+		map["darkgray"]   = Rays::color8( 95,  87,  79);
+		map["brown"]      = Rays::color8(171,  82,  54);
+		map["red"]        = Rays::color8(255,   0,  77);
+		map["orange"]     = Rays::color8(255, 163,   0);
+		map["yellow"]     = Rays::color8(255, 236,  39);
+		map["green"]      = Rays::color8(  0, 228,  54);
+		map["darkgreen"]  = Rays::color8(  0, 135,  81);
+		map["blue"]       = Rays::color8( 41, 173, 255);
+		map["darkblue"]   = Rays::color8( 29,  43,  83);
+		map["indigo"]     = Rays::color8(131, 118, 156);
+		map["pink"]       = Rays::color8(255, 119, 168);
+		map["peach"]      = Rays::color8(255, 204, 170);
+		map["darkpurple"] = Rays::color8(126,  37,  83);
+	}
+	return map;
+}
+
+static const Rays::String
+to_color_name (const char* name)
+{
+	return Rays::String(name).downcase();
+}
+
+static const Rays::Color&
+find_color (const char* name)
+{
+	assert(name);
+
+	const ColorMap& map = get_color_map();
+	ColorMap::const_iterator it = map.find(to_color_name(name));
+	if (it == map.end())
+		argument_error(__FILE__, __LINE__, "color '%s' is not found.", name);
+
+	return it->second;
+}
+
+static
+RUCY_DEFN(set_palette_color)
+{
+	check_arg_count(__FILE__, __LINE__, "Color.set_palette_color", argc, 2, 3, 4, 5);
+
+	get_color_map()[to_color_name(argv[0].c_str())] = to<Rays::Color>(argc - 1, &argv[1]);
+}
+RUCY_END
+
+
 static Class cColor;
 
 void
@@ -137,6 +200,8 @@ Init_color ()
 	cColor.define_method("blue", get_blue);
 	cColor.define_method("alpha=", set_alpha);
 	cColor.define_method("alpha", get_alpha);
+
+	cColor.define_function("set_palette_color", set_palette_color);
 }
 
 
@@ -239,47 +304,6 @@ namespace Rucy
 		return true;
 	}
 
-	static const Rays::Color&
-	find_color (const char* name)
-	{
-		typedef std::map<Rays::String, Rays::Color> ColorMap;
-
-		static ColorMap colors;
-		if (colors.empty())
-		{
-			colors["no"]          =
-			colors["none"]        =
-			colors["transp"]      =
-			colors["transparent"] = Rays::Color(0, 0);
-
-			colors["black"]      = Rays::Color8(  0,   0,   0);
-			colors["white"]      = Rays::Color8(255, 241, 232);
-			colors["gray"]       =
-			colors["lightgray"]  = Rays::Color8(194, 195, 199);
-			colors["darkgray"]   = Rays::Color8( 95,  87,  79);
-			colors["brown"]      = Rays::Color8(171,  82,  54);
-			colors["red"]        = Rays::Color8(255,   0,  77);
-			colors["orange"]     = Rays::Color8(255, 163,   0);
-			colors["yellow"]     = Rays::Color8(255, 236,  39);
-			colors["green"]      = Rays::Color8(  0, 228,  54);
-			colors["darkgreen"]  = Rays::Color8(  0, 135,  81);
-			colors["blue"]       = Rays::Color8( 41, 173, 255);
-			colors["darkblue"]   = Rays::Color8( 29,  43,  83);
-			colors["indigo"]     = Rays::Color8(131, 118, 156);
-			colors["pink"]       = Rays::Color8(255, 119, 168);
-			colors["peach"]      = Rays::Color8(255, 204, 170);
-			colors["darkpurple"] = Rays::Color8(126,  37,  83);
-		}
-
-		assert(name);
-
-		ColorMap::const_iterator it = colors.find(Rays::String(name).downcase());
-		if (it == colors.end())
-			argument_error(__FILE__, __LINE__, "color '%s' is not found.", name);
-
-		return it->second;
-	}
-
 	static Rays::Color
 	str2color (const char* str)
 	{
@@ -315,7 +339,7 @@ namespace Rucy
 				return str2color("none");
 			else if (argv->is_s() || argv->is_sym())
 				return str2color(argv[0].c_str());
-			else if (argv->is_i() || argv->is_f())
+			else if (argv->is_num())
 			{
 				switch (argc)
 				{

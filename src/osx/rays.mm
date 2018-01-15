@@ -4,6 +4,7 @@
 
 #import <Foundation/Foundation.h>
 #include "rays/exception.h"
+#include "../opengl.h"
 
 
 namespace Rays
@@ -28,8 +29,7 @@ namespace Rays
 
 		global::pool = [[NSAutoreleasePool alloc] init];
 
-		void init_offscreen_context ();
-		init_offscreen_context();
+		OpenGL_set_context(get_offscreen_context());
 	}
 
 	void

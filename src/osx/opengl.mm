@@ -1,9 +1,8 @@
 // -*- objc -*-
-#include "rays/opengl.h"
+#include "../opengl.h"
 
 
 #import <AppKit/AppKit.h>
-#include "../opengl.h"
 
 
 namespace Rays
@@ -11,26 +10,29 @@ namespace Rays
 
 
 	void
-	init_offscreen_context ()
-	{
-		NSOpenGLPixelFormat* pf  = [NSOpenGLView defaultPixelFormat];
-		NSOpenGLContext* context =
-			[[[NSOpenGLContext alloc] initWithFormat: pf shareContext: nil] autorelease];
-
-		set_context(context);
-	}
-
-	void
-	set_context (Context context)
+	OpenGL_set_context (Context context)
 	{
 		NSOpenGLContext* c = (NSOpenGLContext*) context;
 		[c makeCurrentContext];
 	}
 
 	Context
-	get_context ()
+	OpenGL_get_context ()
 	{
 		return [NSOpenGLContext currentContext];
+	}
+
+
+	Context
+	get_offscreen_context ()
+	{
+		static Context context = NULL;
+		if (!context)
+		{
+			NSOpenGLPixelFormat* pf  = [NSOpenGLView defaultPixelFormat];
+			context = [[NSOpenGLContext alloc] initWithFormat: pf shareContext: nil];
+		}
+		return context;
 	}
 
 

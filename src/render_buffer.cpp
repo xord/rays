@@ -48,7 +48,14 @@ namespace Rays
 			check_error(__FILE__, __LINE__);
 
 			glRenderbufferStorage(
-				GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+				GL_RENDERBUFFER,
+				#ifdef IOS
+					GL_DEPTH_COMPONENT16,
+				#else
+					GL_DEPTH_COMPONENT24,
+				#endif
+				width,
+				height);
 			check_error(__FILE__, __LINE__);
 
 			width  = width_;

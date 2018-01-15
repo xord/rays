@@ -6,21 +6,19 @@
 
 #include <xot/pimpl.h>
 #include <rays/defs.h>
-#include <rays/opengl.h>
+#include <rays/point.h>
 
 
 namespace Rays
 {
 
 
-	struct Point;
 	struct Bounds;
 	struct Color;
 	struct Matrix;
 
 	class Font;
 	class Image;
-	class Texture;
 	class Shader;
 
 
@@ -42,20 +40,29 @@ namespace Rays
 
 			~Painter ();
 
-			void canvas (coord x, coord y, coord width, coord height);
+			void canvas (
+				coord x, coord y, coord width, coord height,
+				float pixel_density = 1);
 
-			void canvas (coord x, coord y, coord z, coord width, coord height, coord depth);
+			void canvas (
+				coord x, coord y, coord z, coord width, coord height, coord depth,
+				float pixel_density = 1);
 
-			void canvas (const Bounds& bounds);
+			void canvas (
+				const Bounds& bounds,
+				float pixel_density = 1);
 
-			void bind (const Texture& texture);
+			void bind (const Image& image);
 
 			void unbind ();
 
 			const Bounds& bounds () const;
 
+			float pixel_density () const;
+
+
 			//
-			// high level drawing methods
+			// drawing methods
 			//
 			void begin ();
 
@@ -67,9 +74,7 @@ namespace Rays
 
 			void line (const Point& p1, const Point& p2);
 
-			void lines   (const Point* points, size_t size);
-
-			void polygon (const Point* points, size_t size);
+			void line (const Point* points, size_t size, bool loop = false);
 
 			void rect (
 				coord x, coord y, coord width, coord height,
@@ -94,12 +99,12 @@ namespace Rays
 			void ellipse (
 				coord x, coord y, coord width, coord height = 0,
 				float angle_from = 0, float angle_to = 360,
-				coord radius_min = 0, uint nsegment = 0);
+				const Point& hole_size = 0, uint nsegment = 0);
 
 			void ellipse (
 				const Bounds& bounds,
 				float angle_from = 0, float angle_to = 360,
-				coord radius_min = 0, uint nsegment = 0);
+				const Point& hole_size = 0, uint nsegment = 0);
 
 			void ellipse (
 				const Point& center, coord radius,
@@ -136,24 +141,17 @@ namespace Rays
 				const Image& image,
 				const Bounds& src_bounds, const Bounds& dest_bounds);
 
-			void text (
-				const char* str, coord x = 0, coord y = 0,
-				const Font* font = NULL);
+			void text (const char* str, coord x = 0, coord y = 0);
 
-			void text (
-				const char* str, const Point& position,
-				const Font* font = NULL);
+			void text (const char* str, const Point& position);
 
-			void text (
-				const char* str, coord x, coord y, coord width, coord height,
-				const Font* font = NULL);
+			void text (const char* str, coord x, coord y, coord width, coord height);
 
-			void text (
-				const char* str, const Bounds& bounds,
-				const Font* font = NULL);
+			void text (const char* str, const Bounds& bounds);
+
 
 			//
-			// attributes
+			// states
 			//
 			void     set_background (float red, float green, float blue, float alpha = 1, bool clear = true);
 
@@ -179,6 +177,12 @@ namespace Rays
 
 			const Color& stroke () const;
 
+			void      set_shader (const Shader& shader);
+
+			void       no_shader ();
+
+			const Shader& shader () const;
+
 			void      set_clip (coord x, coord y, coord width, coord height);
 
 			void      set_clip (const Bounds& bounds);
@@ -193,40 +197,10 @@ namespace Rays
 
 			const Font& font () const;
 
-			void push_attrs ();
+			void push_state ();
 
-			void  pop_attrs ();
+			void  pop_state ();
 
-			//
-			// shader manipulation methods
-			//
-			void attach (const Shader& shader);
-
-			void detach (const Shader& shader);
-
-			void set_uniform (const char* name, int arg1);
-
-			void set_uniform (const char* name, int arg1, int arg2);
-
-			void set_uniform (const char* name, int arg1, int arg2, int arg3);
-
-			void set_uniform (const char* name, int arg1, int arg2, int arg3, int arg4);
-
-			void set_uniform (const char* name, const int* args, size_t size);
-
-			void set_uniform (const char* name, float arg1);
-
-			void set_uniform (const char* name, float arg1, float arg2);
-
-			void set_uniform (const char* name, float arg1, float arg2, float arg3);
-
-			void set_uniform (const char* name, float arg1, float arg2, float arg3, float arg4);
-
-			void set_uniform (const char* name, const float* args, size_t size);
-
-			void push_shaders ();
-
-			void  pop_shaders ();
 
 			//
 			// transformation methods
@@ -239,9 +213,9 @@ namespace Rays
 
 			void scale (const Point& value);
 
-			void rotate (float angle, coord x = 0, coord y = 0, coord z = 1);
+			void rotate (float degree, coord x = 0, coord y = 0, coord z = 1);
 
-			void rotate (float angle, const Point& axis);
+			void rotate (float degree, const Point& normalized_axis);
 
 			void set_matrix (float value = 1);
 
@@ -251,7 +225,7 @@ namespace Rays
 				float c1, float c2, float c3, float c4,
 				float d1, float d2, float d3, float d4);
 
-			void set_matrix (const float* elements);
+			void set_matrix (const float* elements, size_t size);
 
 			void set_matrix (const Matrix& matrix);
 
@@ -265,6 +239,7 @@ namespace Rays
 			operator bool () const;
 
 			bool operator ! () const;
+
 
 			struct Data;
 

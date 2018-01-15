@@ -6,7 +6,7 @@
 
 #include <xot/util.h>
 #include <rays/defs.h>
-#include <rays/point.h>
+#include <rays/coord.h>
 
 
 namespace Rays
@@ -16,17 +16,12 @@ namespace Rays
 	class ColorSpace;
 
 
-	struct Color
+	struct Color : public Coord4
 	{
 
 		typedef Color This;
 
-		union
-		{
-			struct {float red, green, blue, alpha;};
-			struct {float r,   g,     b,    a;};
-			float array[4];
-		};
+		typedef Coord4 Super;
 
 		Color (float gray = 0,                     float alpha = 1);
 
@@ -56,16 +51,22 @@ namespace Rays
 
 		friend bool operator != (const This& lhs, const This& rhs);
 
-		static uchar float2uchar (float value) {return (uchar) Xot::clip(0.f, 255.f, value * 255);}
+		static uchar float2uchar (float value)
+		{
+			return (uchar) Xot::clip(0.f, 255.f, value * 255);
+		}
 
-		static float uchar2float (int   value) {return value / 255.f;}
+		static float uchar2float (int value)
+		{
+			return value / 255.f;
+		}
 
 	};// Color
 
 
-	Color Color8 (int gray = 0,                 int alpha = 255);
+	Color color8 (int gray = 0,                 int alpha = 255);
 
-	Color Color8 (int red, int green, int blue, int alpha = 255);
+	Color color8 (int red, int green, int blue, int alpha = 255);
 
 
 }// Rays

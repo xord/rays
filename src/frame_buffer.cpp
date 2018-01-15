@@ -3,8 +3,8 @@
 
 #include <vector>
 #include "rays/exception.h"
-#include "rays/texture.h"
-#include "rays/opengl.h"
+#include "rays/debug.h"
+#include "texture.h"
 #include "render_buffer.h"
 
 
@@ -83,21 +83,17 @@ namespace Rays
 	{
 		switch (status)
 		{
+			case GL_FRAMEBUFFER_UNSUPPORTED:                   return "GL_FRAMEBUFFER_UNSUPPORTED";
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
 			#ifdef IOS
-				case GL_FRAMEBUFFER_UNSUPPORTED_OES:                   return "GL_FRAMEBUFFER_UNSUPPORTED_OES";
-				case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_OES:         return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_OES";
-				case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_OES: return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_OES";
-				case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_OES:         return "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_OES";
-				case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_OES:            return "GL_FRAMEBUFFER_INCOMPLETE_FORMATS_OES";
+				case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS: return "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS";
 			#else
-				case GL_FRAMEBUFFER_UNDEFINED:                     return "GL_FRAMEBUFFER_UNDEFINED";
-				case GL_FRAMEBUFFER_UNSUPPORTED:                   return "GL_FRAMEBUFFER_UNSUPPORTED";
-				case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-				case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-				case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
-				case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:        return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
-				case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
-				//case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:      return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
+				case GL_FRAMEBUFFER_UNDEFINED:                  return "GL_FRAMEBUFFER_UNDEFINED";
+				case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:     return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+				case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:     return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+				//case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:   return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
 			#endif
 		}
 		return "UNKNOWN STATUS";
@@ -114,8 +110,7 @@ namespace Rays
 		FrameBufferBinder binder(id());
 
 		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, texture.id(), 0);
+			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id(), 0);
 		check_error(__FILE__, __LINE__);
 
 		self->texture = texture;
@@ -216,58 +211,32 @@ namespace Rays
 	}
 
 
-	struct FrameBufferID
-	{
+	static std::vector<GLuint> frame_buffer_bind_stack;
 
-		GLuint draw, read;
-
-		FrameBufferID ()
-		:	draw(0), read(0)
-		{
-		}
-
-		FrameBufferID (GLuint draw, GLuint read)
-		:	draw(draw), read(read)
-		{
-		}
-
-	};// FrameBufferID
-
-	static std::vector<FrameBufferID> frame_buffer_bind_stack;
-
-
-	static void
-	bind_frame_buffer (GLuint draw, GLuint read)
-	{
-		FrameBufferID id;
-		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, (GLint*) &id.draw);
-		glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, (GLint*) &id.read);
-		check_error(__FILE__, __LINE__);
-
-		frame_buffer_bind_stack.push_back(id);
-
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, read);
-		check_error(__FILE__, __LINE__);
-	}
 
 	void
 	bind_frame_buffer (GLuint id)
 	{
-		bind_frame_buffer(id, id);
+		GLuint current = 0;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*) &current);
+		check_error(__FILE__, __LINE__);
+
+		frame_buffer_bind_stack.push_back(current);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, id);
+		check_error(__FILE__, __LINE__);
 	}
 
 	void
 	unbind_frame_buffer ()
 	{
 		if (frame_buffer_bind_stack.empty())
-			rays_error(__FILE__, __LINE__, "frame_buffer_bind_stack is empty.");
+			rays_error(__FILE__, __LINE__, "frame_buffer_bind_stack underflow.");
 
-		FrameBufferID id = frame_buffer_bind_stack.back();
+		GLuint id = frame_buffer_bind_stack.back();
 		frame_buffer_bind_stack.pop_back();
 
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id.draw);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, id.read);
+		glBindFramebuffer(GL_FRAMEBUFFER, id);
 		check_error(__FILE__, __LINE__);
 	}
 

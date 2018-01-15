@@ -6,7 +6,6 @@
 #include "rays/ruby/color_space.h"
 #include "rays/ruby/color.h"
 #include "rays/ruby/font.h"
-#include "rays/ruby/texture.h"
 #include "defs.h"
 
 
@@ -52,23 +51,6 @@ RUCY_DEF1(initialize_copy, obj)
 	RUCY_CHECK_OBJ(Rays::Bitmap, self);
 
 	*THIS = to<Rays::Bitmap&>(obj).copy();
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(draw_string)
-{
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Bitmap#draw_string", argc, 1, 2, 3, 4);
-
-	const char* str        = to<const char*>(argv[0]);
-	coord x                = argc >= 2 ? to<coord>(argv[1]) : 0;
-	coord y                = argc >= 3 ? to<coord>(argv[2]) : 0;
-	const Rays::Font* font = argc >= 4
-		? to<Rays::Font*>(argv[3]) : &Rays::default_font();
-
-	Rays::draw_string(THIS, str, x, y, *font);
 	return self;
 }
 RUCY_END
@@ -124,34 +106,6 @@ RUCY_DEF2(get_at, x, y)
 }
 RUCY_END
 
-static
-RUCY_DEFN(to_texture)
-{
-	CHECK;
-
-	bool alpha_only = (argc >= 1) ? to<bool>(argv[0]) : false;
-	return value(Rays::Texture(*THIS, alpha_only));
-}
-RUCY_END
-
-static
-RUCY_DEF1(save, path)
-{
-	CHECK;
-
-	Rays::save_bitmap(*THIS, path.c_str());
-	return self;
-}
-RUCY_END
-
-
-static
-RUCY_DEF1(load, path)
-{
-	return value(Rays::load_bitmap(path.c_str()));
-}
-RUCY_END
-
 
 static Class cBitmap;
 
@@ -164,15 +118,11 @@ Init_bitmap ()
 	cBitmap.define_alloc_func(alloc);
 	cBitmap.define_private_method("initialize",      initialize);
 	cBitmap.define_private_method("initialize_copy", initialize_copy);
-	cBitmap.define_method("draw_string", draw_string);
 	cBitmap.define_method("width", width);
 	cBitmap.define_method("height", height);
 	cBitmap.define_method("color_space", color_space);
 	cBitmap.define_method("[]=", set_at);
 	cBitmap.define_method("[]",  get_at);
-	cBitmap.define_method("to_texture", to_texture);
-	cBitmap.define_method("save", save);
-	cBitmap.define_function("load", load);
 }
 
 

@@ -27,7 +27,7 @@ namespace Rays
 	}
 
 	Color
-	Color8 (int gray, int alpha)
+	color8 (int gray, int alpha)
 	{
 		Color c;
 		c.reset8(gray, alpha);
@@ -35,7 +35,7 @@ namespace Rays
 	}
 
 	Color
-	Color8 (int red, int green, int blue, int alpha)
+	color8 (int red, int green, int blue, int alpha)
 	{
 		Color c;
 		c.reset8(red, green, blue, alpha);
@@ -57,10 +57,7 @@ namespace Rays
 	Color&
 	Color::reset (float red, float green, float blue, float alpha)
 	{
-		this->red   = red;
-		this->green = green;
-		this->blue  = blue;
-		this->alpha = alpha;
+		Super::reset(red, green, blue, alpha);
 		return *this;
 	}
 
@@ -75,10 +72,11 @@ namespace Rays
 	Color&
 	Color::reset8 (int red, int green, int blue, int alpha)
 	{
-		this->red   = uchar2float(red);
-		this->green = uchar2float(green);
-		this->blue  = uchar2float(blue);
-		this->alpha = uchar2float(alpha);
+		Super::reset(
+			uchar2float(red),
+			uchar2float(green),
+			uchar2float(blue),
+			uchar2float(alpha));
 		return *this;
 	}
 
@@ -211,7 +209,7 @@ namespace Rays
 
 	Color::operator bool () const
 	{
-		return red >= 0 && green >= 0 && blue >= 0 && alpha >= 0;
+		return alpha > 0;
 	}
 
 	bool

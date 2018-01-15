@@ -636,7 +636,7 @@ namespace Rucy
 					default: argument_error(__FILE__, __LINE__);
 				}
 			}
-			else if (argv->is_i() || argv->is_f())
+			else if (argv->is_num())
 			{
 				switch (argc)
 				{

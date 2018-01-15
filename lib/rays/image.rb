@@ -12,10 +12,10 @@ module Rays
 
     extend Forwardable
 
-    def_delegators :bitmap, :draw_string, :[], :[]=
+    def_delegators :bitmap, :[], :[]=
 
     def paint (&block)
-      painter.begin self, &block
+      painter.paint self, &block
       self
     end
 
@@ -25,10 +25,6 @@ module Rays
 
     def bounds ()
       Bounds.new 0, 0, *size
-    end
-
-    def self.load (path, alpha_only = false)
-      load_image path, alpha_only
     end
 
   end# Image

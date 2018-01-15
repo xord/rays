@@ -1,23 +1,27 @@
-#include "rays/painter.h"
+#include "painter.h"
 
 
 #include <math.h>
 #include <assert.h>
 #include <memory>
-#include <list>
+#include <vector>
 #include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
 #include "rays/exception.h"
-#include "rays/point.h"
 #include "rays/bounds.h"
 #include "rays/color.h"
-#include "rays/matrix.h"
-#include "rays/font.h"
-#include "rays/bitmap.h"
-#include "rays/texture.h"
-#include "rays/image.h"
-#include "rays/shader.h"
+#include "rays/debug.h"
+#include "opengl.h"
+#include "point.h"
+#include "matrix.h"
+#include "bitmap.h"
+#include "texture.h"
+#include "image.h"
+#include "font.h"
 #include "frame_buffer.h"
-#include "program.h"
+#include "shader.h"
+#include "shader_program.h"
+#include "shader_source.h"
 
 
 namespace Rays
@@ -36,14 +40,7 @@ namespace Rays
 	};// ColorType
 
 
-	static const float PI      = M_PI;
-
-	static const float PI_2    = PI * 2;
-
-	static const float PI_HALF = PI / 2;
-
-
-	struct Attributes
+	struct State
 	{
 
 		Bounds clip;
@@ -52,6 +49,8 @@ namespace Rays
 
 		Font font;
 
+		Shader shader;
+
 		void init ()
 		{
 			clip           .reset(-1);
@@ -59,53 +58,249 @@ namespace Rays
 			colors[FILL]   .reset(1, 1);
 			colors[STROKE] .reset(1, 0);
 			font           = default_font();
+			shader         = Shader();
 		}
 
-	};// Attributes
+		bool has_color ()
+		{
+			return colors[FILL] || colors[STROKE];
+		}
+
+	};// State
+
+
+	struct Vertex
+	{
+
+		typedef Coord4 Position;
+		typedef Coord4 TexCoord;
+
+		union
+		{
+			struct {coord x, y, z;};
+			Position position;
+		};
+
+		union
+		{
+			struct {float s, t;};
+			TexCoord texcoord;
+		};
+
+		void reset (coord x, coord y, coord s, coord t)
+		{
+			position.reset(x, y);
+			texcoord.reset(s, t);
+		}
+
+	};// Vertex
+
+
+	struct TextureInfo
+	{
+
+		const Texture& texture;
+
+		Coord2 texcoord_min, texcoord_max;
+
+		TextureInfo (
+			const Texture& texture,
+			coord x_min, coord y_min,
+			coord x_max, coord y_max)
+		:	texture(texture)
+		{
+			texcoord_min.reset(x_min, y_min);
+			texcoord_max.reset(x_max, y_max);
+		}
+
+		operator bool () const
+		{
+			return
+				texture &&
+				texcoord_min.x < texcoord_max.x &&
+				texcoord_min.x < texcoord_max.y;
+		}
+
+		bool operator ! () const
+		{
+			return !operator bool();
+		}
+
+	};// TextureInfo
+
+
+	static constexpr float PI      = M_PI;
+	static constexpr float PI_2    = PI * 2;
+	static constexpr float PI_HALF = PI / 2;
+
+
+	#define  ATTRIB_POSITION        "a_Position"
+	#define VARYING_POSITION        "v_Position"
+	#define UNIFORM_POSITION_MATRIX "u_PositionMatrix"
+	#define  ATTRIB_TEXCOORD        "a_TexCoord"
+	#define VARYING_TEXCOORD        "v_TexCoord"
+	#define UNIFORM_TEXCOORD_MIN    "u_TexCoordMin"
+	#define UNIFORM_TEXCOORD_MAX    "u_TexCoordMax"
+	#define UNIFORM_TEXCOORD_MATRIX "u_TexCoordMatrix"
+	#define  ATTRIB_COLOR           "a_Color"
+	#define VARYING_COLOR           "v_Color"
+	//#define UNIFORM_COLOR_MATRIX    "u_ColorMatrix"
+	#define UNIFORM_TEXTURE         "u_Texture"
+	#define UNIFORM_TEXTURE_SIZE    "u_TextureSize"
+
+
+	template <typename COORD>
+	static GLenum get_gl_type ();
+
+	template <>
+	GLenum
+	get_gl_type<float> ()
+	{
+		return GL_FLOAT;
+	}
+
+	const ShaderSource&
+	Painter_get_vertex_shader_source ()
+	{
+		static const char* SOURCE_STRING =
+			"attribute vec4 "  ATTRIB_POSITION ";"
+			"varying   vec4 " VARYING_POSITION ";"
+			"uniform   mat4 " UNIFORM_POSITION_MATRIX ";"
+			"attribute vec4 "  ATTRIB_TEXCOORD ";"
+			"varying   vec4 " VARYING_TEXCOORD ";"
+			"uniform   mat4 " UNIFORM_TEXCOORD_MATRIX ";"
+			"attribute vec4 "  ATTRIB_COLOR ";"
+			"varying   vec4 " VARYING_COLOR ";"
+			"void main ()"
+			"{"
+			   VARYING_POSITION " = " ATTRIB_POSITION ";"
+			   VARYING_COLOR    " = " ATTRIB_COLOR ";"
+			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * " ATTRIB_TEXCOORD ";"
+			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * " ATTRIB_POSITION ";"
+			"}";
+		static const ShaderSource SOURCE(GL_VERTEX_SHADER, SOURCE_STRING);
+
+		return SOURCE;
+	}
+
+
+	struct DefaultShaderProgram : public ShaderProgram
+	{
+
+		DefaultShaderProgram (const char* fragment_shader)
+		{
+			static const ShaderSource SHARED_SOURCE(
+				GL_FRAGMENT_SHADER,
+				"uniform sampler2D " UNIFORM_TEXTURE ";"
+				"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
+				"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
+				"uniform vec2 "      UNIFORM_TEXCOORD_MAX ";"
+				"vec2 normalizeTexCoord(vec2 texcoord)"
+				"{"
+				"  vec2 min = " UNIFORM_TEXCOORD_MIN ";"
+				"  vec2 len = " UNIFORM_TEXCOORD_MAX " - min;"
+				"  return (mod(texcoord - min, len) + min) / " UNIFORM_TEXTURE_SIZE ";"
+				"}"
+				"vec4 sampleTexture(vec2 texcoord)"
+				"{"
+				"  return texture2D(" UNIFORM_TEXTURE ", normalizeTexCoord(texcoord));"
+				"}");
+
+			add_source(SHARED_SOURCE);
+			add_source(ShaderSource(GL_FRAGMENT_SHADER, fragment_shader));
+		}
+
+	};// DefaultShaderProgram
+
+
+	static const ShaderProgram&
+	get_default_shader_program_for_shape ()
+	{
+		static const DefaultShaderProgram PROGRAM(
+			"varying vec4 " VARYING_COLOR ";"
+			"void main ()"
+			"{"
+			"  gl_FragColor = v_Color;"
+			"}");
+		return PROGRAM;
+	}
+
+	static const ShaderProgram&
+	get_default_shader_program_for_color_texture ()
+	{
+		static const DefaultShaderProgram PROGRAM(
+			"varying vec4 " VARYING_COLOR ";"
+			"varying vec4 " VARYING_TEXCOORD ";"
+			"vec4 sampleTexture(vec2);"
+			"void main ()"
+			"{"
+			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
+			"  gl_FragColor = v_Color * color;"
+			"}");
+		return PROGRAM;
+	}
+
+	static const ShaderProgram&
+	get_default_shader_program_for_alpha_texture ()
+	{
+		static const DefaultShaderProgram PROGRAM(
+			"varying vec4 " VARYING_COLOR ";"
+			"varying vec4 " VARYING_TEXCOORD ";"
+			"vec4 sampleTexture(vec2);"
+			"void main ()"
+			"{"
+			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
+			"  gl_FragColor = vec4(v_Color.rgb, color.a);"
+			"}");
+		return PROGRAM;
+	}
 
 
 	struct Painter::Data
 	{
 
+		bool painting = false;
+
+		float pixel_density = 1;
+
 		Bounds viewport;
 
-		Attributes attrs;
+		State              state;
 
-		Program program;
+		std::vector<State> state_stack;
 
-		std::list<Attributes> attrs_stack;
+		Matrix              position_matrix;
 
-		bool painting;
-
-		GLenum prev_matrix_mode;
-
-		GLuint current_texture;
-
-		Image text_image;
+		std::vector<Matrix> position_matrix_stack;
 
 		FrameBuffer frame_buffer;
 
-		float scale_factor;
-
-		mutable Matrix matrix_tmp;
+		Image text_image;
 
 		Data ()
-		:	painting(false), prev_matrix_mode(0), current_texture(0),
-			text_image(1, 1, GRAY, true), scale_factor(1)
 		{
-			attrs.init();
+			state.init();
+		}
+
+		void set_pixel_density (float density)
+		{
+			if (density <= 0)
+				argument_error(__FILE__, __LINE__, "invalid pixel_density.");
+
+			this->pixel_density = density;
+			text_image = Image();
 		}
 
 		void update_clip ()
 		{
-			if (attrs.clip)
+			if (state.clip)
 			{
 				glEnable(GL_SCISSOR_TEST);
 				glScissor(
-					attrs.clip.x,
-					viewport.height - attrs.clip.height - attrs.clip.y,
-					attrs.clip.width,
-					attrs.clip.height);
+					state.clip.x,
+					viewport.height - state.clip.height - state.clip.y,
+					state.clip.width,
+					state.clip.height);
 			}
 			else
 			{
@@ -115,82 +310,191 @@ namespace Rays
 			check_error(__FILE__, __LINE__);
 		}
 
-		bool use_color (ColorType type)
+		bool get_color (Color* color, ColorType type)
 		{
-			const Color& c = attrs.colors[type];
-			if (c.alpha <= 0) return false;
+			const Color& c = state.colors[type];
+			if (!c) return false;
 
-			glColor4f(c.red, c.green, c.blue, c.alpha);
+			*color = c;
 			return true;
-		}
-
-		bool has_color ()
-		{
-			return
-				attrs.colors[FILL]  .alpha > 0 ||
-				attrs.colors[STROKE].alpha > 0;
 		}
 
 		void draw_shape (
 			GLenum mode,
-			int nindices, const uint* indices,
-			int vertex_size, int vertex_stride, const coord* vertices,
-			const coord* tex_coords = NULL, const Texture* texture = NULL)
+			const Vertex* vertices, size_t nvertices,
+			const uint*   indices,  size_t nindices,
+			const Color& color,
+			const ShaderProgram& shader_program,
+			const TextureInfo* texinfo = NULL)
 		{
-			if (nindices <= 0 || !indices || !vertices)
+			if (nvertices <= 0 || nindices <= 0 || !vertices || !indices)
 				argument_error(__FILE__, __LINE__);
 
 			if (!painting)
 				invalid_state_error(__FILE__, __LINE__, "'painting' should be true.");
 
-			bool use_texture = texture && tex_coords;
-
-			if (use_texture)
+			const ShaderProgram* program = Shader_get_program(state.shader);
+			if (!program || !*program)
 			{
+				program = &shader_program;
+				if (!program || !*program)
+					return;
+			}
+
+			ShaderProgram_activate(*program);
+			apply_builtin_uniforms(*program, texinfo);
+
+			GLint a_position = glGetAttribLocation(program->id(), ATTRIB_POSITION);
+			GLint a_color    = glGetAttribLocation(program->id(), ATTRIB_COLOR);
+			GLint a_texcoord = glGetAttribLocation(program->id(), ATTRIB_TEXCOORD);
+			if (a_position < 0 || a_color < 0 || a_texcoord < 0)
+				opengl_error(__FILE__, __LINE__);
+
+			setup_vertices(
+				vertices, nvertices, color, a_position, a_color, a_texcoord);
+			//activate_texture(texture);
+
+			glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
+			check_error(__FILE__, __LINE__);
+
+			//deactivate_texture(texture);
+			cleanup_vertices(a_position, a_texcoord);
+
+			ShaderProgram_deactivate();
+		}
+
+		private:
+
+			void apply_builtin_uniforms (
+				const ShaderProgram& program, const TextureInfo* texinfo)
+			{
+				GLint pos_matrix_loc =
+					glGetUniformLocation(program.id(), UNIFORM_POSITION_MATRIX);
+				if (pos_matrix_loc >= 0)
+				{
+					glUniformMatrix4fv(
+						pos_matrix_loc, 1, GL_FALSE, position_matrix.array);
+					check_error(__FILE__, __LINE__);
+				}
+
+				GLint texcoord_matrix_loc =
+					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MATRIX);
+				if (texcoord_matrix_loc >= 0)
+				{
+					static const Matrix TEXCOORD_MATRIX(1);
+					glUniformMatrix4fv(
+						texcoord_matrix_loc, 1, GL_FALSE, TEXCOORD_MATRIX.array);
+					check_error(__FILE__, __LINE__);
+				}
+
+				apply_texture_uniforms(program, texinfo);
+			}
+
+			void apply_texture_uniforms (
+				const ShaderProgram& program, const TextureInfo* texinfo)
+			{
+				if (!texinfo || !*texinfo) return;
+
+				const Texture& texture = texinfo->texture;
+
+				GLint texture_loc =
+					glGetUniformLocation(program.id(), UNIFORM_TEXTURE);
+				if (texture_loc >= 0)
+				{
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, texture.id());
+
+					glUniform1i(texture_loc, 0);
+					check_error(__FILE__, __LINE__);
+				}
+
+				GLint size_loc =
+					glGetUniformLocation(program.id(), UNIFORM_TEXTURE_SIZE);
+				if (size_loc >= 0)
+				{
+					glUniform2f(
+						size_loc, texture.reserved_width(), texture.reserved_height());
+					check_error(__FILE__, __LINE__);
+				}
+
+				GLint min_loc =
+					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MIN);
+				if (min_loc >= 0)
+				{
+					glUniform2fv(min_loc, 1, texinfo->texcoord_min.array);
+					check_error(__FILE__, __LINE__);
+				}
+
+				GLint max_loc =
+					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MAX);
+				if (max_loc >= 0)
+				{
+					glUniform2fv(max_loc, 1, texinfo->texcoord_max.array);
+					check_error(__FILE__, __LINE__);
+				}
+			}
+
+			void setup_vertices (
+				const Vertex* vertices, size_t nvertices, const Color& color,
+				GLuint a_position, GLuint a_color, GLuint a_texcoord)
+			{
+				assert(nvertices >= 0 && vertices);
+
+				glVertexAttrib4fv(a_color, color.array);
+
+				glEnableVertexAttribArray(a_position);
+				glVertexAttribPointer(
+					a_position, Vertex::Position::SIZE, get_gl_type<coord>(),
+					GL_FALSE, sizeof(Vertex), &vertices->position);
+				check_error(__FILE__, __LINE__);
+
+				glEnableVertexAttribArray(a_texcoord);
+				glVertexAttribPointer(
+					a_texcoord, Vertex::TexCoord::SIZE, GL_FLOAT,
+					GL_FALSE, sizeof(Vertex), &vertices->texcoord);
+				check_error(__FILE__, __LINE__);
+			}
+
+			void cleanup_vertices (GLint a_position, GLint a_texcoord)
+			{
+				glDisableVertexAttribArray(a_position);
+				glDisableVertexAttribArray(a_texcoord);
+				check_error(__FILE__, __LINE__);
+			}
+
+			void activate_texture (const Texture* texture)
+			{
+				if (!texture)
+				{
+					glDisable(GL_TEXTURE_2D);
+					return;
+				}
+
 				if (!*texture)
 					argument_error(__FILE__, __LINE__, "invalid texture.");
 
 				GLuint id = texture->id();
-				if (id != current_texture)
-				{
+				if (id != get_current_texture_id())
 					glBindTexture(GL_TEXTURE_2D, id);
-					current_texture = id;
-				}
 
 				glEnable(GL_TEXTURE_2D);
-
-				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-				glTexCoordPointer(2, GL_FLOAT, 0, tex_coords);
-			}
-			else
-			{
-				glDisable(GL_TEXTURE_2D);
-				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 			}
 
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glVertexPointer(vertex_size, GL_FLOAT, vertex_stride, vertices);
-
-			glDrawElements(mode, nindices, GL_UNSIGNED_INT, indices);
-
-			glDisableClientState(GL_VERTEX_ARRAY);
-			if (use_texture)
+			GLuint get_current_texture_id ()
 			{
-				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+				GLint id = 0;
+				glGetIntegerv(GL_TEXTURE_BINDING_2D, &id);
+				return (GLuint) id;
+			}
+
+			void deactivate_texture (const Texture* texture)
+			{
+				if (!texture) return;
+
 				glDisable(GL_TEXTURE_2D);
 			}
-		}
 
 	};// Painter::Data
-
-
-	void
-	set_painter_scale_factor (Painter* painter, float factor)
-	{
-		assert(painter);
-
-		painter->self->scale_factor = factor;
-	}
 
 
 	Painter::Painter ()
@@ -202,53 +506,57 @@ namespace Rays
 	}
 
 	void
-	Painter::canvas (coord x, coord y, coord width, coord height)
+	Painter::canvas (
+		coord x, coord y, coord width, coord height, float pixel_density)
 	{
-		canvas(Bounds(x, y, -100, width, height, 200));
+		canvas(Bounds(x, y, -100, width, height, 200), pixel_density);
 	}
 
 	void
-	Painter::canvas (coord x, coord y, coord z, coord width, coord height, coord depth)
+	Painter::canvas (
+		coord x, coord y, coord z, coord width, coord height, coord depth,
+		float pixel_density)
 	{
-		canvas(Bounds(x, y, z, width, height, depth));
+		canvas(Bounds(x, y, z, width, height, depth), pixel_density);
 	}
 
 	void
-	Painter::canvas (const Bounds& bounds)
+	Painter::canvas (const Bounds& viewport, float pixel_density)
 	{
-		if (!bounds)
+		if (!viewport)
 			argument_error(__FILE__, __LINE__);
 
 		if (self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be false.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be false.");
 
-		self->viewport = bounds;
+		self->viewport = viewport;
+		self->set_pixel_density(pixel_density);
 	}
 
 	void
-	Painter::bind (const Texture& texture)
+	Painter::bind (const Image& image)
 	{
-		if (!texture)
-			argument_error(__FILE__, __LINE__, "invalid texture.");
+		if (!image)
+			argument_error(__FILE__, __LINE__, "invalid image.");
 
 		if (self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be false.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be false.");
 
-		FrameBuffer fb(texture);
+		FrameBuffer fb(Image_get_texture(image));
 		if (!fb)
 			rays_error(__FILE__, __LINE__, "invalid frame buffer.");
 
 		unbind();
 
 		self->frame_buffer = fb;
-		canvas(0, 0, fb.width(), fb.height());
+		canvas(0, 0, fb.width(), fb.height(), image.pixel_density());
 	}
 
 	void
 	Painter::unbind ()
 	{
 		if (self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
 		self->frame_buffer = FrameBuffer();
 	}
@@ -259,24 +567,28 @@ namespace Rays
 		return self->viewport;
 	}
 
+	float
+	Painter::pixel_density () const
+	{
+		return self->pixel_density;
+	}
 
 	void
 	Painter::begin ()
 	{
 		if (self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be false.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be false.");
 
 		FrameBuffer& fb = self->frame_buffer;
 		if (fb) bind_frame_buffer(fb.id());
 
-		push_attrs();
-		push_shaders();
+		push_state();
 
 		const Bounds& vp = self->viewport;
-		float scale      = self->scale_factor;
+		float density    = self->pixel_density;
 		glViewport(
-			(int) vp.x,             (int) vp.y,
-			(int) vp.width * scale, (int) vp.height * scale);
+			(int) (vp.x      * density), (int) (vp.y      * density),
+			(int) (vp.width  * density), (int) (vp.height * density));
 
 		coord x1 = vp.x, x2 = vp.x + vp.width;
 		coord y1 = vp.y, y2 = vp.y + vp.height;
@@ -284,34 +596,13 @@ namespace Rays
 		if (z1 == 0 && z2 == 0) {z1 = -100; z2 = 200;}
 		if (!fb)                std::swap(y1, y2);
 
-		glGetIntegerv(GL_MATRIX_MODE, (GLint*) &self->prev_matrix_mode);
-
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(x1, x2, y1, y2, z1, z2);
-
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-		glTranslatef(0.375f, 0.375f, 0);
-
-		glMatrixMode(GL_TEXTURE);
-		glPushMatrix();
-		glLoadIdentity();
-
-	#ifndef IOS
-		glMatrixMode(GL_COLOR);
-		glPushMatrix();
-		glLoadIdentity();
-	#endif
-
-		glMatrixMode(GL_MODELVIEW);
+		self->position_matrix.reset(1);
+		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
+		//self->position_matrix.translate(0.375f, 0.375f);
 
 		//glEnable(GL_CULL_FACE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 		check_error(__FILE__, __LINE__);
 
 		self->painting = true;
@@ -323,31 +614,14 @@ namespace Rays
 	Painter::end ()
 	{
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
 		self->painting = false;
 
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);
 
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-
-		glMatrixMode(GL_TEXTURE);
-		glPopMatrix();
-
-	#ifndef IOS
-		glMatrixMode(GL_COLOR);
-		glPopMatrix();
-	#endif
-
-		glMatrixMode(self->prev_matrix_mode);
-
-		pop_shaders();
-		pop_attrs();
+		pop_state();
 
 		//glFinish();
 
@@ -356,7 +630,7 @@ namespace Rays
 			unbind_frame_buffer();
 
 			Texture& tex = self->frame_buffer.texture();
-			if (tex) tex.set_dirty(true);
+			if (tex) tex.set_modified();
 		}
 	}
 
@@ -364,151 +638,103 @@ namespace Rays
 	Painter::clear ()
 	{
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
-		const Color& c = self->attrs.background;
+		const Color& c = self->state.background;
 		glClearColor(c.red, c.green, c.blue, c.alpha);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		check_error(__FILE__, __LINE__);
+	}
+
+	void
+	draw_line (Painter* painter, const Point* points, size_t npoints, bool loop)
+	{
+		assert(painter);
+
+		Painter::Data* self = painter->self.get();
+
+		if (!self->painting)
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
+
+		if (!self->state.has_color())
+			return;
+
+		GLenum modes[] = {
+			GL_TRIANGLE_FAN,
+			(GLenum) (loop ? GL_LINE_LOOP : GL_LINE_STRIP)
+		};
+
+		std::unique_ptr<Vertex[]> vertices(new Vertex[npoints]);
+		std::unique_ptr<uint[]>   indices(new uint[npoints]);
+		for (size_t i = 0; i < npoints; ++i)
+		{
+			vertices[i].position = points[i];
+			vertices[i].texcoord = points[i];
+			indices[i]           = (uint) i;
+		}
+
+		Color color;
+		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
+		{
+			if (!self->get_color(&color, (ColorType) type))
+				continue;
+
+			self->draw_shape(
+				modes[type], vertices.get(), npoints, indices.get(), npoints, color,
+				get_default_shader_program_for_shape());
+		}
 	}
 
 	void
 	Painter::line (coord x1, coord y1, coord x2, coord y2)
 	{
-		static const uint INDICES[] =
-		{
-			0, 1
-		};
-
-		Data* pself = self.get();
-
-		if (!pself->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
-
-		if (!pself->use_color(STROKE))
-			return;
-
-		coord vertices[] =
-		{
-			x1, y1,
-			x2, y2
-		};
-
-		pself->draw_shape(GL_LINES, 2, INDICES, 2, 0, vertices);
+		line(Point(x1, y1, 0), Point(x2, y2, 0));
 	}
 
 	void
 	Painter::line (const Point& p1, const Point& p2)
 	{
-		line(p1.x, p1.y, p2.x, p2.y);
+		const Point points[] = {p1, p2};
+		draw_line(this, points, 2, false);
 	}
 
 	void
-	draw_lines (
-		Painter* painter, const coord* points, size_t npoints,
-		size_t vertex_size, size_t vertex_stride = 0)
+	Painter::line (const Point* points, size_t size, bool loop)
 	{
-		assert(painter);
-
-		Painter::Data* self = painter->self.get();
-
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
-
-		if (!self->use_color(STROKE))
-			return;
-
-		std::unique_ptr<uint[]> indices(new uint[npoints]);
-		for (size_t i = 0; i < npoints; ++i)
-			indices[i] = (uint) i;
-
-		self->draw_shape(
-			GL_LINE_STRIP, (int) npoints, indices.get(),
-			(int) vertex_size, (int) vertex_stride, points);
-	}
-
-	void
-	Painter::lines (const Point* points, size_t size)
-	{
-		draw_lines(this, (const coord*) points, size, 2, sizeof(Point));
-	}
-
-	void
-	draw_polygon (
-		Painter* painter, const coord* points, size_t npoints,
-		size_t vertex_size, size_t vertex_stride = 0)
-	{
-		assert(painter);
-
-		Painter::Data* self = painter->self.get();
-
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
-
-		if (!self->has_color()) return;
-
-		GLenum modes[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-
-		std::unique_ptr<uint[]> indices(new uint[npoints]);
-		for (size_t i = 0; i < npoints; ++i)
-			indices[i] = (uint) i;
-
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!self->use_color((ColorType) type))
-				continue;
-
-			self->draw_shape(
-				modes[type], (int) npoints, indices.get(),
-				(int) vertex_size, (int) vertex_stride, points);
-		}
-	}
-
-	void
-	Painter::polygon (const Point* points, size_t size)
-	{
-		draw_polygon(this, (const coord*) points, size, 2, sizeof(Point));
+		draw_line(this, points, size, loop);
 	}
 
 	static void
 	draw_rect (Painter* painter, coord x, coord y, coord width, coord height)
 	{
 		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		static const uint INDICES[] =
-		{
-			0, 1, 2, 3
-		};
+		static const uint INDICES[] = {0, 1, 2, 3};
 
 		assert(painter);
 
 		Painter::Data* self = painter->self.get();
 
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
-		if (!self->has_color())
+		if (!self->state.has_color())
 			return;
 
-		coord x2 = x + width  - 1;
-		coord y2 = y + height - 1;
-
+		Color color;
+		Vertex vertices[4];
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!self->use_color((ColorType) type))
+			if (!self->get_color(&color, (ColorType) type))
 				continue;
 
-			coord xx = x2 + 1 - type;
-			coord yy = y2 + 1 - type;
-			coord vertices[] =
-			{
-				x,  y,
-				x,  yy,
-				xx, yy,
-				xx, y
-			};
+			vertices[0].reset(x,         y,          0,     0);
+			vertices[1].reset(x,         y + height, 0,     height);
+			vertices[2].reset(x + width, y + height, width, height);
+			vertices[3].reset(x + width, y,          width, 0);
 
-			self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
+			self->draw_shape(
+				MODES[type], vertices, 4, INDICES, 4, color,
+				get_default_shader_program_for_shape());
 		}
 	}
 
@@ -525,7 +751,7 @@ namespace Rays
 		coord* rounds[] = {left_top, right_top, right_bottom, left_bottom, left_top};
 		coord sizes[]   = {width, height, width, height};
 
-		for (int i = 0; i < 4; ++i)
+		for (size_t i = 0; i < 4; ++i)
 		{
 			const coord& size = sizes[i];
 
@@ -550,28 +776,26 @@ namespace Rays
 	};
 
 	static int
-	draw_round (
-		Coord2* vertex, const RoundedCorner& corner,
+	setup_round (
+		Vertex* vertex, coord x, coord y, const RoundedCorner& corner,
 		coord sign_x, coord sign_y, float radian_offset, uint nsegment)
 	{
 		if (corner.round <= 0)
 		{
-			vertex->reset(corner.x, corner.y);
+			vertex->reset(x + corner.x, y + corner.y, corner.x, corner.y);
 			return 1;
 		}
 
-		coord x = corner.x + corner.round * corner.offset_sign_x * sign_x;
-		coord y = corner.y + corner.round * corner.offset_sign_y * sign_y;
+		coord offset_x = corner.x + corner.round * corner.offset_sign_x * sign_x;
+		coord offset_y = corner.y + corner.round * corner.offset_sign_y * sign_y;
 
 		for (uint seg = 0; seg <= nsegment; ++seg, ++vertex)
 		{
 			float pos    = (float) seg / (float) nsegment;
 			float radian = radian_offset + pos * PI_HALF;
-			float xx     =  cos(radian);
-			float yy     = -sin(radian);
-			vertex->reset(
-				x + xx * corner.round * sign_x,
-				y + yy * corner.round * sign_y);
+			coord xx     = offset_x + cos(radian) * corner.round * sign_x;
+			coord yy     = offset_y - sin(radian) * corner.round * sign_y;
+			vertex->reset(x + xx, y + yy, xx, yy);
 		}
 		return nsegment + 1;
 	}
@@ -591,9 +815,9 @@ namespace Rays
 		Painter::Data* self = painter->self.get();
 
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
-		if (!self->has_color())
+		if (!self->state.has_color())
 			return;
 
 		if (nsegment <= 0)
@@ -604,44 +828,42 @@ namespace Rays
 			&round_left_bottom, &round_right_bottom,
 			width, height);
 
-		coord xx     = x + width;
-		coord yy     = y + height;
 		coord sign_x = width  >= 0 ? +1 : -1;
 		coord sign_y = height >= 0 ? +1 : -1;
-
 		RoundedCorner corners[] =
 		{
-			{xx, y,  -1, +1, round_right_top},
-			{x,  y,  +1, +1, round_left_top},
-			{x,  yy, +1, -1, round_left_bottom},
-			{xx, yy, -1, -1, round_right_bottom}
+			{width,      0, -1, +1, round_right_top},
+			{    0,      0, +1, +1, round_left_top},
+			{    0, height, +1, -1, round_left_bottom},
+			{width, height, -1, -1, round_right_bottom}
 		};
 
-		int nvertices = 0;
-		for (int i = 0; i < 4; ++i)
+		size_t nvertices = 0;
+		for (size_t i = 0; i < 4; ++i)
 			nvertices += corners[i].round > 0 ? nsegment + 1 : 1;
 
 		std::unique_ptr<uint[]> indices(new uint[nvertices]);
-		for (int i = 0; i < nvertices; ++i)
-			indices[i] = i;
+		for (size_t i = 0; i < nvertices; ++i)
+			indices[i] = (int) i;
 
-		std::unique_ptr<Coord2[]> vertices(new Coord2[nvertices]);
-		Coord2* vertex = vertices.get();
-		assert(vertex);
+		std::unique_ptr<Vertex[]> vertices(new Vertex[nvertices]);
+		Vertex* vertex = vertices.get();
 
-		for (int i = 0; i < 4; ++i)
+		for (size_t i = 0; i < 4; ++i)
 		{
-			vertex += draw_round(
-				vertex, corners[i], sign_x, sign_y, PI_HALF * i, nsegment);
+			vertex += setup_round(
+				vertex, x, y, corners[i], sign_x, sign_y, PI_HALF * i, nsegment);
 		}
 
+		Color color;
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!self->use_color((ColorType) type))
+			if (!self->get_color(&color, (ColorType) type))
 				continue;
 
 			self->draw_shape(
-				MODES[type], nvertices, indices.get(), 2, 0, (coord*) vertices.get());
+				MODES[type], vertices.get(), nvertices, indices.get(), nvertices, color,
+				get_default_shader_program_for_shape());
 		}
 	}
 
@@ -696,11 +918,21 @@ namespace Rays
 			nsegment);
 	}
 
+	static inline void
+	setup_ellipse_vertex (
+		Vertex* vertex, coord origin_x, coord origin_y, coord vertex_x, coord vertex_y)
+	{
+		assert(vertex);
+
+		vertex->position.reset(origin_x + vertex_x, origin_y + vertex_y);
+		vertex->texcoord.reset(vertex_x, vertex_y);
+	}
+
 	static void
 	draw_ellipse (
 		Painter* painter,
 		coord x, coord y, coord width, coord height,
-		float angle_from, float angle_to, coord radius_min,
+		float angle_from, float angle_to, coord hole_width, coord hole_height,
 		uint nsegment)
 	{
 		assert(painter);
@@ -708,139 +940,166 @@ namespace Rays
 		Painter::Data* self = painter->self.get();
 
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
+
+		if (!self->state.has_color() || width == 0 || height == 0)
+			return;
 
 		if (nsegment <= 0)
 			nsegment = Painter::NSEGMENT_ELLIPSE;
 
-		coord radius_x     = width  / 2;
-		coord radius_y     = height / 2;
-		coord radius_x_min = radius_x * radius_min;
-		coord radius_y_min = radius_y * radius_min;
 		float from         = angle_from / 360.f;
 		float to           = angle_to   / 360.f;
-		bool hole          = radius_min != 0;
-		int nvertices      = hole ? nsegment * 2 : nsegment;
+		bool hole          = hole_width != 0 && hole_height != 0;
+		coord hole_x       = x + (width  - hole_width)  / 2;
+		coord hole_y       = y + (height - hole_height) / 2;
+		int npoint         = nsegment + 1;
+		size_t nvertices   = hole ? npoint * 2 : npoint + 1;
 		GLenum modes[]     =
 		{
 			(GLenum) (hole ? GL_TRIANGLE_STRIP : GL_TRIANGLE_FAN),
 			GL_LINE_LOOP
 		};
 
-		x += radius_x;
-		y += radius_y;
-
 		std::unique_ptr<uint[]> indices(new uint[nvertices]);
-		for (int i = 0; i < nvertices; ++i)
-			indices[i] = i;
+		for (size_t i = 0; i < nvertices; ++i)
+			indices[i] = (int) i;
 
-		std::unique_ptr<Coord2[]> vertices(new Coord2[nvertices]);
-		Coord2* vertex = vertices.get();
-		assert(vertex);
+		std::unique_ptr<Vertex[]> vertices(new Vertex[nvertices]);
+		Vertex* vertex = vertices.get();
 
-		for (uint seg = 0; seg < nsegment; ++seg, ++vertex)
+		if (!hole)
+		{
+			(vertex++)->position.reset(
+				x + width  / 2,
+				y + height / 2);
+		}
+
+		for (uint seg = 0; seg <= nsegment; ++seg)
 		{
 			float pos    = (float) seg / (float) nsegment;
 			float radian = (from + (to - from) * pos) * PI_2;
-			float xx     = cos(radian);
-			float yy     = -sin(radian);
+			float cos_   = (cos(radian)  + 1) / 2.;
+			float sin_   = (-sin(radian) + 1) / 2.;
 
 			if (hole)
-				vertex->reset(x + xx * radius_x_min, y + yy * radius_y_min);
-			vertex  ->reset(x + xx * radius_x,     y + yy * radius_y);
+			{
+				setup_ellipse_vertex(
+					vertex++,
+					hole_x,
+					hole_y,
+					hole_width  * cos_,
+					hole_height * sin_);
+			}
+
+			setup_ellipse_vertex(
+				vertex++,
+				x,
+				y,
+				width  * cos_,
+				height * sin_);
 		}
 
+		Color color;
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (!self->use_color((ColorType) type))
+			if (!self->get_color(&color, (ColorType) type))
 				continue;
 
 			self->draw_shape(
-				modes[type], nvertices, indices.get(), 2, 0, (coord*) vertices.get());
+				modes[type], vertices.get(), nvertices, indices.get(), nvertices, color,
+				get_default_shader_program_for_shape());
 		}
 	}
 
 	void
 	Painter::ellipse (
 		coord x, coord y, coord width, coord height,
-		float angle_from, float angle_to, coord radius_min, uint nsegment)
+		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
 	{
 		draw_ellipse(
-			this, x, y, width, height, angle_from, angle_to, radius_min, nsegment);
+			this, x, y, width, height,
+			angle_from, angle_to, hole_size.x, hole_size.y, nsegment);
 	}
 
 	void
 	Painter::ellipse (
 		const Bounds& bounds,
-		float angle_from, float angle_to, coord radius_min, uint nsegment)
+		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
 	{
 		ellipse(
 			bounds.x, bounds.y, bounds.width, bounds.height,
-			angle_from, angle_to, radius_min, nsegment);
+			angle_from, angle_to, hole_size, nsegment);
 	}
 
 	void
 	Painter::ellipse (
 		const Point& center, coord radius,
-		float angle_from, float angle_to, coord radius_min, uint nsegment)
+		float angle_from, float angle_to, coord hole_radius, uint nsegment)
 	{
-		ellipse(
-			center.x - radius, center.y - radius, radius * 2, radius * 2,
-			angle_from, angle_to, radius_min, nsegment);
+		draw_ellipse(
+			this, center.x - radius, center.y - radius, radius * 2, radius * 2,
+			angle_from, angle_to, hole_radius * 2, hole_radius * 2, nsegment);
 	}
 
 	static void
-	draw_texture (
-		Painter* painter, const Texture& tex,
-		float s_min, float t_min, float s_max, float t_max,
-		coord x, coord y, coord width, coord height,
-		bool nostroke = false)
+	draw_image (
+		Painter* painter, const Image& image,
+		coord src_x, coord src_y, coord src_w, coord src_h,
+		coord dst_x, coord dst_y, coord dst_w, coord dst_h,
+		bool nostroke = false, const ShaderProgram* shader_program = NULL)
 	{
 		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		static const uint INDICES[] =
-		{
-			0, 1, 2, 3
-		};
+		static const uint INDICES[] = {0, 1, 2, 3};
 
-		assert(painter && tex);
+		assert(painter && image);
 
 		Painter::Data* self = painter->self.get();
 
 		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
-		coord x2 = x + width  - 1;
-		coord y2 = y + height - 1;
-		coord vertices[] =
-		{
-			x,  y,
-			x,  y2,
-			x2, y2,
-			x2, y
-		};
+		if (!self->state.has_color())
+			return;
 
+		const Texture& texture = Image_get_texture(image);
+		if (!texture)
+			invalid_state_error(__FILE__, __LINE__);
+
+		float density = image.pixel_density();
+		src_x *= density;
+		src_y *= density;
+		src_w *= density;
+		src_h *= density;
+
+		coord src_x2 = src_x + src_w;
+		coord src_y2 = src_y + src_h;
+		coord dst_x2 = dst_x + dst_w;
+		coord dst_y2 = dst_y + dst_h;
+
+		Vertex vertices[4];
+		vertices[0].reset(dst_x,  dst_y,  src_x,  src_y);
+		vertices[1].reset(dst_x,  dst_y2, src_x,  src_y2);
+		vertices[2].reset(dst_x2, dst_y2, src_x2, src_y2);
+		vertices[3].reset(dst_x2, dst_y,  src_x2, src_y);
+
+		TextureInfo texinfo(texture, src_x, src_y, src_x2, src_y2);
+
+		if (!shader_program)
+			shader_program = &get_default_shader_program_for_color_texture();
+
+		Color color;
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
 			if (
 				(nostroke && type == STROKE) ||
-				!self->use_color((ColorType) type))
+				!self->get_color(&color, (ColorType) type))
 			{
 				continue;
 			}
 
-			if (type == FILL)
-			{
-				coord tex_coords[] =
-				{
-					s_min, t_min,
-					s_min, t_max,
-					s_max, t_max,
-					s_max, t_min
-				};
-				self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices, tex_coords, &tex);
-			}
-			else
-				self->draw_shape(MODES[type], 4, INDICES, 2, 0, vertices);
+			self->draw_shape(
+				MODES[type], vertices, 4, INDICES, 4, color, *shader_program, &texinfo);
 		}
 	}
 
@@ -850,14 +1109,10 @@ namespace Rays
 		if (!image_)
 			argument_error(__FILE__, __LINE__);
 
-		const Texture& tex = image_.texture();
-		if (!tex)
-			argument_error(__FILE__, __LINE__);
-
-		draw_texture(
-			this, tex,
-			0, 0, tex.s_max(), tex.t_max(),
-			x, y, tex.width(), tex.height());
+		draw_image(
+			this, image_,
+			0, 0, image_.width(), image_.height(),
+			x, y, image_.width(), image_.height());
 	}
 
 	void
@@ -873,14 +1128,10 @@ namespace Rays
 		if (!image_)
 			argument_error(__FILE__, __LINE__);
 
-		const Texture& tex = image_.texture();
-		if (!tex)
-			argument_error(__FILE__, __LINE__);
-
-		draw_texture(
-			this, tex,
-			0, 0, tex.s_max(), tex.t_max(),
-			x, y, width,       height);
+		draw_image(
+			this, image_,
+			0, 0, image_.width(), image_.height(),
+			x, y, width,          height);
 	}
 
 	void
@@ -893,188 +1144,185 @@ namespace Rays
 	void
 	Painter::image (
 		const Image& image_,
-		coord  src_x, coord  src_y, coord src_width, coord src_height,
-		coord dest_x, coord dest_y)
+		coord src_x, coord src_y, coord src_width, coord src_height,
+		coord dst_x, coord dst_y)
 	{
 		if (!image_)
 			argument_error(__FILE__, __LINE__);
 
-		const Texture& tex = image_.texture();
-		if (!tex)
-			argument_error(__FILE__, __LINE__);
-
-		coord dest_width = tex.width(), dest_height = tex.height();
-		float s = tex.s_max() / dest_width, t = tex.t_max() / dest_height;
-		draw_texture(
-			this, tex,
-			 src_x * s,  src_y * t,  src_width * s,  src_height * t,
-			dest_x,     dest_y,     dest_width,     dest_height);
+		draw_image(
+			this, image_,
+			src_x, src_y, src_width,      src_height,
+			dst_x, dst_y, image_.width(), image_.height());
 	}
 
 	void
 	Painter::image (
-		const Image& image_, const Bounds& src_bounds, const Point& dest_position)
+		const Image& image_, const Bounds& src_bounds, const Point& dst_position)
 	{
 		image(
 			image_,
 			src_bounds.x, src_bounds.y, src_bounds.width, src_bounds.height,
-			dest_position.x, dest_position.y);
+			dst_position.x, dst_position.y);
 	}
 
 	void
 	Painter::image (
 		const Image& image_,
-		coord  src_x, coord  src_y, coord  src_width, coord  src_height,
-		coord dest_x, coord dest_y, coord dest_width, coord dest_height)
+		coord src_x, coord src_y, coord src_width, coord src_height,
+		coord dst_x, coord dst_y, coord dst_width, coord dst_height)
 	{
 		if (!image_)
 			argument_error(__FILE__, __LINE__);
 
-		const Texture& tex = image_.texture();
-		if (!tex)
-			argument_error(__FILE__, __LINE__);
-
-		float s = tex.s_max() / tex.width();
-		float t = tex.t_max() / tex.height();
-		draw_texture(
-			this, tex,
-			 src_x * s,  src_y * t,  src_width * s,  src_height * t,
-			dest_x,     dest_y,     dest_width,     dest_height);
+		draw_image(
+			this, image_,
+			src_x, src_y, src_width, src_height,
+			dst_x, dst_y, dst_width, dst_height);
 	}
 
 	void
 	Painter::image (
-		const Image& image_, const Bounds& src_bounds, const Bounds& dest_bounds)
+		const Image& image_, const Bounds& src_bounds, const Bounds& dst_bounds)
 	{
 		image(
 			image_,
-			 src_bounds.x,  src_bounds.y,  src_bounds.width,  src_bounds.height,
-			dest_bounds.x, dest_bounds.y, dest_bounds.width, dest_bounds.height);
+			src_bounds.x, src_bounds.y, src_bounds.width, src_bounds.height,
+			dst_bounds.x, dst_bounds.y, dst_bounds.width, dst_bounds.height);
+	}
+
+	static void
+	debug_draw_text (
+		Painter* painter, const Font& font,
+		coord x, coord y, coord str_width, coord str_height)
+	{
+		save_image(painter->self->text_image, "/tmp/font.png");
+
+		painter->push_state();
+		{
+			coord asc, desc, lead;
+			font.get_height(&asc, &desc, &lead);
+			//printf("%f %f %f %f \n", str_height, asc, desc, lead);
+
+			painter->set_stroke(0.5, 0.5, 1);
+			painter->no_fill();
+			painter->rect(x - 1, y - 1, str_width + 2, str_height + 2);
+
+			coord yy = y;
+			painter->set_stroke(1, 0.5, 0.5, 0.4);
+			painter->rect(x, yy, str_width, asc);//str_height);
+
+			yy += asc;
+			painter->set_stroke(1, 1, 0.5, 0.4);
+			painter->rect(x, yy, str_width, desc);
+
+			yy += desc;
+			painter->set_stroke(1, 0.5, 1, 0.4);
+			painter->rect(x, yy, str_width, lead);
+		}
+		painter->pop_state();
 	}
 
 	static void
 	draw_text (
-		Painter* painter, const char* str, coord str_width, coord str_height,
-		coord x, coord y, coord width, coord height,
-		const Font& font)
+		Painter* painter, const Font& font,
+		const char* str, coord x, coord y, coord width = 0, coord height = 0)
 	{
-		assert(painter && str && *str != '\0' && font);
-
-		if (!painter->self->painting)
-			invalid_state_error(__FILE__, __LINE__, "self->painting should be true.");
+		assert(painter && font && str && *str != '\0');
 
 		Painter::Data* self = painter->self.get();
-		int tex_w = ceil(str_width);
-		int tex_h = ceil(str_height);
 
+		if (!self->painting)
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
+
+		if (!self->state.has_color())
+			return;
+
+		float density = self->pixel_density;
+		coord str_w = Font_get_width(font, density, str);
+		coord str_h = Font_get_height(font, density);
+		int tex_w   = ceil(str_w);
+		int tex_h   = ceil(str_h);
+		const Texture& texture = Image_get_texture(self->text_image);
 		if (
-			self->text_image.width()  < tex_w ||
-			self->text_image.height() < tex_h)
+			texture.width()  < tex_w ||
+			texture.height() < tex_h ||
+			self->text_image.pixel_density() != density)
 		{
-			self->text_image = Image(
-				std::max(self->text_image.width(),  tex_w),
-				std::max(self->text_image.height(), tex_h),
-				self->text_image.color_space(),
-				self->text_image.alpha_only());
+			int bmp_w = std::max(texture.width(),  tex_w);
+			int bmp_h = std::max(texture.height(), tex_h);
+			self->text_image = Image(Bitmap(bmp_w, bmp_h, ALPHA), density);
 		}
 
 		if (!self->text_image)
 			invalid_state_error(__FILE__, __LINE__);
 
-		draw_string(&self->text_image.bitmap(), str, 0, 0, font);
+		assert(self->text_image.pixel_density() == density);
 
-		const Texture& tex = self->text_image.texture();
-		if (!tex)
-			rays_error(__FILE__, __LINE__, "text_image's texture is invalid.");
+		Bitmap_draw_string(
+			&self->text_image.bitmap(), Font_get_raw(font, density), str, 0, 0);
 
-		#if 0//def DEBUG
-			save_image(self->text_image, "/Users/snori/font.png");
+		str_w /= density;
+		str_h /= density;
+		if (width  == 0) width  = str_w;
+		if (height == 0) height = str_h;
 
-			painter->push_attrs();
-			{
-				coord asc, desc, lead;
-				font.get_height(&asc, &desc, &lead);
-				//printf("%f %f %f %f \n", str_height, asc, desc, lead);
+		draw_image(
+			painter, self->text_image,
+			0, 0, str_w, str_h,
+			x, y, str_w, str_h,
+			true, &get_default_shader_program_for_alpha_texture());
 
-				painter->set_stroke(0.5, 0.5, 1);
-				painter->no_fill();
-				painter->rect(x - 1, y - 1, str_width + 2, str_height + 2);
-
-				coord yy = y;
-				painter->set_stroke(1, 0.5, 0.5, 0.4);
-				painter->rect(x, yy, str_width, asc);//str_height);
-
-				yy += asc;
-				painter->set_stroke(1, 1, 0.5, 0.4);
-				painter->rect(x, yy, str_width, desc);
-
-				yy += desc;
-				painter->set_stroke(1, 0.5, 1, 0.4);
-				painter->rect(x, yy, str_width, lead);
-			}
-			painter->pop_attr();
+		#if 0
+			debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
 		#endif
-
-		draw_texture(
-			painter, tex,
-			0, 0, tex.s(str_width - 1), tex.t(str_height - 1),
-			x, y, width,                height,
-			true);
 	}
 
 	void
-	Painter::text (const char* str, coord x, coord y, const Font* font)
+	Painter::text (const char* str, coord x, coord y)
 	{
 		if (!str)
 			argument_error(__FILE__, __LINE__);
 
 		if (*str == '\0') return;
 
-		if (!font) font = &self->attrs.font;
-		if (!*font)
-			argument_error(__FILE__, __LINE__);
+		const Font& font = self->state.font;
+		if (!font)
+			invalid_state_error(__FILE__, __LINE__);
 
-		coord w = font->get_width(str), h = font->get_height();
-		w = ceil(w);
-		h = ceil(h);
-		draw_text(this, str, w, h, x, y, w, h, *font);
+		draw_text(this, font, str, x, y);
 	}
 
 	void
-	Painter::text (const char* str, const Point& position, const Font* font)
+	Painter::text (const char* str, const Point& position)
 	{
-		text(str, position.x, position.y, font);
+		text(str, position.x, position.y);
 	}
 
 	void
-	Painter::text (
-		const char* str, coord x, coord y, coord width, coord height,
-		const Font* font)
+	Painter::text (const char* str, coord x, coord y, coord width, coord height)
 	{
 		if (!str)
 			argument_error(__FILE__, __LINE__);
 
-		if (*str == '\0') return;
+		if (*str == '\0' || width == 0 || height == 0) return;
 
-		if (!font) font = &self->attrs.font;
-		if (!*font)
-			argument_error(__FILE__, __LINE__);
+		const Font& font = self->state.font;
+		if (!font)
+			invalid_state_error(__FILE__, __LINE__);
 
-		coord w = font->get_width(str), h = font->get_height();
-		w = ceil(w);
-		h = ceil(h);
-		draw_text(this, str, w, h, x, y, width, height, *font);
+		draw_text(this, font, str, x, y, width, height);
 	}
 
 	void
-	Painter::text (const char* str, const Bounds& bounds, const Font* font)
+	Painter::text (const char* str, const Bounds& bounds)
 	{
-		text(str, bounds.x, bounds.y, bounds.width, bounds.height, font);
+		text(str, bounds.x, bounds.y, bounds.width, bounds.height);
 	}
 
-
 	void
-	Painter::set_background (float red, float green, float blue, float alpha, bool clear)
+	Painter::set_background (
+		float red, float green, float blue, float alpha, bool clear)
 	{
 		set_background(Color(red, green, blue, alpha), clear);
 	}
@@ -1082,7 +1330,7 @@ namespace Rays
 	void
 	Painter::set_background (const Color& color, bool clear)
 	{
-		self->attrs.background = color;
+		self->state.background = color;
 
 		if (self->painting && clear) this->clear();
 	}
@@ -1098,7 +1346,7 @@ namespace Rays
 	const Color&
 	Painter::background () const
 	{
-		return self->attrs.background;
+		return self->state.background;
 	}
 
 	void
@@ -1110,19 +1358,19 @@ namespace Rays
 	void
 	Painter::set_fill (const Color& color)
 	{
-		self->attrs.colors[FILL] = color;
+		self->state.colors[FILL] = color;
 	}
 
 	void
 	Painter::no_fill ()
 	{
-		self->attrs.colors[FILL].alpha = 0;
+		self->state.colors[FILL].alpha = 0;
 	}
 
 	const Color&
 	Painter::fill () const
 	{
-		return self->attrs.colors[FILL];
+		return self->state.colors[FILL];
 	}
 
 	void
@@ -1134,19 +1382,37 @@ namespace Rays
 	void
 	Painter::set_stroke (const Color& color)
 	{
-		self->attrs.colors[STROKE] = color;
+		self->state.colors[STROKE] = color;
 	}
 
 	void
 	Painter::no_stroke ()
 	{
-		self->attrs.colors[STROKE].alpha = 0;
+		self->state.colors[STROKE].alpha = 0;
 	}
 
 	const Color&
 	Painter::stroke () const
 	{
-		return self->attrs.colors[STROKE];
+		return self->state.colors[STROKE];
+	}
+
+	void
+	Painter::set_shader (const Shader& shader)
+	{
+		self->state.shader = shader;
+	}
+
+	void
+	Painter::no_shader ()
+	{
+		self->state.shader = Shader();
+	}
+
+	const Shader&
+	Painter::shader () const
+	{
+		return self->state.shader;
 	}
 
 	void
@@ -1158,7 +1424,7 @@ namespace Rays
 	void
 	Painter::set_clip (const Bounds& bounds)
 	{
-		self->attrs.clip = bounds;
+		self->state.clip = bounds;
 		self->update_clip();
 	}
 
@@ -1171,7 +1437,7 @@ namespace Rays
 	const Bounds&
 	Painter::clip () const
 	{
-		return self->attrs.clip;
+		return self->state.clip;
 	}
 
 	void
@@ -1183,168 +1449,72 @@ namespace Rays
 	void
 	Painter::set_font (const Font& font)
 	{
-		self->attrs.font = font;
+		self->state.font = font;
 	}
 
 	const Font&
 	Painter::font () const
 	{
-		return self->attrs.font;
+		return self->state.font;
 	}
 
 	void
-	Painter::push_attrs ()
+	Painter::push_state ()
 	{
-		self->attrs_stack.push_back(self->attrs);
+		self->state_stack.push_back(self->state);
 	}
 
 	void
-	Painter::pop_attrs ()
+	Painter::pop_state ()
 	{
-		if (self->attrs_stack.empty())
-			rays_error(__FILE__, __LINE__, "attrs_stack is empty.");
+		if (self->state_stack.empty())
+			invalid_state_error(__FILE__, __LINE__, "state stack underflow.");
 
-		self->attrs = self->attrs_stack.back();
-		self->attrs_stack.pop_back();
+		self->state = self->state_stack.back();
+		self->state_stack.pop_back();
 		self->update_clip();
 	}
-
-
-	void
-	Painter::attach (const Shader& shader)
-	{
-		self->program.attach(shader);
-	}
-
-	void
-	Painter::detach (const Shader& shader)
-	{
-		self->program.detach(shader);
-	}
-
-	void
-	Painter::set_uniform (const char* name, int arg1)
-	{
-		self->program.set_uniform(name, arg1);
-	}
-
-	void
-	Painter::set_uniform (const char* name, int arg1, int arg2)
-	{
-		self->program.set_uniform(name, arg1, arg2);
-	}
-
-	void
-	Painter::set_uniform (const char* name, int arg1, int arg2, int arg3)
-	{
-		self->program.set_uniform(name, arg1, arg2, arg3);
-	}
-
-	void
-	Painter::set_uniform (const char* name, int arg1, int arg2, int arg3, int arg4)
-	{
-		self->program.set_uniform(name, arg1, arg2, arg3, arg4);
-	}
-
-	void
-	Painter::set_uniform (const char* name, const int* args, size_t size)
-	{
-		self->program.set_uniform(name, args, size);
-	}
-
-	void
-	Painter::set_uniform (const char* name, float arg1)
-	{
-		self->program.set_uniform(name, arg1);
-	}
-
-	void
-	Painter::set_uniform (const char* name, float arg1, float arg2)
-	{
-		self->program.set_uniform(name, arg1, arg2);
-	}
-
-	void
-	Painter::set_uniform (const char* name, float arg1, float arg2, float arg3)
-	{
-		self->program.set_uniform(name, arg1, arg2, arg3);
-	}
-
-	void
-	Painter::set_uniform (const char* name, float arg1, float arg2, float arg3, float arg4)
-	{
-		self->program.set_uniform(name, arg1, arg2, arg3, arg4);
-	}
-
-	void
-	Painter::set_uniform (const char* name, const float* args, size_t size)
-	{
-		self->program.set_uniform(name, args, size);
-	}
-
-	void
-	Painter::push_shaders ()
-	{
-		self->program.push();
-	}
-
-	void
-	Painter::pop_shaders ()
-	{
-		self->program.pop();
-	}
-
 
 	void
 	Painter::translate (coord x, coord y, coord z)
 	{
-		glTranslatef(x, y, z);
+		self->position_matrix.translate(x, y, z);
 	}
 
 	void
 	Painter::translate (const Point& value)
 	{
-		translate(value.x, value.y, value.z);
+		self->position_matrix.translate(value);
 	}
 
 	void
 	Painter::scale (coord x, coord y, coord z)
 	{
-		glScalef(x, y, z);
+		self->position_matrix.scale(x, y, z);
 	}
 
 	void
 	Painter::scale (const Point& value)
 	{
-		scale(value.x, value.y, value.z);
+		self->position_matrix.scale(value);
 	}
 
 	void
-	Painter::rotate (float angle, coord x, coord y, coord z)
+	Painter::rotate (float degree, coord x, coord y, coord z)
 	{
-		glRotatef(angle, x, y, z);
+		self->position_matrix.rotate(degree, x, y, z);
 	}
 
 	void
-	Painter::rotate (float angle, const Point& axis)
+	Painter::rotate (float angle, const Point& normalized_axis)
 	{
-		rotate(angle, axis.x, axis.y, axis.z);
+		self->position_matrix.rotate(angle, normalized_axis);
 	}
 
 	void
 	Painter::set_matrix (float value)
 	{
-		if (value == 1)
-		{
-			glLoadIdentity();
-			return;
-		}
-
-		set_matrix(
-			value, 0, 0, 0,
-			0, value, 0, 0,
-			0, 0, value, 0,
-			0, 0, 0, value);
+		self->position_matrix.reset(value);
 	}
 
 	void
@@ -1354,53 +1524,46 @@ namespace Rays
 		float c1, float c2, float c3, float c4,
 		float d1, float d2, float d3, float d4)
 	{
-		float array[] =
-		{
+		self->position_matrix.reset(
 			a1, a2, a3, a4,
 			b1, b2, b3, b4,
 			c1, c2, c3, c4,
-			d1, d2, d3, d4
-		};
-		set_matrix(array);
+			d1, d2, d3, d4);
 	}
 
 	void
-	Painter::set_matrix (const float* elements)
+	Painter::set_matrix (const coord* elements, size_t size)
 	{
-		if (!elements)
-			argument_error(__FILE__, __LINE__);
-
-		glLoadMatrixf(elements);
+		self->position_matrix.reset(elements, size);
 	}
 
 	void
 	Painter::set_matrix (const Matrix& matrix)
 	{
-		set_matrix(matrix.array);
+		self->position_matrix = matrix;
 	}
 
 	const Matrix&
 	Painter::matrix () const
 	{
-		glGetFloatv(GL_MODELVIEW_MATRIX, self->matrix_tmp.array);
-		check_error(__FILE__, __LINE__);
-		return self->matrix_tmp;
+		return self->position_matrix;
 	}
 
 	void
 	Painter::push_matrix ()
 	{
-		glPushMatrix();
-		check_error(__FILE__, __LINE__);
+		self->position_matrix_stack.push_back(self->position_matrix);
 	}
 
 	void
 	Painter::pop_matrix ()
 	{
-		glPopMatrix();
-		check_error(__FILE__, __LINE__);
-	}
+		if (self->position_matrix_stack.empty())
+			invalid_state_error(__FILE__, __LINE__, "matrix stack underflow.");
 
+		self->position_matrix = self->position_matrix_stack.back();
+		self->position_matrix_stack.pop_back();
+	}
 
 	Painter::operator bool () const
 	{

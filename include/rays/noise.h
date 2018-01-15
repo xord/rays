@@ -11,7 +11,7 @@ namespace Rays
 {
 
 
-	struct Point;
+	struct Coord3;
 
 
 	coord perlin (coord x);
@@ -22,7 +22,7 @@ namespace Rays
 
 	coord perlin (coord x, coord y, coord z, coord w);
 
-	coord perlin (const Point& point);
+	coord perlin (const Coord3& position);
 
 
 	coord simplex (coord x);
@@ -33,7 +33,7 @@ namespace Rays
 
 	coord simplex (coord x, coord y, coord z, coord w);
 
-	coord simplex (const Point& point);
+	coord simplex (const Coord3& position);
 
 
 }// Rays

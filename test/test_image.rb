@@ -31,11 +31,6 @@ class TestImage < Test::Unit::TestCase
     assert_equal H, img.bitmap.height
   end
 
-  def test_texture ()
-    assert_equal W, img.texture.width
-    assert_equal H, img.texture.height
-  end
-
   def test_painter ()
     pa = img.painter
     assert_equal rgb(0, 0, 0, 0), pa.background
@@ -64,9 +59,6 @@ class TestImage < Test::Unit::TestCase
     assert_equal rgb(1, 0, 0, 1), stroke {|p| p.line 0, 0, 1, 1}[0, 0]
 
     assert drawn {|p| p.text "a"}
-  end
-
-  def test_dirty ()
   end
 
 end# TestImage

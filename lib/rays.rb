@@ -6,9 +6,10 @@ require 'rays/module'
 
 require 'rays/point'
 require 'rays/matrix'
-
 require 'rays/bounds'
 require 'rays/color'
+require 'rays/color_space'
+
 require 'rays/bitmap'
 require 'rays/texture'
 require 'rays/image'

@@ -1,4 +1,4 @@
-#include "rays/point.h"
+#include "point.h"
 
 
 #include <math.h>
@@ -7,7 +7,6 @@
 #include <xot/string.h>
 #include <xot/util.h>
 #include "rays/exception.h"
-#include "point.h"
 
 
 namespace Rays
@@ -28,6 +27,12 @@ namespace Rays
 		return *this;
 	}
 
+	size_t
+	Coord2::size () const
+	{
+		return SIZE;
+	}
+
 	coord&
 	Coord2::operator [] (size_t index)
 	{
@@ -45,6 +50,15 @@ namespace Rays
 
 
 	Coord3&
+	Coord3::operator = (const Coord2& rhs)
+	{
+		x = rhs.x;
+		y = rhs.y;
+		z = 0;
+		return *this;
+	}
+
+	Coord3&
 	Coord3::reset (coord value)
 	{
 		return reset(value, value);
@@ -57,6 +71,12 @@ namespace Rays
 		this->y = y;
 		this->z = z;
 		return *this;
+	}
+
+	size_t
+	Coord3::size () const
+	{
+		return SIZE;
 	}
 
 	coord&
@@ -76,9 +96,29 @@ namespace Rays
 
 
 	Coord4&
+	Coord4::operator = (const Coord2& rhs)
+	{
+		x = rhs.x;
+		y = rhs.y;
+		z = 0;
+		w = 1;
+		return *this;
+	}
+
+	Coord4&
+	Coord4::operator = (const Coord3& rhs)
+	{
+		x = rhs.x;
+		y = rhs.y;
+		z = rhs.z;
+		w = 1;
+		return *this;
+	}
+
+	Coord4&
 	Coord4::reset (coord value)
 	{
-		return reset(value, value);
+		return reset(value, value, value);
 	}
 
 	Coord4&
@@ -89,6 +129,12 @@ namespace Rays
 		this->z = z;
 		this->w = w;
 		return *this;
+	}
+
+	size_t
+	Coord4::size () const
+	{
+		return SIZE;
 	}
 
 	coord&
@@ -124,6 +170,20 @@ namespace Rays
 	}
 
 	Point&
+	Point::reset (coord value)
+	{
+		Super::reset(value);
+		return *this;
+	}
+
+	Point&
+	Point::reset (coord x, coord y, coord z)
+	{
+		Super::reset(x, y, z);
+		return *this;
+	}
+
+	Point&
 	Point::move_to (coord x, coord y, coord z)
 	{
 		reset(x, y, z);
@@ -131,7 +191,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::move_to (const Point& point)
+	Point::move_to (const This& point)
 	{
 		reset(point.x, point.y, point.z);
 		return *this;
@@ -145,7 +205,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::move_by (const Point& point)
+	Point::move_by (const This& point)
 	{
 		reset(this->x + point.x, this->y + point.y, this->z + point.z);
 		return *this;
@@ -198,7 +258,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::operator += (const Point& rhs)
+	Point::operator += (const This& rhs)
 	{
 		to_glm(*this) += to_glm(rhs);
 		return *this;
@@ -212,7 +272,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::operator -= (const Point& rhs)
+	Point::operator -= (const This& rhs)
 	{
 		to_glm(*this) -= to_glm(rhs);
 		return *this;
@@ -226,7 +286,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::operator *= (const Point& rhs)
+	Point::operator *= (const This& rhs)
 	{
 		to_glm(*this) *= to_glm(rhs);
 		return *this;
@@ -243,7 +303,7 @@ namespace Rays
 	}
 
 	Point&
-	Point::operator /= (const Point& rhs)
+	Point::operator /= (const This& rhs)
 	{
 		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
 			argument_error(__FILE__, __LINE__);
