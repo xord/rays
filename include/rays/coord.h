@@ -31,6 +31,8 @@ namespace Rays
 
 		size_t size () const;
 
+		String inspect () const;
+
 		      coord& operator [] (size_t index);
 
 		const coord& operator [] (size_t index) const;
@@ -61,6 +63,8 @@ namespace Rays
 		Coord3& reset (coord x, coord y, coord z = 0);
 
 		size_t size () const;
+
+		String inspect () const;
 
 		      coord& operator [] (size_t index);
 
@@ -94,6 +98,8 @@ namespace Rays
 		Coord4& reset (coord x, coord y, coord z = 0, coord w = 1);
 
 		size_t size () const;
+
+		String inspect () const;
 
 		      coord& operator [] (size_t index);
 

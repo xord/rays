@@ -41,33 +41,35 @@ namespace Rays
 		{
 			delete_texture();
 
-			context = NULL;
-			id = 0;
-			width = height = width_pow2 = height_pow2 = 0;
+			width       =
+			height      =
+			width_pow2  =
+			height_pow2 = 0;
 			color_space = COLORSPACE_UNKNOWN;
-			modified = false;
+			modified    = false;
+		}
+
+		void delete_texture ()
+		{
+			if (!has_id()) return;
+
+			Context current_context = OpenGL_get_context();
+
+			assert(context);
+			OpenGL_set_context(context);
+
+			glDeleteTextures(1, &id);
+
+			OpenGL_set_context(current_context);
+
+			context = NULL;
+			id      = 0;
 		}
 
 		bool has_id () const
 		{
-			return id > 0;
+			return context && id > 0;
 		}
-
-		private:
-
-			void delete_texture ()
-			{
-				if (!has_id()) return;
-
-				Context current_context = OpenGL_get_context();
-
-				assert(context);
-				OpenGL_set_context(context);
-
-				glDeleteTextures(1, &id);
-
-				OpenGL_set_context(current_context);
-			}
 
 	};// Texture::Data
 
@@ -301,7 +303,11 @@ namespace Rays
 
 	Texture::operator bool () const
 	{
-		return self->has_id() && self->width > 0 && self->height > 0;
+		return
+			self->has_id()   &&
+			self->width  > 0 &&
+			self->height > 0 &&
+			self->color_space;
 	}
 
 	bool

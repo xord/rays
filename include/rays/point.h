@@ -44,8 +44,6 @@ namespace Rays
 
 		void normalize ();
 
-		String inspect () const;
-
 		This operator - () const;
 
 		This& operator += (coord       rhs);

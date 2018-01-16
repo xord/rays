@@ -1,6 +1,7 @@
 #include "coord.h"
 
 
+#include <xot/string.h>
 #include "rays/exception.h"
 
 
@@ -26,6 +27,12 @@ namespace Rays
 	Coord2::size () const
 	{
 		return SIZE;
+	}
+
+	String
+	Coord2::inspect () const
+	{
+		return Xot::stringf("x=%f y=%f", x, y);
 	}
 
 	coord&
@@ -72,6 +79,12 @@ namespace Rays
 	Coord3::size () const
 	{
 		return SIZE;
+	}
+
+	String
+	Coord3::inspect () const
+	{
+		return Xot::stringf("x=%f y=%f z=%f", x, y, z);
 	}
 
 	coord&
@@ -130,6 +143,12 @@ namespace Rays
 	Coord4::size () const
 	{
 		return SIZE;
+	}
+
+	String
+	Coord4::inspect () const
+	{
+		return Xot::stringf("x=%f y=%f z=%f w=%f", x, y, z, w);
 	}
 
 	coord&

@@ -293,14 +293,16 @@ namespace Rays
 
 		void update_clip ()
 		{
-			if (state.clip)
+			const Bounds& clip = state.clip;
+			if (clip)
 			{
+				coord y = frame_buffer ? clip.y : viewport.h - (clip.y + clip.h);
 				glEnable(GL_SCISSOR_TEST);
 				glScissor(
-					state.clip.x,
-					viewport.height - state.clip.height - state.clip.y,
-					state.clip.width,
-					state.clip.height);
+					pixel_density * clip.x,
+					pixel_density * y,
+					pixel_density * clip.width,
+					pixel_density * clip.height);
 			}
 			else
 			{
@@ -549,7 +551,7 @@ namespace Rays
 		unbind();
 
 		self->frame_buffer = fb;
-		canvas(0, 0, fb.width(), fb.height(), image.pixel_density());
+		canvas(0, 0, image.width(), image.height(), image.pixel_density());
 	}
 
 	void
@@ -594,7 +596,7 @@ namespace Rays
 		coord y1 = vp.y, y2 = vp.y + vp.height;
 		coord z1 = vp.z, z2 = vp.z + vp.depth;
 		if (z1 == 0 && z2 == 0) {z1 = -100; z2 = 200;}
-		if (!fb)                std::swap(y1, y2);
+		if (!fb) std::swap(y1, y2);
 
 		self->position_matrix.reset(1);
 		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
