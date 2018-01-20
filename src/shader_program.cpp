@@ -310,25 +310,40 @@ namespace Rays
 			if (linked) return;
 			linked = true;
 
-			const ShaderSource& vertex_shader = Painter_get_vertex_shader_source();
+			const ShaderSource* shared_sources[] = {
+				&Painter_get_vertex_shader_source(),
+				&Painter_get_fragment_shader_shared_source()
+			};
 
-			glAttachShader(id, vertex_shader.id());
-			for (const auto& fragment_shader : sources)
-				glAttachShader(id, fragment_shader.id());
-			check_error(__FILE__, __LINE__);
+			for (const auto* source : shared_sources)
+				attach_shader(*source);
+			for (const auto& source : sources)
+				attach_shader(source);
 
 			glLinkProgram(id);
 			check_error(__FILE__, __LINE__);
 
-			glDetachShader(id, vertex_shader.id());
-			for (const auto& fragment_shader : sources)
-				glDetachShader(id, fragment_shader.id());
-			check_error(__FILE__, __LINE__);
+			for (const auto* source : shared_sources)
+				detach_shader(*source);
+			for (const auto& source : sources)
+				detach_shader(source);
 
 			GLint status = GL_FALSE;
 			glGetProgramiv(id, GL_LINK_STATUS, &status);
 			if (status == GL_FALSE)
 				opengl_error(__FILE__, __LINE__, get_link_log().c_str());
+		}
+
+		void attach_shader (const ShaderSource& source) const
+		{
+			glAttachShader(id, source.id());
+			check_error(__FILE__, __LINE__);
+		}
+
+		void detach_shader (const ShaderSource& source) const
+		{
+			glDetachShader(id, source.id());
+			check_error(__FILE__, __LINE__);
 		}
 
 		String get_link_log () const

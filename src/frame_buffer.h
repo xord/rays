@@ -68,9 +68,9 @@ namespace Rays
 	};// FrameBufferBinder
 
 
-	void bind_frame_buffer (GLuint id);
+	void FrameBuffer_bind (GLuint id);
 
-	void unbind_frame_buffer ();
+	void FrameBuffer_unbind ();
 
 
 }// Rays

@@ -196,12 +196,12 @@ namespace Rays
 	FrameBufferBinder::FrameBufferBinder (GLuint id)
 	:	id(id)
 	{
-		bind_frame_buffer(id);
+		FrameBuffer_bind(id);
 	}
 
 	FrameBufferBinder::~FrameBufferBinder ()
 	{
-		unbind_frame_buffer();
+		FrameBuffer_unbind();
 	}
 
 	GLuint
@@ -215,7 +215,7 @@ namespace Rays
 
 
 	void
-	bind_frame_buffer (GLuint id)
+	FrameBuffer_bind (GLuint id)
 	{
 		GLuint current = 0;
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*) &current);
@@ -228,7 +228,7 @@ namespace Rays
 	}
 
 	void
-	unbind_frame_buffer ()
+	FrameBuffer_unbind ()
 	{
 		if (frame_buffer_bind_stack.empty())
 			rays_error(__FILE__, __LINE__, "frame_buffer_bind_stack underflow.");

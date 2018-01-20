@@ -25,39 +25,39 @@ namespace Rays
 
 			Shader (const char* source = NULL);
 
-			virtual ~Shader ();
+			~Shader ();
 
-			virtual void set_uniform (const char* name, int arg1);
+			void set_uniform (const char* name, int arg1);
 
-			virtual void set_uniform (const char* name, int arg1, int arg2);
+			void set_uniform (const char* name, int arg1, int arg2);
 
-			virtual void set_uniform (const char* name, int arg1, int arg2, int arg3);
+			void set_uniform (const char* name, int arg1, int arg2, int arg3);
 
-			virtual void set_uniform (const char* name, int arg1, int arg2, int arg3, int arg4);
+			void set_uniform (const char* name, int arg1, int arg2, int arg3, int arg4);
 
-			virtual void set_uniform (const char* name, const int* args, size_t size);
+			void set_uniform (const char* name, const int* args, size_t size);
 
-			virtual void set_uniform (const char* name, float arg1);
+			void set_uniform (const char* name, float arg1);
 
-			virtual void set_uniform (const char* name, float arg1, float arg2);
+			void set_uniform (const char* name, float arg1, float arg2);
 
-			virtual void set_uniform (const char* name, float arg1, float arg2, float arg3);
+			void set_uniform (const char* name, float arg1, float arg2, float arg3);
 
-			virtual void set_uniform (const char* name, float arg1, float arg2, float arg3, float arg4);
+			void set_uniform (const char* name, float arg1, float arg2, float arg3, float arg4);
 
-			virtual void set_uniform (const char* name, const float* args, size_t size);
+			void set_uniform (const char* name, const float* args, size_t size);
 
-			virtual void set_uniform (const char* name, const Coord2& vec2);
+			void set_uniform (const char* name, const Coord2& vec2);
 
-			virtual void set_uniform (const char* name, const Coord3& vec3);
+			void set_uniform (const char* name, const Coord3& vec3);
 
-			virtual void set_uniform (const char* name, const Coord4& vec4);
+			void set_uniform (const char* name, const Coord4& vec4);
 
-			virtual void set_uniform (const char* name, const Image& texture);
+			void set_uniform (const char* name, const Image& texture);
 
-			virtual operator bool () const;
+			operator bool () const;
 
-			virtual bool operator ! () const;
+			bool operator ! () const;
 
 			friend bool operator == (const This& lhs, const This& rhs);
 

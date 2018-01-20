@@ -129,6 +129,66 @@ namespace Rays
 	};// TextureInfo
 
 
+	struct OpenGLState
+	{
+
+		GLint viewport[4];
+
+		GLclampf color_clear[4];
+
+		GLboolean scissor_test;
+		GLint scissor_box[4];
+
+		GLboolean blend;
+		GLint blend_src_factor, blend_dst_factor;
+
+		GLint framebuffer_binding;
+
+		void push ()
+		{
+			glGetIntegerv(GL_VIEWPORT, viewport);
+
+			glGetFloatv(GL_COLOR_CLEAR_VALUE, color_clear);
+
+			glGetBooleanv(GL_SCISSOR_TEST, &scissor_test);
+			glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
+
+			glGetBooleanv(GL_BLEND, &blend);
+			glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_factor);
+			glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_factor);
+
+			glGetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer_binding);
+		}
+
+		void pop ()
+		{
+			glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+			glClearColor(
+				color_clear[0], color_clear[1], color_clear[2], color_clear[3]);
+
+			enable(GL_SCISSOR_TEST, scissor_test);
+			glScissor(scissor_box[0], scissor_box[1], scissor_box[2], scissor_box[3]);
+
+			enable(GL_BLEND, blend);
+			glBlendFunc(blend_src_factor, blend_dst_factor);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_binding);
+		}
+
+		private:
+
+			void enable(GLenum type, GLboolean value)
+			{
+				if (value)
+					glEnable(type);
+				else
+					glDisable(type);
+			}
+
+	};// OpenGLState
+
+
 	static constexpr float PI      = M_PI;
 	static constexpr float PI_2    = PI * 2;
 	static constexpr float PI_HALF = PI / 2;
@@ -162,7 +222,8 @@ namespace Rays
 	const ShaderSource&
 	Painter_get_vertex_shader_source ()
 	{
-		static const char* SOURCE_STRING =
+		static const ShaderSource SOURCE(
+			GL_VERTEX_SHADER,
 			"attribute vec4 "  ATTRIB_POSITION ";"
 			"varying   vec4 " VARYING_POSITION ";"
 			"uniform   mat4 " UNIFORM_POSITION_MATRIX ";"
@@ -177,58 +238,49 @@ namespace Rays
 			   VARYING_COLOR    " = " ATTRIB_COLOR ";"
 			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * " ATTRIB_TEXCOORD ";"
 			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * " ATTRIB_POSITION ";"
-			"}";
-		static const ShaderSource SOURCE(GL_VERTEX_SHADER, SOURCE_STRING);
-
+			"}");
 		return SOURCE;
 	}
 
-
-	struct DefaultShaderProgram : public ShaderProgram
+	const ShaderSource&
+	Painter_get_fragment_shader_shared_source ()
 	{
-
-		DefaultShaderProgram (const char* fragment_shader)
-		{
-			static const ShaderSource SHARED_SOURCE(
-				GL_FRAGMENT_SHADER,
-				"uniform sampler2D " UNIFORM_TEXTURE ";"
-				"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
-				"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
-				"uniform vec2 "      UNIFORM_TEXCOORD_MAX ";"
-				"vec2 normalizeTexCoord(vec2 texcoord)"
-				"{"
-				"  vec2 min = " UNIFORM_TEXCOORD_MIN ";"
-				"  vec2 len = " UNIFORM_TEXCOORD_MAX " - min;"
-				"  return (mod(texcoord - min, len) + min) / " UNIFORM_TEXTURE_SIZE ";"
-				"}"
-				"vec4 sampleTexture(vec2 texcoord)"
-				"{"
-				"  return texture2D(" UNIFORM_TEXTURE ", normalizeTexCoord(texcoord));"
-				"}");
-
-			add_source(SHARED_SOURCE);
-			add_source(ShaderSource(GL_FRAGMENT_SHADER, fragment_shader));
-		}
-
-	};// DefaultShaderProgram
+		static const ShaderSource SHARED_SOURCE(
+			GL_FRAGMENT_SHADER,
+			"uniform sampler2D " UNIFORM_TEXTURE ";"
+			"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
+			"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
+			"uniform vec2 "      UNIFORM_TEXCOORD_MAX ";"
+			"vec2 normalizeTexCoord(vec2 texcoord)"
+			"{"
+			"  vec2 min = " UNIFORM_TEXCOORD_MIN ";"
+			"  vec2 len = " UNIFORM_TEXCOORD_MAX " - min;"
+			"  return (mod(texcoord - min, len) + min) / " UNIFORM_TEXTURE_SIZE ";"
+			"}"
+			"vec4 sampleTexture(vec2 texcoord)"
+			"{"
+			"  return texture2D(" UNIFORM_TEXTURE ", normalizeTexCoord(texcoord));"
+			"}");
+		return SHARED_SOURCE;
+	}
 
 
-	static const ShaderProgram&
-	get_default_shader_program_for_shape ()
+	static const Shader&
+	get_default_shader_for_shape ()
 	{
-		static const DefaultShaderProgram PROGRAM(
+		static const Shader SHADER(
 			"varying vec4 " VARYING_COLOR ";"
 			"void main ()"
 			"{"
 			"  gl_FragColor = v_Color;"
 			"}");
-		return PROGRAM;
+		return SHADER;
 	}
 
-	static const ShaderProgram&
-	get_default_shader_program_for_color_texture ()
+	static const Shader&
+	get_default_shader_for_color_texture ()
 	{
-		static const DefaultShaderProgram PROGRAM(
+		static const Shader SHADER(
 			"varying vec4 " VARYING_COLOR ";"
 			"varying vec4 " VARYING_TEXCOORD ";"
 			"vec4 sampleTexture(vec2);"
@@ -237,13 +289,13 @@ namespace Rays
 			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
 			"  gl_FragColor = v_Color * color;"
 			"}");
-		return PROGRAM;
+		return SHADER;
 	}
 
-	static const ShaderProgram&
-	get_default_shader_program_for_alpha_texture ()
+	static const Shader&
+	get_default_shader_for_alpha_texture ()
 	{
-		static const DefaultShaderProgram PROGRAM(
+		static const Shader SHADER(
 			"varying vec4 " VARYING_COLOR ";"
 			"varying vec4 " VARYING_TEXCOORD ";"
 			"vec4 sampleTexture(vec2);"
@@ -252,7 +304,7 @@ namespace Rays
 			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
 			"  gl_FragColor = vec4(v_Color.rgb, color.a);"
 			"}");
-		return PROGRAM;
+		return SHADER;
 	}
 
 
@@ -276,6 +328,8 @@ namespace Rays
 		FrameBuffer frame_buffer;
 
 		Image text_image;
+
+		OpenGLState opengl_state;
 
 		Data ()
 		{
@@ -326,7 +380,7 @@ namespace Rays
 			const Vertex* vertices, size_t nvertices,
 			const uint*   indices,  size_t nindices,
 			const Color& color,
-			const ShaderProgram& shader_program,
+			const Shader& default_shader,
 			const TextureInfo* texinfo = NULL)
 		{
 			if (nvertices <= 0 || nindices <= 0 || !vertices || !indices)
@@ -338,9 +392,8 @@ namespace Rays
 			const ShaderProgram* program = Shader_get_program(state.shader);
 			if (!program || !*program)
 			{
-				program = &shader_program;
-				if (!program || !*program)
-					return;
+				program = Shader_get_program(default_shader);
+				if (!program || !*program) return;
 			}
 
 			ShaderProgram_activate(*program);
@@ -581,10 +634,10 @@ namespace Rays
 		if (self->painting)
 			invalid_state_error(__FILE__, __LINE__, "painting flag should be false.");
 
-		FrameBuffer& fb = self->frame_buffer;
-		if (fb) bind_frame_buffer(fb.id());
+		self->opengl_state.push();
 
-		push_state();
+		FrameBuffer& fb = self->frame_buffer;
+		if (fb) FrameBuffer_bind(fb.id());
 
 		const Bounds& vp = self->viewport;
 		float density    = self->pixel_density;
@@ -597,6 +650,8 @@ namespace Rays
 		coord z1 = vp.z, z2 = vp.z + vp.depth;
 		if (z1 == 0 && z2 == 0) {z1 = -100; z2 = 200;}
 		if (!fb) std::swap(y1, y2);
+
+		self->state.init();
 
 		self->position_matrix.reset(1);
 		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
@@ -618,18 +673,20 @@ namespace Rays
 		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
+		if (!self->state_stack.empty())
+			invalid_state_error(__FILE__, __LINE__, "state stack is not empty.");
+
+		if (!self->position_matrix_stack.empty())
+			invalid_state_error(__FILE__, __LINE__, "position matrix stack is not empty.");
+
 		self->painting = false;
+		self->opengl_state.pop();
 
-		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-
-		pop_state();
-
-		//glFinish();
+		glFinish();
 
 		if (self->frame_buffer)
 		{
-			unbind_frame_buffer();
+			FrameBuffer_unbind();
 
 			Texture& tex = self->frame_buffer.texture();
 			if (tex) tex.set_modified();
@@ -683,7 +740,7 @@ namespace Rays
 
 			self->draw_shape(
 				modes[type], vertices.get(), npoints, indices.get(), npoints, color,
-				get_default_shader_program_for_shape());
+				get_default_shader_for_shape());
 		}
 	}
 
@@ -736,7 +793,7 @@ namespace Rays
 
 			self->draw_shape(
 				MODES[type], vertices, 4, INDICES, 4, color,
-				get_default_shader_program_for_shape());
+				get_default_shader_for_shape());
 		}
 	}
 
@@ -865,7 +922,7 @@ namespace Rays
 
 			self->draw_shape(
 				MODES[type], vertices.get(), nvertices, indices.get(), nvertices, color,
-				get_default_shader_program_for_shape());
+				get_default_shader_for_shape());
 		}
 	}
 
@@ -1010,7 +1067,7 @@ namespace Rays
 
 			self->draw_shape(
 				modes[type], vertices.get(), nvertices, indices.get(), nvertices, color,
-				get_default_shader_program_for_shape());
+				get_default_shader_for_shape());
 		}
 	}
 
@@ -1049,7 +1106,7 @@ namespace Rays
 		Painter* painter, const Image& image,
 		coord src_x, coord src_y, coord src_w, coord src_h,
 		coord dst_x, coord dst_y, coord dst_w, coord dst_h,
-		bool nostroke = false, const ShaderProgram* shader_program = NULL)
+		bool nostroke = false, const Shader* shader = NULL)
 	{
 		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
 		static const uint INDICES[] = {0, 1, 2, 3};
@@ -1087,8 +1144,8 @@ namespace Rays
 
 		TextureInfo texinfo(texture, src_x, src_y, src_x2, src_y2);
 
-		if (!shader_program)
-			shader_program = &get_default_shader_program_for_color_texture();
+		if (!shader)
+			shader = &get_default_shader_for_color_texture();
 
 		Color color;
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
@@ -1101,7 +1158,7 @@ namespace Rays
 			}
 
 			self->draw_shape(
-				MODES[type], vertices, 4, INDICES, 4, color, *shader_program, &texinfo);
+				MODES[type], vertices, 4, INDICES, 4, color, *shader, &texinfo);
 		}
 	}
 
@@ -1273,7 +1330,7 @@ namespace Rays
 			painter, self->text_image,
 			0, 0, str_w, str_h,
 			x, y, str_w, str_h,
-			true, &get_default_shader_program_for_alpha_texture());
+			true, &get_default_shader_for_alpha_texture());
 
 		#if 0
 			debug_draw_text(painter, font, x, y, str_w / density, str_h / density);

@@ -16,6 +16,8 @@ namespace Rays
 
 	const ShaderSource& Painter_get_vertex_shader_source ();
 
+	const ShaderSource& Painter_get_fragment_shader_shared_source ();
+
 
 }// Rays
 
