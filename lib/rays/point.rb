@@ -10,6 +10,7 @@ module Rays
   class Point
 
     include Comparable
+    include Enumerable
 
     def move_to (*args)
       dup.move_to! *args
@@ -21,6 +22,10 @@ module Rays
 
     def zero? ()
       length == 0
+    end
+
+    def each (&block)
+      to_a.each &block
     end
 
     def to_a (dimension = 2)

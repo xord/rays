@@ -11,6 +11,7 @@ module Rays
   class Bounds
 
     include Comparable
+    include Enumerable
 
     alias w  width
     alias w= width=
@@ -24,9 +25,9 @@ module Rays
     alias pos  position
     alias pos= position=
 
-    alias left_top                position
-    def  right_top    ()          position.move_by w - 1,     0 end
-    def   left_bottom ()          position.move_by     0, h - 1 end
+    alias left_top        position
+    def  right_top    ()  position        .move_by w - 1,     0 end
+    def   left_bottom ()  position        .move_by     0, h - 1 end
     def  right_bottom () (position + size).move_by!   -1,    -1 end
 
     def  left_top=    (*args) p = Point.new *args; self.left,  self.top    = p.x, p.y;  left_top end
@@ -63,7 +64,12 @@ module Rays
       dup.inset_by! *args
     end
 
+    def each (dimension = 2, &block)
+      to_a(dimension).each &block
+    end
+
     def to_a (dimension = 2)
+      # TODO: return [lt, rb]
       case dimension
       when 1 then [x, w]
       when 2 then [x, y, w, h]

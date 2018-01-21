@@ -77,11 +77,11 @@ namespace Rays
 
 		coord  operator [] (int index) const;
 
-		This&   operator *= (const This&    rhs);
+		This& operator *= (const This&  rhs);
 
-		Point   operator *  (const Point&   rhs) const;
+		Point operator *  (const Point& rhs) const;
 
-		This    operator *  (const This&    rhs) const;
+		This  operator *  (const This&  rhs) const;
 
 	};// Matrix
 

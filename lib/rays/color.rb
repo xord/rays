@@ -10,6 +10,7 @@ module Rays
   class Color
 
     include Comparable
+    include Enumerable
 
     def opaque? ()
       alpha >= 1
@@ -22,6 +23,10 @@ module Rays
     def translucent? ()
       a = alpha
       0 < a && a < 1
+    end
+
+    def each (&block)
+      to_a.each &block
     end
 
     def to_a ()

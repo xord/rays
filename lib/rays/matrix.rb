@@ -10,6 +10,11 @@ module Rays
   class Matrix
 
     include Comparable
+    include Enumerable
+
+    def each (&block)
+      to_a.each &block
+    end
 
     alias inspect_org inspect
 

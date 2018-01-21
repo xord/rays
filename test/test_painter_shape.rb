@@ -20,7 +20,7 @@ class TestPainterShape < Test::Unit::TestCase
   end
 
   def test_line ()
-    img = image 0, 1 {line 1, 1, 98, 98}
+    img = image(0, 1) {line 1, 1, 98, 98}
     assert_equal color(0), img.bitmap[ 0,  0]
     assert_equal color(1), img.bitmap[ 1,  1]
     assert_equal color(1), img.bitmap[97, 97]

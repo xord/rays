@@ -175,6 +175,9 @@ namespace Rays
 
 	Image::Image (const Bitmap& bitmap, float pixel_density)
 	{
+		if (pixel_density <= 0)
+			argument_error(__FILE__, __LINE__, "invalid pixel_density.");
+
 		self->bitmap        = bitmap;
 		self->width         = bitmap.width();
 		self->height        = bitmap.height();

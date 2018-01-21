@@ -114,6 +114,18 @@ RUCY_DEFN(rotate)
 RUCY_END
 
 static
+RUCY_DEF0(to_a)
+{
+	CHECK;
+	return array(
+		THIS->x0, THIS->y0, THIS->z0, THIS->w0,
+		THIS->x1, THIS->y1, THIS->z1, THIS->w1,
+		THIS->x2, THIS->y2, THIS->z2, THIS->w2,
+		THIS->x3, THIS->y3, THIS->z3, THIS->w3);
+}
+RUCY_END
+
+static
 RUCY_DEF1(mult, val)
 {
 	CHECK;
@@ -213,6 +225,7 @@ Init_matrix ()
 	cMatrix.define_method("translate", translate);
 	cMatrix.define_method("scale",     scale);
 	cMatrix.define_method("rotate",    rotate);
+	cMatrix.define_method("to_a", to_a);
 	cMatrix.define_method("*", mult);
 	cMatrix.define_method("[]=", set_at);
 	cMatrix.define_method("[]",  get_at);

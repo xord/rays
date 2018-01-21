@@ -116,7 +116,7 @@ namespace Rays
 		self->texture = texture;
 
 #if 0
-		int w = texture.width(), h = texture.height();
+		int w = texture.reserved_width(), h = texture.reserved_height();
 		if (
 			w != self->render_buffer.width() ||
 			h != self->render_buffer.height())
@@ -180,7 +180,9 @@ namespace Rays
 			return false;
 
 		const RenderBuffer& r = self->render_buffer;
-		if (r && (t.width() != r.width() || t.height() != r.height()))
+		int w                 = t.reserved_width();
+		int h                 = t.reserved_height();
+		if (r && (r.width() != w || r.height() != h))
 			return false;
 
 		return true;

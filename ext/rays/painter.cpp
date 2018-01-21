@@ -55,6 +55,14 @@ RUCY_DEF0(bounds)
 }
 RUCY_END
 
+static
+RUCY_DEF0(pixel_density)
+{
+	CHECK;
+	return value(THIS->pixel_density());
+}
+RUCY_END
+
 
 static
 RUCY_DEF0(begin_paint)
@@ -291,6 +299,7 @@ RUCY_DEFN(text)
 	return self;
 }
 RUCY_END
+
 
 static
 RUCY_DEFN(set_background)
@@ -560,6 +569,7 @@ Init_painter ()
 
 	cPainter.define_method("canvas", canvas);
 	cPainter.define_method("bounds", bounds);
+	cPainter.define_method("pixel_density", pixel_density);
 
 	cPainter.define_private_method("begin_paint", begin_paint);
 	cPainter.define_private_method(  "end_paint",   end_paint);
