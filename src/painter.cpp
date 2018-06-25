@@ -789,11 +789,14 @@ namespace Rays
 			1.f - color.green,
 			1.f - color.blue);
 
-		TrianglePointList triangles;
+		Polygon::TrianglePointList triangles;
 		if (Polygon_triangulate(&triangles, polygon))
 		{
 			for (size_t i = 0; i < triangles.size(); i += 3)
-				painter->self->draw_polygon(GL_LINE_LOOP, invert_color, &triangles[i], 3);
+			{
+				painter->self->draw_polygon(
+					GL_LINE_LOOP, invert_color, &triangles[i], 3);
+			}
 		}
 #endif
 	}

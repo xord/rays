@@ -36,7 +36,7 @@ class TestPolygon < Test::Unit::TestCase
     assert_raise(ArgumentError) {polygon(1,                loop: true)}
     assert_raise(ArgumentError) {polygon(1,                loop: false)}
     assert_raise(ArgumentError) {polygon(1, 2,             loop: true)}
-    assert_raise(ArgumentError) {polygon(1, 2,             loop: false)}
+    assert_nothing_raised       {polygon(1, 2,             loop: false)}
     assert_raise(ArgumentError) {polygon(1, 2, 3,          loop: true)}
     assert_raise(ArgumentError) {polygon(1, 2, 3,          loop: false)}
     assert_raise(ArgumentError) {polygon(1, 2, 3, 4,       loop: true)}
@@ -45,6 +45,12 @@ class TestPolygon < Test::Unit::TestCase
     assert_raise(ArgumentError) {polygon(1, 2, 3, 4, 5,    loop: false)}
     assert_nothing_raised       {polygon(1, 2, 3, 4, 5, 6, loop: true)}
     assert_nothing_raised       {polygon(1, 2, 3, 4, 5, 6, loop: false)}
+  end
+
+  def test_expand ()
+    expanded = polygon(0, 0, 1, 0, loop: false).expand 2
+    assert_equal 1, expanded.size
+    assert_equal 4, expanded[0].size
   end
 
   def test_loop ()

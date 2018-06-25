@@ -34,7 +34,7 @@ class TestPolyline < Test::Unit::TestCase
     assert_raise(ArgumentError) {polyline(1,                loop: true)}
     assert_raise(ArgumentError) {polyline(1,                loop: false)}
     assert_raise(ArgumentError) {polyline(1, 2,             loop: true)}
-    assert_raise(ArgumentError) {polyline(1, 2,             loop: false)}
+    assert_nothing_raised       {polyline(1, 2,             loop: false)}
     assert_raise(ArgumentError) {polyline(1, 2, 3,          loop: true)}
     assert_raise(ArgumentError) {polyline(1, 2, 3,          loop: false)}
     assert_raise(ArgumentError) {polyline(1, 2, 3, 4,       loop: true)}

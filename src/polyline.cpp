@@ -23,7 +23,7 @@ namespace Rays
 		void reset (I begin, I end, bool loop_, FUN to_point_fun)
 		{
 			size_t size = end - begin;
-			if (size <= 2 && loop_)
+			if (0 < size && size < 3 && loop_)
 				argument_error(__FILE__, __LINE__);
 
 			points.clear();
@@ -31,7 +31,7 @@ namespace Rays
 			for (auto it = begin; it != end; ++it)
 				points.emplace_back(to_point_fun(*it));
 
-			loop = loop_;
+			loop = loop_ && size > 0;
 		}
 
 	};// Polyline::Data

@@ -43,6 +43,14 @@ RUCY_DEF1(set_polyline, polyline)
 RUCY_END
 
 static
+RUCY_DEF1(expand, width)
+{
+	CHECK;
+	return value(THIS->expand(to<coord>(width)));
+}
+RUCY_END
+
+static
 RUCY_DEF0(size)
 {
 	CHECK;
@@ -83,6 +91,14 @@ RUCY_DEF0(each)
 	for (const auto& line : *THIS)
 		ret = rb_yield(value(line));
 	return ret;
+}
+RUCY_END
+
+static
+RUCY_DEF1(op_add, obj)
+{
+	CHECK;
+	return value(*THIS + to<Rays::Polygon&>(obj));
 }
 RUCY_END
 
@@ -160,10 +176,12 @@ Init_polygon ()
 	cPolygon.define_alloc_func(alloc);
 	cPolygon.define_private_method("set_points",   set_points);
 	cPolygon.define_private_method("set_polyline", set_polyline);
-	cPolygon.define_method("size",   size);
+	cPolygon.define_method("expand", expand);
+	cPolygon.define_method("size", size);
 	cPolygon.define_method("empty?", empty);
-	cPolygon.define_method("[]",     at);
-	cPolygon.define_method("each",   each);
+	cPolygon.define_method("[]", at);
+	cPolygon.define_method("each", each);
+	cPolygon.define_method("+", op_add);
 	cPolygon.define_method("-", op_sub);
 	cPolygon.define_method("&", op_and);
 	cPolygon.define_method("|", op_or);

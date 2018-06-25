@@ -52,6 +52,8 @@ namespace Rays
 
 			~Polygon ();
 
+			Polygon expand (coord width) const;
+
 			size_t size () const;
 
 			bool empty () const;
@@ -66,9 +68,9 @@ namespace Rays
 
 			bool operator ! () const;
 
-			Polygon& operator -= (const Polygon& rhs);
-
 			Polygon& operator += (const Polygon& rhs);
+
+			Polygon& operator -= (const Polygon& rhs);
 
 			Polygon& operator &= (const Polygon& rhs);
 
@@ -76,9 +78,9 @@ namespace Rays
 
 			Polygon& operator ^= (const Polygon& rhs);
 
-			friend Polygon operator - (const Polygon& lhs, const Polygon& rhs);
-
 			friend Polygon operator + (const Polygon& lhs, const Polygon& rhs);
+
+			friend Polygon operator - (const Polygon& lhs, const Polygon& rhs);
 
 			friend Polygon operator & (const Polygon& lhs, const Polygon& rhs);
 
@@ -90,7 +92,13 @@ namespace Rays
 
 			Xot::PSharedImpl<Data> self;
 
+			typedef std::vector<Point> TrianglePointList;
+
 			Polygon (Data* data);
+
+		protected:
+
+			bool triangulate (TrianglePointList* triangles) const;
 
 	};// Polygon
 

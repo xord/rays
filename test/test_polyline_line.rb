@@ -9,7 +9,7 @@ class TestPolylineLine < Test::Unit::TestCase
   def rect (*args)
     Rays::Polygon.rect *args
   end
-            
+
   def test_initialize ()
     assert_raise(NotImplementedError) {Rays::Polygon::Line.new}
   end

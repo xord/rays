@@ -86,21 +86,24 @@ void get_rect_args (
 		Rays::Point& p = to<Rays::Point&>(args[0]);
 		*x  = p.x;
 		*y  = p.y;
-		*w  = to<coord>(args[1]);
+		*w  =             to<coord>(args[1]);
 		*h  = argc >= 3 ? to<coord>(args[2]) : *w;
 		*lt = argc >= 4 ? to<coord>(args[3]) : 0;
 		*rt = argc >= 5 ? to<coord>(args[4]) : *lt;
 		*lb = argc >= 6 ? to<coord>(args[5]) : *lt;
 		*rb = argc >= 7 ? to<coord>(args[6]) : *lt;
 	}
+	else if (argc <= 2)
+	{
+		*x = *y = *lt = *rt = *lb = *rb = 0;
+		*w =             to<coord>(args[0]);
+		*h = argc >= 2 ? to<coord>(args[1]) : *w;
+	}
 	else
 	{
-		if (argc < 3)
-			argument_error(__FILE__, __LINE__);
-
-		*x  = to<coord>(args[0]);
-		*y  = to<coord>(args[1]);
-		*w  = to<coord>(args[2]);
+		*x  =             to<coord>(args[0]);
+		*y  =             to<coord>(args[1]);
+		*w  =             to<coord>(args[2]);
 		*h  = argc >= 4 ? to<coord>(args[3]) : *w;
 		*lt = argc >= 5 ? to<coord>(args[4]) : 0;
 		*rt = argc >= 6 ? to<coord>(args[5]) : *lt;
@@ -152,17 +155,20 @@ void get_ellipse_args (
 		const Rays::Point& p = to<Rays::Point&>(args[0]);
 		*x = p.x;
 		*y = p.y;
-		*w = to<coord>(args[1]);
+		*w =             to<coord>(args[1]);
 		*h = argc >= 3 ? to<coord>(args[2]) : *w;
+	}
+	else if (argc <= 2)
+	{
+		*x = *y = 0;
+		*w =             to<coord>(args[0]);
+		*h = argc >= 2 ? to<coord>(args[1]) : *w;
 	}
 	else
 	{
-		if (argc < 3)
-			argument_error(__FILE__, __LINE__);
-
-		*x = to<coord>(args[0]);
-		*y = to<coord>(args[1]);
-		*w = to<coord>(args[2]);
+		*x =             to<coord>(args[0]);
+		*y =             to<coord>(args[1]);
+		*w =             to<coord>(args[2]);
 		*h = argc >= 4 ? to<coord>(args[3]) : *w;
 	}
 

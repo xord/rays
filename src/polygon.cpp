@@ -6,6 +6,7 @@
 #include <utility>
 #include <poly2tri.h>
 #include "xot/util.h"
+#include "rays/color.h"
 #include "rays/exception.h"
 #include "rays/debug.h"
 #include "polyline.h"
@@ -30,58 +31,6 @@ namespace Rays
 	{
 		return Point(point.x, point.y);
 	}
-
-	static uint
-	get_nsegment (
-		uint nsegment, uint nsegment_min, float angle_from, float angle_to)
-	{
-		float angle = angle_to - angle_from;
-		assert(0 <= angle && angle <= 360);
-
-		if (nsegment <= 0)
-			nsegment = 32;
-		else if (nsegment < nsegment_min)
-			nsegment = nsegment_min;
-
-		nsegment *= angle / 360;
-		return nsegment > 0 ? nsegment : 1;
-	}
-
-#if 0
-	static String
-	path2str (const Path& path)
-	{
-		String s;
-		for (const auto& point : path)
-		{
-			if (!s.empty()) s += ", ";
-
-			Point p = from_clipper(point);
-			s += Xot::stringf("[%d,%d]", p.x, p.y);
-		}
-		return s;
-	}
-
-	static void
-	dout_node (const PolyNode& node)
-	{
-		doutln(
-			"path(open: %d, hole: %d, Contour: %s)",
-			(int) node.IsOpen(),
-			(int) node.IsHole(),
-			path2str(node.Contour).c_str());
-	}
-
-	static void
-	dout_tree (const PolyNode& node, int level = 0)
-	{
-		for (int i = 0; i < level; ++i) dout("  ");
-		dout_node(node);
-
-		for (const auto* child : node.Childs)
-			dout_tree(*child, level + 1);
-	}
-#endif
 
 
 	struct Polygon::Data
@@ -192,7 +141,36 @@ namespace Rays
 
 			void stroke_with_width (
 				const Polygon& polygon, Painter* painter,
-				const Color& color, coord stroke_width) const;
+				const Color& color, coord stroke_width) const
+			{
+				assert(painter && color && stroke_width > 0);
+
+				if (!polygon || polygon.empty()) return;
+
+				bool has_loop = false;
+				for (const auto& polyline : polygon)
+				{
+					if (!polyline || polyline.empty())
+						continue;
+
+					if (polyline.loop())
+					{
+						has_loop = true;
+						continue;
+					}
+
+					Polygon_fill(
+						Polygon(polyline).expand(stroke_width / 2),
+						painter, color);
+				}
+
+				if (has_loop)
+				{
+					Polygon_fill(
+						polygon - polygon.expand(-stroke_width),
+						painter, color);
+				}
+			}
 
 			void stroke_without_width (Painter* painter, const Color& color) const
 			{
@@ -208,6 +186,58 @@ namespace Rays
 
 	};// Polygon::Data
 
+
+#if 0
+	static String
+	path2str (const Path& path)
+	{
+		String s;
+		for (const auto& point : path)
+		{
+			if (!s.empty()) s += ", ";
+
+			Point p = from_clipper(point);
+			s += Xot::stringf("[%d,%d]", p.x, p.y);
+		}
+		return s;
+	}
+
+	static void
+	dout_node (const PolyNode& node)
+	{
+		doutln(
+			"path(open: %d, hole: %d, Contour: %s)",
+			(int) node.IsOpen(),
+			(int) node.IsHole(),
+			path2str(node.Contour).c_str());
+	}
+
+	static void
+	dout_tree (const PolyNode& node, int level = 0)
+	{
+		for (int i = 0; i < level; ++i) dout("  ");
+		dout_node(node);
+
+		for (const auto* child : node.Childs)
+			dout_tree(*child, level + 1);
+	}
+#endif
+
+	static uint
+	get_nsegment (
+		uint nsegment, uint nsegment_min, float angle_from, float angle_to)
+	{
+		float angle = angle_to - angle_from;
+		assert(0 <= angle && angle <= 360);
+
+		if (nsegment <= 0)
+			nsegment = 32;
+		else if (nsegment < nsegment_min)
+			nsegment = nsegment_min;
+
+		nsegment *= angle / 360;
+		return nsegment > 0 ? nsegment : 1;
+	}
 
 	static void
 	add_polygon_to_clipper (
@@ -329,26 +359,10 @@ namespace Rays
 	}
 
 
-	void
-	Polygon::Data::stroke_with_width (
-		const Polygon& polygon, Painter* painter,
-		const Color& color, coord stroke_width) const
-	{
-		assert(painter && color && stroke_width > 0);
-
-		if (!polygon) return;
-
-		Polygon stroke = polygon - offset_polygon(polygon, -stroke_width);
-		if (!stroke) return;
-
-		stroke.self->fill(painter, color);
-	}
-
-
 	struct PolygonData : public Polygon::Data
 	{
 
-		mutable TrianglePointList triangles;
+		mutable Polygon::TrianglePointList triangles;
 
 		void fill (Painter* painter, const Color& color) const
 		{
@@ -805,24 +819,37 @@ namespace Rays
 	{
 		return create_ellipse(
 			center.x - radius.x, center.y - radius.y,
-			center.x + radius.x, center.y + radius.y,
+			radius.x * 2,        radius.y * 2,
 			hole_radius * 2, angle_from, angle_to, nsegment);
 	}
 
 	void
 	Polygon_fill (const Polygon& polygon, Painter* painter, const Color& color)
 	{
+		if (!painter)
+			argument_error(__FILE__, __LINE__);
+
+		if (!color || !polygon || polygon.empty())
+			return;
+
 		polygon.self->fill(painter, color);
 	}
 
 	void
 	Polygon_stroke (const Polygon& polygon, Painter* painter, const Color& color)
 	{
+		if (!painter)
+			argument_error(__FILE__, __LINE__);
+
+		if (!color || !polygon || polygon.empty())
+			return;
+
 		polygon.self->stroke(polygon, painter, color);
 	}
 
 	bool
-	Polygon_triangulate (TrianglePointList* triangles, const Polygon& polygon)
+	Polygon_triangulate (
+		Polygon::TrianglePointList* triangles, const Polygon& polygon)
 	{
 		return polygon.self->triangulate(triangles);
 	}
@@ -854,6 +881,12 @@ namespace Rays
 
 	Polygon::~Polygon ()
 	{
+	}
+
+	Polygon
+	Polygon::expand (coord width) const
+	{
+		return offset_polygon(*this, width);
 	}
 
 	size_t
@@ -898,18 +931,18 @@ namespace Rays
 	}
 
 	Polygon&
+	Polygon::operator += (const Polygon& rhs)
+	{
+		return operator|=(rhs);
+	}
+
+	Polygon&
 	Polygon::operator -= (const Polygon& rhs)
 	{
 		if (&rhs == this) return *this;
 
 		*this = clip_polygon(*this, rhs, ctDifference);
 		return *this;
-	}
-
-	Polygon&
-	Polygon::operator += (const Polygon& rhs)
-	{
-		return operator|=(rhs);
 	}
 
 	Polygon&
@@ -939,6 +972,12 @@ namespace Rays
 		return *this;
 	}
 
+	bool
+	Polygon::triangulate (TrianglePointList* triangles) const
+	{
+		return self->triangulate(triangles);
+	}
+
 	static Polygon
 	duplicate (const Polygon& obj)
 	{
@@ -948,15 +987,15 @@ namespace Rays
 	}
 
 	Polygon
-	operator - (const Polygon& lhs, const Polygon& rhs)
-	{
-		return duplicate(lhs) -= rhs;
-	}
-
-	Polygon
 	operator + (const Polygon& lhs, const Polygon& rhs)
 	{
 		return duplicate(lhs) += rhs;
+	}
+
+	Polygon
+	operator - (const Polygon& lhs, const Polygon& rhs)
+	{
+		return duplicate(lhs) -= rhs;
 	}
 
 	Polygon

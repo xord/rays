@@ -16,9 +16,6 @@ namespace Rays
 	struct Color;
 
 
-	typedef std::vector<Point> TrianglePointList;
-
-
 	void Polygon_fill (
 		const Polygon& polygon, Painter* painter, const Color& color);
 
@@ -26,7 +23,7 @@ namespace Rays
 		const Polygon& polygon, Painter* painter, const Color& color);
 
 	bool Polygon_triangulate (
-		TrianglePointList* triangles, const Polygon& polygon);
+		Polygon::TrianglePointList* triangles, const Polygon& polygon);
 
 
 }// Rays
