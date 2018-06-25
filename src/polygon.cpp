@@ -3,6 +3,8 @@
 
 #include <math.h>
 #include <assert.h>
+#include <poly2tri.h>
+#include "xot/util.h"
 #include "rays/exception.h"
 #include "rays/debug.h"
 #include "polyline.h"
@@ -37,15 +39,20 @@ namespace Rays
 
 		LineList lines;
 
+		void append (const Polyline& polyline, bool hole = false)
+		{
+			if (polyline.empty())
+				return;
+
+			lines.emplace_back(Line(polyline, hole));
+		}
+
+		void copy_to (Data* data)
+		{
+			data->lines = lines;
+		}
+
 	};// Polygon::Data
-
-
-	void
-	Polygon_triangulate (const Polygon& polygon)
-	{
-		//polygon.self->polygons.get_trapezoids(polygon.self->trapezoids);
-		//return polygon.self->trapezoids;
-	}
 
 
 	Polygon
@@ -55,14 +62,14 @@ namespace Rays
 			Point(x1, y1),
 			Point(x2, y2)
 		};
-		return create_line(points, 2, false);
+		return create_line(points, 2);
 	}
 
 	Polygon
 	create_line (const Point& p1, const Point& p2)
 	{
 		const Point points[] = {p1, p2};
-		return create_line(points, 2, false);
+		return create_line(points, 2);
 	}
 
 	Polygon
@@ -70,7 +77,6 @@ namespace Rays
 	{
 		return Polygon(points, size, loop);
 	}
-
 
 	static Polygon
 	create_unrounded_rect (coord x, coord y, coord width, coord height)
@@ -257,101 +263,221 @@ namespace Rays
 		}
 	}
 
-#if 0
-	static void
-	create_ellipse_without_hole (
+	static inline Point
+	make_ellipse_points (
 		coord x, coord y, coord width, coord height,
-		coord hole_width, coord hole_height,
-		uint nsegment)
+		float radian_from, float radian_to,
+		uint segment_max, uint segment_index)
 	{
-		if (width == 0 || height == 0)
-			return;
+		float pos    = (float) segment_index / (float) segment_max;
+		float radian = radian_from + (radian_to - radian_from) * pos;
+		float cos_   = (cos(radian)  + 1) / 2.;
+		float sin_   = (-sin(radian) + 1) / 2.;
+
+		return Point(
+			x + width  * cos_,
+			y + height * sin_);
+	}
+
+	static Polygon
+	create_ellipse (
+		coord x, coord y, coord width, coord height,
+		const Point& hole_size, uint nsegment)
+	{
+		assert(width > 0 && height > 0);
 
 		if (nsegment < 3)
 			nsegment = NSEGMENT_ELLIPSE;
 
-		float from     = angle_from / 360.f;
-		float to       = angle_to   / 360.f;
-		bool hole      = hole_width != 0 && hole_height != 0;
-		coord hole_x   = x + (width  - hole_width)  / 2;
-		coord hole_y   = y + (height - hole_height) / 2;
-		int npoint     = nsegment + 1;
-		size_t npoints = hole ? npoint * 2 : npoint + 1;
+		bool has_hole = hole_size != 0;
+		uint npoint   = nsegment + 1;
 
-		std::unique_ptr<Point[]> points(new Point[nvertices]);
-		Point* point = points.get();
+		std::vector<Point> points;
+		points.reserve(npoint);
 
-		if (!hole)
+		for (uint seg = 0; seg < nsegment; ++seg)
 		{
-			(point++)->reset(
-				x + width  / 2,
-				y + height / 2);
+			points.emplace_back(
+				make_ellipse_points(x, y, width, height, 0, M_PI, nsegment, seg));
 		}
 
-		for (uint seg = 0; seg <= nsegment; ++seg)
-		{
-			float pos    = (float) seg / (float) nsegment;
-			float radian = (from + (to - from) * pos) * PI_2;
-			float cos_   = (cos(radian)  + 1) / 2.;
-			float sin_   = (-sin(radian) + 1) / 2.;
+		Polygon polygon;
+		polygon.self->append(Polyline(&points[0], points.size()));
 
-			if (hole)
+		if (has_hole)
+		{
+			coord hole_x = x + (width  - hole_size.x) / 2;
+			coord hole_y = y + (height - hole_size.y) / 2;
+
+			points.clear();
+			for (uint seg = 0; seg < nsegment; ++seg)
 			{
-				setup_ellipse_vertex(
-					vertex++,
-					hole_x,
-					hole_y,
-					hole_width  * cos_,
-					hole_height * sin_);
+				points.emplace_back(make_ellipse_points(
+					hole_x, hole_y, hole_size.x, hole_size.y, 0, M_PI, nsegment, seg));
 			}
-
-			setup_ellipse_vertex(
-				vertex++,
-				x,
-				y,
-				width  * cos_,
-				height * sin_);
+			polygon.self->append(Polyline(&points[0], points.size()), true);
 		}
 
-		Color color;
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!self->get_color(&color, (ColorType) type))
-				continue;
-
-			self->draw_shape(
-				modes[type], vertices.get(), nvertices, indices.get(), nvertices, color,
-				get_default_shader_for_shape());
-		}
+		return polygon;
 	}
 
-	Ellipse::Ellipse (
+	static Polygon
+	create_arc (
 		coord x, coord y, coord width, coord height,
 		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
 	{
-		draw_ellipse(
-			this, x, y, width, height,
-			angle_from, angle_to, hole_size.x, hole_size.y, nsegment);
+		assert(width > 0 && height > 0 && angle_from != angle_to);
+
+		if (nsegment < 2)
+			nsegment = NSEGMENT_ELLIPSE;
+
+		bool has_hole     = hole_size != 0;
+		float radian_from = Xot::deg2rad(angle_from);
+		float radian_to   = Xot::deg2rad(angle_to);
+		uint npoint       = nsegment + 1;
+
+		std::vector<Point> points;
+		points.reserve(has_hole ? npoint * 2 : npoint + 1);
+
+		for (uint seg = 0; seg <= nsegment; ++seg)
+		{
+			points.emplace_back(make_ellipse_points(
+				x, y, width, height, radian_from, radian_to, nsegment, seg));
+		}
+
+		if (has_hole)
+		{
+			coord hole_x = x + (width  - hole_size.x) / 2;
+			coord hole_y = y + (height - hole_size.y) / 2;
+
+			for (uint seg = nsegment; seg >= 0; --seg)
+			{
+				points.emplace_back(make_ellipse_points(
+					hole_x, hole_y, hole_size.x, hole_size.y,
+					radian_from, radian_to, nsegment, seg));
+			}
+		}
+		else
+		{
+			points.emplace_back(Point(
+				x + width  / 2,
+				y + height / 2));
+		}
+
+		return Polygon(&points[0], points.size());
 	}
 
-	Ellipse::Ellipse (
+	Polygon
+	create_ellipse (
+		coord x, coord y, coord width, coord height,
+		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
+	{
+		if (width == 0 || height == 0 || angle_from == angle_to)
+			return Polygon();
+
+		if (angle_from == 0 && angle_to == 360)
+			return create_ellipse(x, y, width, height, hole_size, nsegment);
+		else
+		{
+			return create_arc(
+				x, y, width, height, angle_from, angle_to, hole_size, nsegment);
+		}
+	}
+
+	Polygon
+	create_ellipse (
 		const Bounds& bounds,
 		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
 	{
-		ellipse(
+		return create_ellipse(
 			bounds.x, bounds.y, bounds.width, bounds.height,
 			angle_from, angle_to, hole_size, nsegment);
 	}
 
-	Ellipse::Ellipse (
-		const Point& center, coord radius,
+	Polygon
+	create_ellipse (
+		const Point& center, const Point& radius,
 		float angle_from, float angle_to, coord hole_radius, uint nsegment)
 	{
-		draw_ellipse(
-			this, center.x - radius, center.y - radius, radius * 2, radius * 2,
-			angle_from, angle_to, hole_radius * 2, hole_radius * 2, nsegment);
+		return create_ellipse(
+			center.x - radius.x, center.y - radius.y,
+			center.x + radius.x, center.y + radius.y,
+			angle_from, angle_to,
+			hole_radius * 2, nsegment);
 	}
-#endif
+
+
+	static inline p2t::Point
+	to_poly2tri (const Point& point)
+	{
+		return p2t::Point(point.x, point.y);
+	}
+
+	static inline Point
+	from_poly2tri (const p2t::Point& point)
+	{
+		return Point(point.x, point.y);
+	}
+
+	static size_t
+	count_points (const Polygon& polygon)
+	{
+		size_t count = 0;
+		for (const auto& line : polygon)
+			count += line.size();
+		return count;
+	}
+
+	static void
+	triangulate (std::vector<Point>* triangles, p2t::CDT* cdt)
+	{
+		assert(triangles && cdt);
+
+		cdt->Triangulate();
+
+		for (auto* triangle : cdt->GetTriangles())
+		{
+			for (int i = 0; i < 3; ++i)
+				triangles->emplace_back(from_poly2tri(*triangle->GetPoint(i)));
+		}
+	}
+
+	void
+	Polygon_triangulate (std::vector<Point>* triangles, const Polygon& polygon)
+	{
+		assert(triangles);
+
+		triangles->clear();
+
+		size_t npoint = count_points(polygon);
+		if (npoint <= 0) return;
+
+		std::unique_ptr<p2t::CDT> cdt;
+		std::vector<p2t::Point> points;
+		std::vector<p2t::Point*> pointers;
+
+		points.reserve(npoint);
+		for (const auto& line : polygon)
+		{
+			pointers.clear();
+			pointers.reserve(line.size());
+			for (const auto& point : line)
+			{
+				points.emplace_back(to_poly2tri(point));
+				pointers.emplace_back(&points.back());
+			}
+
+			if (!line.hole)
+			{
+				if (cdt) triangulate(triangles, cdt.get());
+				cdt.reset(new p2t::CDT(pointers));
+			}
+			else if (cdt)
+				cdt->AddHole(pointers);
+		}
+
+		if (cdt) triangulate(triangles, cdt.get());
+	}
 
 
 	Polygon::Polygon ()
@@ -360,55 +486,18 @@ namespace Rays
 
 	Polygon::Polygon (const Point* points, size_t size, bool loop)
 	{
-		add(points, size, loop);
+		if (size <= 0) return;
+
+		self->append(Polyline(points, size, loop));
 	}
 
 	Polygon::Polygon (const Polyline& polyline)
 	{
-		add(polyline);
+		self->append(polyline);
 	}
 
 	Polygon::~Polygon ()
 	{
-	}
-
-	Polygon
-	Polygon::dup () const
-	{
-		Polygon p;
-		for (const auto& line : self->lines)
-			p.add(line.dup(), line.hole);
-		return p;
-	}
-
-	void
-	Polygon::add (const Point* points, size_t size, bool loop, bool hole)
-	{
-		add(Polyline(points, size, loop), hole);
-	}
-
-	void
-	Polygon::add (const Polyline& polyline, bool hole)
-	{
-		self->lines.emplace_back(Line(polyline, hole));
-	}
-
-	void
-	Polygon::clear ()
-	{
-		self->lines.clear();
-	}
-
-	Polygon::const_iterator
-	Polygon::begin () const
-	{
-		return self->lines.begin();
-	}
-
-	Polygon::const_iterator
-	Polygon::end () const
-	{
-		return self->lines.end();
 	}
 
 	size_t
@@ -421,6 +510,18 @@ namespace Rays
 	Polygon::empty () const
 	{
 		return size() <= 0;
+	}
+
+	Polygon::const_iterator
+	Polygon::begin () const
+	{
+		return self->lines.begin();
+	}
+
+	Polygon::const_iterator
+	Polygon::end () const
+	{
+		return self->lines.end();
 	}
 
 	const Polygon::Line&
@@ -440,6 +541,40 @@ namespace Rays
 		return !operator bool();
 	}
 
+#if 0
+	static String
+	path2str (const ClipperLib::Path& path)
+	{
+		String s;
+		for (const auto& point : path)
+		{
+			if (!s.empty()) s += ", ";
+			s += Xot::stringf("[%d,%d]", point.X / 1000, point.Y / 1000);
+		}
+		return s;
+	}
+
+	static void
+	dout_node (const ClipperLib::PolyNode& node)
+	{
+		doutln(
+			"path(open: %d, hole: %d, Contour: %s)",
+			(int) node.IsOpen(),
+			(int) node.IsHole(),
+			path2str(node.Contour).c_str());
+	}
+
+	static void
+	dout_tree (const PolyNode& node, int level = 0)
+	{
+		for (int i = 0; i < level; ++i) dout("  ");
+		dout_node(node);
+
+		for (const auto* child : node.Childs)
+			dout_tree(*child, level + 1);
+	}
+#endif
+
 	static void
 	add_polygon_to_clipper (Clipper* clipper, const Polygon& polygon, PolyType polytype)
 	{
@@ -457,33 +592,69 @@ namespace Rays
 		}
 	}
 
-	static void
-	get_polygon (Polygon* polygon, const PolyNode* node)
+	static bool
+	append_outline (Polygon* polygon, const PolyNode& node)
 	{
 		assert(polygon);
 
-		for (const PolyNode* p = node; p; p = p->GetNext())
-		{
-			Polyline polyline;
-			Polyline_create(&polyline, p->Contour, !p->IsOpen(), p->IsHole());
-			if (!polyline) continue;
+		if (node.Contour.empty() || node.IsHole())
+			return false;
 
-			polygon->add(polyline, p->IsHole());
+		Polyline polyline;
+		Polyline_create(&polyline, node.Contour, !node.IsOpen(), false);
+		if (!polyline)
+			return false;
+
+		polygon->self->append(polyline, false);
+		return true;
+	}
+
+	static void
+	append_hole (Polygon* polygon, const PolyNode& node)
+	{
+		assert(polygon);
+
+		for (const auto* child : node.Childs)
+		{
+			if (!child->IsHole())
+				return;
+
+			Polyline polyline;
+			Polyline_create(&polyline, child->Contour, !child->IsOpen(), true);
+			if (!polyline)
+				continue;
+
+			polygon->self->append(polyline, true);
 		}
+	}
+
+	static void
+	get_polygon (Polygon* polygon, const PolyNode& node)
+	{
+		assert(polygon);
+
+		if (append_outline(polygon, node))
+			append_hole(polygon, node);
+
+		for (const auto* child : node.Childs)
+			get_polygon(polygon, *child);
 	}
 
 	static Polygon
 	clip (const Polygon& clipped, const Polygon& clipper, ClipType cliptype)
 	{
 		Clipper c;
+		c.StrictlySimple(true);
+
 		add_polygon_to_clipper(&c, clipped, ptSubject);
 		add_polygon_to_clipper(&c, clipper, ptClip);
 
 		PolyTree tree;
 		c.Execute(cliptype, tree);
+		assert(tree.Contour.empty());
 
 		Polygon result;
-		get_polygon(&result, tree.GetFirst());
+		get_polygon(&result, tree);
 
 		return result;
 	}
@@ -524,36 +695,36 @@ namespace Rays
 		return *this;
 	}
 
+	static Polygon
+	dup (const Polygon& obj)
+	{
+		Polygon p;
+		obj.self->copy_to(p.self.get());
+		return p;
+	}
+
 	Polygon
 	operator - (const Polygon& lhs, const Polygon& rhs)
 	{
-		Polygon s = lhs.dup();
-		s -= rhs;
-		return s;
+		return dup(lhs) -= rhs;
 	}
 
 	Polygon
 	operator & (const Polygon& lhs, const Polygon& rhs)
 	{
-		Polygon s = lhs.dup();
-		s &= rhs;
-		return s;
+		return dup(lhs) &= rhs;
 	}
 
 	Polygon
 	operator | (const Polygon& lhs, const Polygon& rhs)
 	{
-		Polygon s = lhs.dup();
-		s |= rhs;
-		return s;
+		return dup(lhs) |= rhs;
 	}
 
 	Polygon
 	operator ^ (const Polygon& lhs, const Polygon& rhs)
 	{
-		Polygon s = lhs.dup();
-		s ^= rhs;
-		return s;
+		return dup(lhs) ^= rhs;
 	}
 
 

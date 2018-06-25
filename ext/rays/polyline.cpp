@@ -27,11 +27,34 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF1(initialize_copy, obj)
+RUCY_DEF2(set_points, points, loop)
 {
 	CHECK;
-	*THIS = to<Rays::Polyline&>(obj).dup();
-	return self;
+
+	std::vector<Rays::Point> array;
+	if (!points.empty() && points[0].is_num())
+	{
+		if (points.size() % 2 != 0)
+			argument_error(__FILE__, __LINE__);
+
+		size_t size = points.size();
+		array.reserve(size / 2);
+		for (size_t i = 0; i < size; i += 2)
+		{
+			coord x = to<coord>(points[i + 0]);
+			coord y = to<coord>(points[i + 1]);
+			array.emplace_back(Rays::Point(x, y));
+		}
+	}
+	else
+	{
+		size_t size = points.size();
+		array.reserve(size);
+		for (size_t i = 0; i < size; ++i)
+			array.emplace_back(to<Rays::Point>(points[i]));
+	}
+
+	*THIS = Rays::Polyline(&array[0], array.size(), loop);
 }
 RUCY_END
 
@@ -63,7 +86,15 @@ static
 RUCY_DEF1(at, index)
 {
 	CHECK;
-	return value((*THIS)[index]);
+
+	int size = (int) THIS->size();
+	int i    = to<int>(index);
+	if (i < 0) i += size;
+
+	if (i < 0 || size <= i)
+		index_error(__FILE__, __LINE__);
+
+	return value((*THIS)[i]);
 }
 RUCY_END
 
@@ -89,7 +120,7 @@ Init_polyline ()
 
 	cPolyline = mRays.define_class("Polyline");
 	cPolyline.define_alloc_func(alloc);
-	cPolyline.define_private_method("initialize_copy", initialize_copy);
+	cPolyline.define_private_method("set_points", set_points);
 	cPolyline.define_method("loop?",  loop);
 	cPolyline.define_method("size",   size);
 	cPolyline.define_method("empty?", empty);

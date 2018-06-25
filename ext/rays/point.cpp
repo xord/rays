@@ -280,11 +280,11 @@ Init_point ()
 	cPoint.define_method("normalize", normalize);
 	cPoint.define_method("normal",    normal);
 	cPoint.define_method("x=", set_x);
-	cPoint.define_method("x", get_x);
+	cPoint.define_method("x",  get_x);
 	cPoint.define_method("y=", set_y);
-	cPoint.define_method("y", get_y);
+	cPoint.define_method("y",  get_y);
 	cPoint.define_method("z=", set_z);
-	cPoint.define_method("z", get_z);
+	cPoint.define_method("z",  get_z);
 	cPoint.define_method("+", add);
 	cPoint.define_method("-", sub);
 	cPoint.define_method("*", mult);

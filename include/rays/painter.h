@@ -17,6 +17,7 @@ namespace Rays
 	struct Color;
 	struct Matrix;
 
+	class Polyline;
 	class Polygon;
 	class Image;
 	class Font;
@@ -67,6 +68,10 @@ namespace Rays
 			void line (const Point& p1, const Point& p2);
 
 			void line (const Point* points, size_t size, bool loop = false);
+
+			void line (const Polyline& polyline);
+
+			void line (const Polygon& polygon);
 
 			void rect (
 				coord x, coord y, coord width, coord height,
@@ -140,10 +145,6 @@ namespace Rays
 			void text (const char* str, coord x, coord y, coord width, coord height);
 
 			void text (const char* str, const Bounds& bounds);
-
-			void polygon (const Polygon& polygon, coord x = 0, coord y = 0);
-
-			void polygon (const Polygon& polygon, const Point& position);
 
 
 			//

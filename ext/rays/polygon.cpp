@@ -28,23 +28,12 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF1(initialize_copy, obj)
+RUCY_DEF2(set_points, points, loop)
 {
 	CHECK;
-	*THIS = to<Rays::Polygon&>(obj).dup();
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF3(add_points, points, loop, hole)
-{
-	CHECK;
-
-	if (points.size() <= 0) return nil();
 
 	std::vector<Rays::Point> array;
-	if (points[0].is_num())
+	if (!points.empty() && points[0].is_num())
 	{
 		if (points.size() % 2 != 0)
 			argument_error(__FILE__, __LINE__);
@@ -66,23 +55,47 @@ RUCY_DEF3(add_points, points, loop, hole)
 			array.emplace_back(to<Rays::Point>(points[i]));
 	}
 
-	THIS->add(&array[0], array.size(), loop, hole);
+	*THIS = Rays::Polygon(&array[0], array.size(), loop);
 }
 RUCY_END
 
 static
-RUCY_DEF2(add_polyline, polyline, hole)
+RUCY_DEF1(set_polyline, polyline)
 {
 	CHECK;
-	THIS->add(to<Rays::Polyline&>(polyline), hole);
+	*THIS = Rays::Polygon(to<Rays::Polyline&>(polyline));
 }
 RUCY_END
 
 static
-RUCY_DEF0(clear)
+RUCY_DEF0(size)
 {
 	CHECK;
-	THIS->clear();
+	return value(THIS->size());
+}
+RUCY_END
+
+static
+RUCY_DEF0(empty)
+{
+	CHECK;
+	return value(THIS->empty());
+}
+RUCY_END
+
+static
+RUCY_DEF1(at, index)
+{
+	CHECK;
+
+	int size = (int) THIS->size();
+	int i    = to<int>(index);
+	if (i < 0) i += size;
+
+	if (i < 0 || size <= i)
+		index_error(__FILE__, __LINE__);
+
+	return value((*THIS)[i]);
 }
 RUCY_END
 
@@ -95,30 +108,6 @@ RUCY_DEF0(each)
 	for (const auto& polyline : *THIS)
 		ret = rb_yield(value(polyline));
 	return ret;
-}
-RUCY_END
-
-static
-RUCY_DEF0(size)
-{
-	CHECK;
-	return THIS->size();
-}
-RUCY_END
-
-static
-RUCY_DEF0(empty)
-{
-	CHECK;
-	return THIS->empty();
-}
-RUCY_END
-
-static
-RUCY_DEF1(at, index)
-{
-	CHECK;
-	return value((*THIS)[index]);
 }
 RUCY_END
 
@@ -196,14 +185,12 @@ Init_polygon ()
 
 	cPolygon = mRays.define_class("Polygon");
 	cPolygon.define_alloc_func(alloc);
-	cPolygon.define_private_method("initialize_copy", initialize_copy);
-	cPolygon.define_method("add_points",   add_points);
-	cPolygon.define_method("add_polyline", add_polyline);
-	cPolygon.define_method("clear",  clear);
-	cPolygon.define_method("each",   each);
+	cPolygon.define_private_method("set_points",   set_points);
+	cPolygon.define_private_method("set_polyline", set_polyline);
 	cPolygon.define_method("size",   size);
 	cPolygon.define_method("empty?", empty);
-	cPolygon.define_method("at",     at);
+	cPolygon.define_method("[]",     at);
+	cPolygon.define_method("each",   each);
 	cPolygon.define_method("-", op_sub);
 	cPolygon.define_method("&", op_and);
 	cPolygon.define_method("|", op_or);

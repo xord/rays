@@ -37,10 +37,18 @@ module Rays
       end
     end
 
+    def to_s (dimension = 2)
+      to_a(dimension).to_s
+    end
+
     def <=> (o)
       ret = x <=> o.x; return ret if ret != 0
       ret = y <=> o.y; return ret if ret != 0
             z <=> o.z
+    end
+
+    def inspect ()
+      "#<Rays::Point #{to_a(3).join ', '}>"
     end
 
   end# Point

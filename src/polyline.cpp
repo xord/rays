@@ -27,7 +27,7 @@ namespace Rays
 	from_clipper (cInt value)
 	{
 		double v = value / CLIPPER_SCALE;
-		if (v <= FLT_MIN || FLT_MAX <= v)
+		if (v <= -FLT_MAX || FLT_MAX <= v)
 			argument_error(__FILE__, __LINE__);
 
 		return (coord) v;
@@ -55,23 +55,29 @@ namespace Rays
 
 		PointList points;
 
+		bool loop;
+
+		Data ()
+		:	loop(false)
+		{
+		}
+
 		template <typename I, typename FUN>
-		void reset (I begin, I end, bool loop, FUN to_point_fun)
+		void reset (I begin, I end, bool loop_, FUN to_point_fun)
 		{
 			size_t size = end - begin;
-			if (size < 2 || (size == 2 && loop))
+			if (size <= 0)
+				return;
+
+			if (size < 2 || (size == 2 && loop_))
 				argument_error(__FILE__, __LINE__);
 
+			loop = loop_;
+
 			points.clear();
-
-			bool append_to_close = loop && *begin != *(end - 1);
-			points.reserve(size + append_to_close ? 1 : 0);
-
+			points.reserve(size);
 			for (auto it = begin; it != end; ++it)
 				points.emplace_back(to_point_fun(*it));
-
-			if (append_to_close)
-				points.emplace_back(points.front());
 		}
 
 	};// Polyline::Data
@@ -83,11 +89,14 @@ namespace Rays
 	{
 		assert(polyline);
 
+		Path cleaned;
+		ClipperLib::CleanPolygon(path, cleaned);
+
 		auto to_point = [](const IntPoint& point) {return from_clipper(point);};
 		if (reverse)
-			polyline->self->reset(path.rbegin(), path.rend(), loop, to_point);
+			polyline->self->reset(cleaned.rbegin(), cleaned.rend(), loop, to_point);
 		else
-			polyline->self->reset(path.begin(), path.end(), loop, to_point);
+			polyline->self->reset(cleaned.begin(), cleaned.end(), loop, to_point);
 	}
 
 	template <typename I>
@@ -125,19 +134,10 @@ namespace Rays
 	{
 	}
 
-	Polyline
-	Polyline::dup () const
-	{
-		Polyline p;
-		p.self->points = self->points;
-		return p;
-	}
-
 	bool
 	Polyline::loop () const
 	{
-		const PointList& p = self->points;
-		return p.size() >= 3 && p.front() == p.back();
+		return self->loop;
 	}
 
 	size_t
@@ -172,7 +172,8 @@ namespace Rays
 
 	Polyline::operator bool () const
 	{
-		return !empty();
+		size_t s = size();
+		return !((s == 1 || s == 2) && self->loop);
 	}
 
 	bool

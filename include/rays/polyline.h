@@ -28,17 +28,15 @@ namespace Rays
 
 			~Polyline ();
 
-			Polyline dup () const;
-
 			bool loop () const;
-
-			const_iterator begin () const;
-
-			const_iterator end () const;
 
 			size_t size () const;
 
 			bool empty () const;
+
+			const_iterator begin () const;
+
+			const_iterator end () const;
 
 			const Point& operator [] (size_t index) const;
 

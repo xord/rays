@@ -57,7 +57,20 @@ module Rays
     end
 
     def line (*args, loop: false)
-      loop ? line_loop(*args) : line_strip(*args)
+      case first = args.first
+      when Polyline then polyline first
+      when Polygon  then polygon  first
+      else loop ? line_loop(*args) : line_strip(*args)
+      end
+    end
+
+    def color= (fill, stroke = nil)
+      self.fill   fill
+      self.stroke stroke
+    end
+
+    def color ()
+      return fill, stroke
     end
 
     def shader= (shader, **uniforms)
@@ -65,7 +78,7 @@ module Rays
       set_shader shader
     end
 
-    universal_accessor :background, :fill, :stroke, :shader, :clip, :font
+    universal_accessor :background, :fill, :stroke, :color, :shader, :clip, :font
 
     private
 

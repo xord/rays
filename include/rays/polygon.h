@@ -45,25 +45,13 @@ namespace Rays
 
 			~Polygon ();
 
-			Polygon dup () const;
+			size_t size () const;
 
-			void add (
-				const Point* points, size_t size, bool loop = true,
-				bool hole = false);
-
-			void add (
-				const Polyline& polyline,
-				bool hole = false);
-
-			void clear ();
+			bool empty () const;
 
 			const_iterator begin () const;
 
 			const_iterator end () const;
-
-			size_t size () const;
-
-			bool empty () const;
 
 			const Line& operator [] (size_t index) const;
 
@@ -121,7 +109,7 @@ namespace Rays
 		coord round_left_bottom, coord round_right_bottom,
 		uint nsegment = 0);
 
-#if 0
+
 	Polygon create_ellipse (
 		coord x, coord y, coord width, coord height = 0,
 		float angle_from = 0, float angle_to = 360,
@@ -133,10 +121,10 @@ namespace Rays
 		const Point& hole_size = 0, uint nsegment = 0);
 
 	Polygon create_ellipse (
-		const Point& center, coord radius,
+		const Point& center, const Point& radius,
 		float angle_from = 0, float angle_to = 360,
-		coord radius_min = 0, uint nsegment = 0);
-#endif
+		const Point& hole_radius = 0, uint nsegment = 0);
+
 
 }// Rays
 

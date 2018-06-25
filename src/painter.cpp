@@ -190,11 +190,6 @@ namespace Rays
 	};// OpenGLState
 
 
-	static constexpr float PI      = M_PI;
-	static constexpr float PI_2    = PI * 2;
-	static constexpr float PI_HALF = PI / 2;
-
-
 	#define  ATTRIB_POSITION        "a_Position"
 	#define VARYING_POSITION        "v_Position"
 	#define UNIFORM_POSITION_MATRIX "u_PositionMatrix"
@@ -706,7 +701,7 @@ namespace Rays
 		check_error(__FILE__, __LINE__);
 	}
 
-	void
+	static void
 	draw_line (Painter* painter, const Point* points, size_t npoints, bool loop)
 	{
 		assert(painter);
@@ -762,6 +757,83 @@ namespace Rays
 	Painter::line (const Point* points, size_t size, bool loop)
 	{
 		draw_line(this, points, size, loop);
+	}
+
+	void
+	Painter::line (const Polyline& polyline)
+	{
+		draw_line(this, &polyline[0], polyline.size(), polyline.loop());
+	}
+
+	static void
+	fill_polygon (Painter* painter, const Polygon& polygon)
+	{
+		assert(painter);
+
+		Color color;
+		if (!painter->self->get_color(&color, FILL))
+			return;
+
+		std::vector<Point> triangles;
+		Polygon_triangulate(&triangles, polygon);
+
+		std::unique_ptr<Vertex[]> vertices(new Vertex[triangles.size()]);
+		std::unique_ptr<uint[]>   indices(new uint[triangles.size()]);
+		for (size_t i = 0; i < triangles.size(); ++i)
+		{
+			vertices[i].position = triangles[i];
+			vertices[i].texcoord = triangles[i];
+			indices[i]           = (uint) i;
+		}
+
+		painter->self->draw_shape(
+			GL_TRIANGLES,
+			&vertices[0], triangles.size(),
+			&indices[0],  triangles.size(),
+			color,
+			get_default_shader_for_shape());
+	}
+
+	static void
+	stroke_polygon (Painter* painter, const Polygon& polygon)
+	{
+		assert(painter);
+
+		Color color;
+		if (!painter->self->get_color(&color, STROKE))
+			return;
+
+		for (const auto& polyline : polygon)
+		{
+			std::unique_ptr<Vertex[]> vertices(new Vertex[polyline.size()]);
+			std::unique_ptr<uint[]>   indices(new uint[polyline.size()]);
+			for (size_t i = 0; i < polyline.size(); ++i)
+			{
+				vertices[i].position = polyline[i];
+				vertices[i].texcoord = polyline[i];
+				indices[i]           = (uint) i;
+			}
+
+			painter->self->draw_shape(
+				GL_LINE_LOOP,
+				&vertices[0], polyline.size(),
+				&indices[0],  polyline.size(),
+				color,
+				get_default_shader_for_shape());
+		}
+	}
+
+	void
+	Painter::line (const Polygon& poly)
+	{
+		if (!self->painting)
+			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
+
+		if (!self->state.has_color())
+			return;
+
+		fill_polygon(this, poly);
+		stroke_polygon(this, poly);
 	}
 
 	static void
@@ -852,7 +924,7 @@ namespace Rays
 		for (uint seg = 0; seg <= nsegment; ++seg, ++vertex)
 		{
 			float pos    = (float) seg / (float) nsegment;
-			float radian = radian_offset + pos * PI_HALF;
+			float radian = radian_offset + pos * (M_PI / 2);
 			coord xx     = offset_x + cos(radian) * corner.round * sign_x;
 			coord yy     = offset_y - sin(radian) * corner.round * sign_y;
 			vertex->reset(x + xx, y + yy, xx, yy);
@@ -912,7 +984,7 @@ namespace Rays
 		for (size_t i = 0; i < 4; ++i)
 		{
 			vertex += setup_round(
-				vertex, x, y, corners[i], sign_x, sign_y, PI_HALF * i, nsegment);
+				vertex, x, y, corners[i], sign_x, sign_y, (M_PI / 2) * i, nsegment);
 		}
 
 		Color color;
@@ -1038,7 +1110,7 @@ namespace Rays
 		for (uint seg = 0; seg <= nsegment; ++seg)
 		{
 			float pos    = (float) seg / (float) nsegment;
-			float radian = (from + (to - from) * pos) * PI_2;
+			float radian = (from + (to - from) * pos) * (M_PI * 2);
 			float cos_   = (cos(radian)  + 1) / 2.;
 			float sin_   = (-sin(radian) + 1) / 2.;
 
@@ -1256,6 +1328,7 @@ namespace Rays
 		Painter* painter, const Font& font,
 		coord x, coord y, coord str_width, coord str_height)
 	{
+#if 0
 		save_image(painter->self->text_image, "/tmp/font.png");
 
 		painter->push_state();
@@ -1281,6 +1354,7 @@ namespace Rays
 			painter->rect(x, yy, str_width, lead);
 		}
 		painter->pop_state();
+#endif
 	}
 
 	static void
@@ -1333,9 +1407,7 @@ namespace Rays
 			x, y, str_w, str_h,
 			true, &get_default_shader_for_alpha_texture());
 
-		#if 0
-			debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
-		#endif
+		debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
 	}
 
 	void
@@ -1378,28 +1450,6 @@ namespace Rays
 	Painter::text (const char* str, const Bounds& bounds)
 	{
 		text(str, bounds.x, bounds.y, bounds.width, bounds.height);
-	}
-
-	void
-	Painter::polygon (const Polygon& poly, coord x, coord y)
-	{
-		if (x != 0 || y != 0)
-		{
-			push_matrix();
-			translate(x, y);
-		}
-
-		for (const auto& polyline : poly)
-			line(&polyline[0], polyline.size());
-
-		if (x != 0 || y != 0)
-			pop_matrix();
-	}
-
-	void
-	Painter::polygon (const Polygon& poly, const Point& position)
-	{
-		polygon(poly, position.x, position.y);
 	}
 
 	void

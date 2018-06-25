@@ -2,6 +2,7 @@
 
 
 require 'rays/ext'
+require 'rays/polyline'
 
 
 module Rays
@@ -11,20 +12,16 @@ module Rays
 
     include Enumerable
 
-    def initialize (*args)
-      add *args
-    end
-
-    def add (*args, loop: true, hole: false)
-      if args.first.kind_of Polyline
-        add_polyline args.first, hole
+    def initialize (*args, loop: true)
+      if !args.empty? && args.first.kind_of?(Polyline)
+        set_polyline args.first
       else
-        add_points args, loop, hole
+        set_points args, loop
       end
     end
 
     def self.line (*args, loop: false)
-      new *args, loop: loop, hole: false
+      new *args, loop: loop
     end
 
   end# Polygon

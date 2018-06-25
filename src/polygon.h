@@ -4,6 +4,7 @@
 #define __RAYS_SRC_POLYGON_H__
 
 
+#include <vector>
 #include <rays/polygon.h>
 
 
@@ -21,7 +22,8 @@ namespace Rays
 	};
 
 
-	void Polygon_triangulate (const Polygon& polygon);
+	void Polygon_triangulate (
+		std::vector<Point>* triangles, const Polygon& polygon);
 
 
 }// Rays

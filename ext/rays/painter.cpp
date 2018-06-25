@@ -147,6 +147,26 @@ RUCY_DEFN(line_loop)
 RUCY_END
 
 static
+RUCY_DEF1(polyline, poly)
+{
+	CHECK;
+
+	THIS->line(to<Rays::Polyline&>(poly));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF1(polygon, poly)
+{
+	CHECK;
+
+	THIS->line(to<Rays::Polygon&>(poly));
+	return self;
+}
+RUCY_END
+
+static
 RUCY_DEFN(rect)
 {
 	CHECK;
@@ -294,24 +314,6 @@ RUCY_DEFN(text)
 		coord x = to<coord>(argv[1]), w = to<coord>(argv[3]);
 		coord y = to<coord>(argv[2]), h = to<coord>(argv[4]);
 		THIS->text(argv[0].c_str(), x, y, w, h);
-	}
-
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(polygon)
-{
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#polygon", argc, 1, 3);
-
-	if (argc == 1)
-		THIS->polygon(to<Rays::Polygon&>(argv[0]));
-	else if (argc == 3)
-	{
-		coord x = to<coord>(argv[1]), y = to<coord>(argv[2]);
-		THIS->polygon(to<Rays::Polygon&>(argv[0]), x, y);
 	}
 
 	return self;
@@ -594,11 +596,12 @@ Init_painter ()
 	cPainter.define_method("clear",   clear);
 	cPainter.define_private_method("line_strip", line_strip);
 	cPainter.define_private_method("line_loop",  line_loop);
+	cPainter.define_private_method("polyline",   polyline);
+	cPainter.define_private_method("polygon",    polygon);
 	cPainter.define_method("rect",    rect);
 	cPainter.define_method("ellipse", ellipse);
 	cPainter.define_method("image",   image);
 	cPainter.define_method("text",    text);
-	cPainter.define_method("polygon", polygon);
 
 	cPainter.define_method(   "background=", set_background);
 	cPainter.define_method(   "background",  get_background);

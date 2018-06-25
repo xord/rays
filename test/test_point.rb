@@ -159,4 +159,8 @@ class TestPoint < Test::Unit::TestCase
     assert_equal point( 5, 10, 15), point(10, 20, 30) / 2
   end
 
+  def test_inspect ()
+    assert_equal "#<Rays::Point 1.0, 2.0, 3.0>", point(1, 2, 3).inspect
+  end
+
 end# TestPoint
