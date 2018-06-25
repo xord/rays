@@ -2,39 +2,49 @@
 
 
 #include <math.h>
+#include <assert.h>
 #include "rays/exception.h"
 #include "rays/debug.h"
-#include "painter.h"
+#include "polyline.h"
 
 
-using namespace boost::polygon::operators;
+using namespace ClipperLib;
 
 
 namespace Rays
 {
 
 
+	Polygon::Line::Line (const Polyline& polyline, bool hole)
+	:	Super(polyline), hole(hole)
+	{
+	}
+
+	Polygon::Line::operator bool () const
+	{
+		return loop() || !hole;
+	}
+
+	bool
+	Polygon::Line::operator ! () const
+	{
+		return !operator bool();
+	}
+
+
 	struct Polygon::Data
 	{
 
-		BoostPolygonSet polygons;
-
-		mutable BoostPolygonList trapezoids;
+		LineList lines;
 
 	};// Polygon::Data
 
 
-	const BoostPolygonList&
-	Polygon_subdivide (const Polygon& polygon)
+	void
+	Polygon_triangulate (const Polygon& polygon)
 	{
-		polygon.self->polygons.get_trapezoids(polygon.self->trapezoids);
-		return polygon.self->trapezoids;
-	}
-
-	const BoostPolygonSet&
-	Polygon_get_boost_polygons (const Polygon& polygon)
-	{
-		return polygon.self->polygons;
+		//polygon.self->polygons.get_trapezoids(polygon.self->trapezoids);
+		//return polygon.self->trapezoids;
 	}
 
 
@@ -72,7 +82,7 @@ namespace Rays
 			Point(x,         y),
 			Point(x,         y + height),
 			Point(x + width, y + height),
-			Point(x + width, y)
+			Point(x + width, y),
 		};
 		return Polygon(points, 4);
 	}
@@ -350,7 +360,12 @@ namespace Rays
 
 	Polygon::Polygon (const Point* points, size_t size, bool loop)
 	{
-		add_outline(points, size, loop);
+		add(points, size, loop);
+	}
+
+	Polygon::Polygon (const Polyline& polyline)
+	{
+		add(polyline);
 	}
 
 	Polygon::~Polygon ()
@@ -361,58 +376,62 @@ namespace Rays
 	Polygon::dup () const
 	{
 		Polygon p;
-		p.self->polygons = self->polygons;
+		for (const auto& line : self->lines)
+			p.add(line.dup(), line.hole);
 		return p;
 	}
 
-	static void
-	make_polygon (
-		BoostPolygon* polygon, const Point* points, size_t size, bool loop)
+	void
+	Polygon::add (const Point* points, size_t size, bool loop, bool hole)
 	{
-		assert(polygon);
-		doutln("a: %d, %d", size, loop ? 1 : 0);
-
-		if (!points || size < 2 || (size == 2 && loop))
-			argument_error(__FILE__, __LINE__);
-
-		std::vector<BoostPoint> tmp;
-		tmp.reserve(size + loop ? 1 : 0);
-		for (size_t i = 0; i < size; ++i)
-			tmp.emplace_back(BoostPoint(points[i].x, points[i].y));
-
-		if (loop)
-			tmp.emplace_back(tmp[0]);
-
-		polygon->set(tmp.begin(), tmp.end());
+		add(Polyline(points, size, loop), hole);
 	}
 
 	void
-	Polygon::add_outline (const Point* points, size_t size, bool loop)
+	Polygon::add (const Polyline& polyline, bool hole)
 	{
-		BoostPolygon polygon;
-		make_polygon(&polygon, points, size, loop);
-
-		self->polygons.insert(polygon);
-	}
-
-	void
-	Polygon::add_hole (const Point* points, size_t size)
-	{
-		BoostPolygon polygon;
-		make_polygon(&polygon, points, size, true);
-
-		self->polygons.insert(polygon, true);
+		self->lines.emplace_back(Line(polyline, hole));
 	}
 
 	void
 	Polygon::clear ()
 	{
-		self->polygons.clear();
+		self->lines.clear();
+	}
+
+	Polygon::const_iterator
+	Polygon::begin () const
+	{
+		return self->lines.begin();
+	}
+
+	Polygon::const_iterator
+	Polygon::end () const
+	{
+		return self->lines.end();
+	}
+
+	size_t
+	Polygon::size () const
+	{
+		return self->lines.size();
+	}
+
+	bool
+	Polygon::empty () const
+	{
+		return size() <= 0;
+	}
+
+	const Polygon::Line&
+	Polygon::operator [] (size_t index) const
+	{
+		return self->lines[index];
 	}
 
 	Polygon::operator bool () const
 	{
-		return !self->polygons.empty();
+		return true;
 	}
 
 	bool
@@ -421,12 +440,60 @@ namespace Rays
 		return !operator bool();
 	}
 
+	static void
+	add_polygon_to_clipper (Clipper* clipper, const Polygon& polygon, PolyType polytype)
+	{
+		assert(clipper);
+
+		Path path;
+		for (const auto& line : polygon)
+		{
+			if (!line) continue;
+
+			Polyline_get_path(&path, line, line.hole);
+			if (path.empty()) continue;
+
+			clipper->AddPath(path, polytype, line.loop());
+		}
+	}
+
+	static void
+	get_polygon (Polygon* polygon, const PolyNode* node)
+	{
+		assert(polygon);
+
+		for (const PolyNode* p = node; p; p = p->GetNext())
+		{
+			Polyline polyline;
+			Polyline_create(&polyline, p->Contour, !p->IsOpen(), p->IsHole());
+			if (!polyline) continue;
+
+			polygon->add(polyline, p->IsHole());
+		}
+	}
+
+	static Polygon
+	clip (const Polygon& clipped, const Polygon& clipper, ClipType cliptype)
+	{
+		Clipper c;
+		add_polygon_to_clipper(&c, clipped, ptSubject);
+		add_polygon_to_clipper(&c, clipper, ptClip);
+
+		PolyTree tree;
+		c.Execute(cliptype, tree);
+
+		Polygon result;
+		get_polygon(&result, tree.GetFirst());
+
+		return result;
+	}
+
 	Polygon&
 	Polygon::operator -= (const Polygon& rhs)
 	{
 		if (&rhs == this) return *this;
 
-		if (*this && rhs) self->polygons -= rhs.self->polygons;
+		*this = clip(*this, rhs, ctDifference);
 		return *this;
 	}
 
@@ -435,7 +502,7 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		if (*this && rhs) self->polygons &= rhs.self->polygons;
+		*this = clip(*this, rhs, ctIntersection);
 		return *this;
 	}
 
@@ -444,7 +511,7 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		if (*this && rhs) self->polygons |= rhs.self->polygons;
+		*this = clip(*this, rhs, ctUnion);
 		return *this;
 	}
 
@@ -453,15 +520,13 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		if (*this && rhs) self->polygons ^= rhs.self->polygons;
+		*this = clip(*this, rhs, ctXor);
 		return *this;
 	}
 
 	Polygon
 	operator - (const Polygon& lhs, const Polygon& rhs)
 	{
-		if (!lhs || !rhs) return Polygon();
-
 		Polygon s = lhs.dup();
 		s -= rhs;
 		return s;
@@ -470,8 +535,6 @@ namespace Rays
 	Polygon
 	operator & (const Polygon& lhs, const Polygon& rhs)
 	{
-		if (!lhs || !rhs) return Polygon();
-
 		Polygon s = lhs.dup();
 		s &= rhs;
 		return s;
@@ -480,8 +543,6 @@ namespace Rays
 	Polygon
 	operator | (const Polygon& lhs, const Polygon& rhs)
 	{
-		if (!lhs || !rhs) return Polygon();
-
 		Polygon s = lhs.dup();
 		s |= rhs;
 		return s;
@@ -490,8 +551,6 @@ namespace Rays
 	Polygon
 	operator ^ (const Polygon& lhs, const Polygon& rhs)
 	{
-		if (!lhs || !rhs) return Polygon();
-
 		Polygon s = lhs.dup();
 		s ^= rhs;
 		return s;
@@ -499,163 +558,3 @@ namespace Rays
 
 
 }// Rays
-
-
-#if 0
-namespace boost
-{
-
-
-	namespace polygon
-	{
-
-
-		template <>
-		struct geometry_concept<Rays::Point>
-		{
-			typedef point_concept type;
-		};
-
-		template <>
-		struct geometry_concept<Rays::Polygon>
-		{
-			typedef polygon_concept type;
-		};
-
-		template <>
-		struct geometry_concept<Rays::PolygonSet>
-		{
-			typedef polygon_set_concept type;
-		};
-
-
-		template <>
-		struct point_traits<Rays::Point>
-		{
-			typedef Rays::coord coordinate_type;
-
-			static inline coordinate_type get (
-				const Rays::Point& point, orientation_2d orient)
-			{
-				return orient == HORIZONTAL ? point.x : point.y;
-			}
-		};
-
-
-		template <>
-		struct point_mutable_traits<Rays::Point>
-		{
-			typedef Rays::coord coordinate_type;
-
-			static inline void set (
-				Rays::Point& point, orientation_2d orient, coordinate_type value)
-			{
-				if (orient == HORIZONTAL)
-					point.x = value;
-				else
-					point.y = value;
-			}
-
-			static inline Rays::Point construct (coordinate_type x, coordinate_type y)
-			{
-				return Rays::Point(x, y);
-			}
-		};
-
-
-		template <>
-		struct polygon_traits<Rays::Polygon>
-		{
-			typedef Rays::coord                   coordinate_type;
-
-			typedef Rays::Point                   point_type;
-
-			typedef Rays::Polygon::const_iterator iterator_type;
-
-			static inline iterator_type begin_points (const Rays::Polygon& polygon)
-			{
-				return polygon.begin();
-			}
-
-			static inline iterator_type   end_points (const Rays::Polygon& polygon)
-			{
-				return polygon.end();
-			}
-
-			static inline std::size_t size (const Rays::Polygon& polygon)
-			{
-				return polygon.size();
-			}
-
-			static inline winding_direction winding (const Rays::Polygon& polygon)
-			{
-				return unknown_winding;
-			}
-		};
-
-
-		template <>
-		struct polygon_mutable_traits<Rays::Polygon>
-		{
-			template <typename IT>
-			static inline Rays::Polygon& set_points (
-				Rays::Polygon& polygon, IT begin, IT end)
-			{
-				polygon.clear();
-				polygon.insert(polygon.end(), begin, end);
-				return polygon;
-			}
-		};
-
-
-		template <>
-		struct polygon_set_traits<Rays::PolygonSet>
-		{
-			typedef Rays::coord                      coordinate_type;
-
-			typedef Rays::PolygonSet::const_iterator iterator_type;
-
-			typedef Rays::PolygonSet                 operator_arg_type;
-
-			static inline iterator_type begin (const Rays::PolygonSet& polyset)
-			{
-				return polyset.begin();
-			}
-
-			static inline iterator_type end (const Rays::PolygonSet& polyset)
-			{
-				return polyset.end();
-			}
-
-			static inline bool clean (const Rays::PolygonSet& polyset)
-			{
-				return false;
-			}
-
-			static inline bool sorted (const Rays::PolygonSet& polyset)
-			{
-				return false;
-			}
-		};
-
-
-		template <>
-		struct polygon_set_mutable_traits<Rays::PolygonSet>
-		{
-			template <typename IT>
-			static inline void set (Rays::PolygonSet& polyset, IT begin, IT end)
-			{
-				polyset.clear();
-
-				polygon_set_data<Rays::coord> tmp;
-				tmp.insert(begin, end);
-				tmp.get(polyset);
-			}
-		};
-
-
-	}// polygon
-
-
-}// boost
-#endif

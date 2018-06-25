@@ -5,8 +5,8 @@
 
 
 #include <xot/pimpl.h>
-#include <rays/point.h>
 #include <rays/bounds.h>
+#include <rays/polyline.h>
 
 
 namespace Rays
@@ -18,19 +18,54 @@ namespace Rays
 
 		public:
 
+			struct Line : public Polyline
+			{
+
+				typedef Polyline Super;
+
+				bool hole;
+
+				Line (const Polyline& polyline, bool hole);
+
+				operator bool () const;
+
+				bool operator ! () const;
+
+			};// Line
+
+			typedef std::vector<Line> LineList;
+
+			typedef LineList::const_iterator const_iterator;
+
 			Polygon ();
 
 			Polygon (const Point* points, size_t size, bool loop = true);
+
+			Polygon (const Polyline& polyline);
 
 			~Polygon ();
 
 			Polygon dup () const;
 
-			void add (const Point* points, size_t size, bool loop = true);
+			void add (
+				const Point* points, size_t size, bool loop = true,
+				bool hole = false);
 
-			void add_hole (const Point* points, size_t size);
+			void add (
+				const Polyline& polyline,
+				bool hole = false);
 
 			void clear ();
+
+			const_iterator begin () const;
+
+			const_iterator end () const;
+
+			size_t size () const;
+
+			bool empty () const;
+
+			const Line& operator [] (size_t index) const;
 
 			operator bool () const;
 

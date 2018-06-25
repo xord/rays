@@ -1383,17 +1383,17 @@ namespace Rays
 	void
 	Painter::polygon (const Polygon& poly, coord x, coord y)
 	{
-		std::vector<BoostPolygon> polygons;
-		Polygon_get_boost_polygons(poly).get(polygons);
-
-		for (const auto& polygon : polygons)
+		if (x != 0 || y != 0)
 		{
-			std::vector<Point> points;
-			for (const auto& point : polygon)
-				points.emplace_back(Point(x + point.x(), y + point.y()));
-
-			line(&points[0], points.size());
+			push_matrix();
+			translate(x, y);
 		}
+
+		for (const auto& polyline : poly)
+			line(&polyline[0], polyline.size());
+
+		if (x != 0 || y != 0)
+			pop_matrix();
 	}
 
 	void

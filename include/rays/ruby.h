@@ -12,6 +12,7 @@
 #include <rays/ruby/color_space.h>
 #include <rays/ruby/matrix.h>
 
+#include <rays/ruby/polyline.h>
 #include <rays/ruby/polygon.h>
 #include <rays/ruby/bitmap.h>
 #include <rays/ruby/image.h>

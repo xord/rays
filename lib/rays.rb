@@ -10,6 +10,7 @@ require 'rays/color'
 require 'rays/color_space'
 require 'rays/matrix'
 
+require 'rays/polyline'
 require 'rays/polygon'
 require 'rays/bitmap'
 require 'rays/image'

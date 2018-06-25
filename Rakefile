@@ -19,8 +19,15 @@ use_external_library 'https://github.com/g-truc/glm',
   tag: '0.9.8.5',
   srcdir: 'NOSRC'
 
-use_boost_library %w[core preprocessor mpl polygon],
-  tag: 'boost-1.66.0'
+use_external_library 'https://github.com/skyrpex/clipper',
+  tag: '6.4.2',
+  incdir: 'cpp',
+  srcdir: 'cpp',
+  excludes: 'clipper/cpp/cpp_'
+
+use_external_library 'https://github.com/greenm01/poly2tri',
+  incdir: 'poly2tri',
+  srcdir: 'poly2tri'
 
 build_native_library
 build_ruby_extension

@@ -4,9 +4,6 @@
 #define __RAYS_SRC_POLYGON_H__
 
 
-#include <vector>
-#include <deque>
-#include <boost/polygon/polygon.hpp>
 #include <rays/polygon.h>
 
 
@@ -14,20 +11,17 @@ namespace Rays
 {
 
 
-	typedef double                                              BoostCoord;
+	enum
+	{
 
-	typedef boost::polygon::point_data<BoostCoord>              BoostPoint;
+		NSEGMENT_ROUND   = 8,
 
-	typedef boost::polygon::polygon_with_holes_data<BoostCoord> BoostPolygon;
+		NSEGMENT_ELLIPSE = NSEGMENT_ROUND * 4
 
-	typedef boost::polygon::polygon_set_data<BoostCoord>        BoostPolygonSet;
-
-	typedef std::vector<BoostPolygon>                           BoostPolygonList;
+	};
 
 
-	const BoostPolygonList& Polygon_subdivide (const Polygon& polygon);
-
-	const BoostPolygonSet& Polygon_get_boost_polygons (const Polygon& polygon);
+	void Polygon_triangulate (const Polygon& polygon);
 
 
 }// Rays

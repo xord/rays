@@ -13,6 +13,7 @@ void Init_color ();
 void Init_color_space ();
 void Init_matrix ();
 
+void Init_polyline ();
 void Init_polygon ();
 void Init_bitmap ();
 void Init_image ();
@@ -43,6 +44,7 @@ extern "C" void
 	Init_color_space();
 	Init_matrix();
 
+	Init_polyline();
 	Init_polygon();
 	Init_bitmap();
 	Init_image();

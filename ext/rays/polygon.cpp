@@ -4,6 +4,7 @@
 #include <vector>
 #include <rucy.h>
 #include "rays/ruby/bounds.h"
+#include "rays/ruby/polyline.h"
 #include "defs.h"
 
 
@@ -36,6 +37,92 @@ RUCY_DEF1(initialize_copy, obj)
 RUCY_END
 
 static
+RUCY_DEF3(add_points, points, loop, hole)
+{
+	CHECK;
+
+	if (points.size() <= 0) return nil();
+
+	std::vector<Rays::Point> array;
+	if (points[0].is_num())
+	{
+		if (points.size() % 2 != 0)
+			argument_error(__FILE__, __LINE__);
+
+		size_t size = points.size();
+		array.reserve(size / 2);
+		for (size_t i = 0; i < size; i += 2)
+		{
+			coord x = to<coord>(points[i + 0]);
+			coord y = to<coord>(points[i + 1]);
+			array.emplace_back(Rays::Point(x, y));
+		}
+	}
+	else
+	{
+		size_t size = points.size();
+		array.reserve(size);
+		for (size_t i = 0; i < size; ++i)
+			array.emplace_back(to<Rays::Point>(points[i]));
+	}
+
+	THIS->add(&array[0], array.size(), loop, hole);
+}
+RUCY_END
+
+static
+RUCY_DEF2(add_polyline, polyline, hole)
+{
+	CHECK;
+	THIS->add(to<Rays::Polyline&>(polyline), hole);
+}
+RUCY_END
+
+static
+RUCY_DEF0(clear)
+{
+	CHECK;
+	THIS->clear();
+}
+RUCY_END
+
+static
+RUCY_DEF0(each)
+{
+	CHECK;
+
+	Value ret;
+	for (const auto& polyline : *THIS)
+		ret = rb_yield(value(polyline));
+	return ret;
+}
+RUCY_END
+
+static
+RUCY_DEF0(size)
+{
+	CHECK;
+	return THIS->size();
+}
+RUCY_END
+
+static
+RUCY_DEF0(empty)
+{
+	CHECK;
+	return THIS->empty();
+}
+RUCY_END
+
+static
+RUCY_DEF1(at, index)
+{
+	CHECK;
+	return value((*THIS)[index]);
+}
+RUCY_END
+
+static
 RUCY_DEF1(op_sub, obj)
 {
 	CHECK;
@@ -64,64 +151,6 @@ RUCY_DEF1(op_xor, obj)
 {
 	CHECK;
 	return value(*THIS ^ to<Rays::Polygon&>(obj));
-}
-RUCY_END
-
-static void
-make_line_points (
-	std::vector<Rays::Coord3>* points, int argc, const Rucy::Value* argv)
-{
-	assert(points && argv);
-
-	points->clear();
-
-	if (argv[0].is_num())
-	{
-		if (argc % 2 != 0)
-			argument_error(__FILE__, __LINE__);
-
-		size_t npoints = argc / 2;
-		points->reserve(npoints);
-
-		for (size_t i = 0; i < npoints; ++i)
-		{
-			coord x = to<coord>(argv[i * 2 + 0]);
-			coord y = to<coord>(argv[i * 2 + 1]);
-			points->emplace_back(Rays::Point(x, y));
-		}
-	}
-	else
-	{
-		points->reserve(argc);
-		for (int i = 0; i < argc; ++i)
-			points->emplace_back(to<Rays::Point>(argv[i]));
-	}
-}
-
-static
-RUCY_DEFN(line_strip)
-{
-	if (argc <= 0)
-		argument_error(__FILE__, __LINE__);
-
-	std::vector<Rays::Coord3> points;
-	make_line_points(&points, argc, argv);
-
-	return value(
-		Rays::create_line((Rays::Point*) &points[0], points.size(), false));
-}
-RUCY_END
-
-static
-RUCY_DEFN(line_loop)
-{
-	if (argc <= 0)
-		argument_error(__FILE__, __LINE__);
-
-	std::vector<Rays::Coord3> points;
-	make_line_points(&points, argc, argv);
-
-	return value(create_line((Rays::Point*) &points[0], points.size(), true));
 }
 RUCY_END
 
@@ -168,12 +197,17 @@ Init_polygon ()
 	cPolygon = mRays.define_class("Polygon");
 	cPolygon.define_alloc_func(alloc);
 	cPolygon.define_private_method("initialize_copy", initialize_copy);
+	cPolygon.define_method("add_points",   add_points);
+	cPolygon.define_method("add_polyline", add_polyline);
+	cPolygon.define_method("clear",  clear);
+	cPolygon.define_method("each",   each);
+	cPolygon.define_method("size",   size);
+	cPolygon.define_method("empty?", empty);
+	cPolygon.define_method("at",     at);
 	cPolygon.define_method("-", op_sub);
 	cPolygon.define_method("&", op_and);
 	cPolygon.define_method("|", op_or);
 	cPolygon.define_method("^", op_xor);
-	cPolygon.define_singleton_method("line_loop",  line_loop);
-	cPolygon.define_singleton_method("line_strip", line_strip);
 	cPolygon.define_singleton_method("rect", rect);
 }
 
