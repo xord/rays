@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
   s.description = 'This library helps you to develop graphics application with OpenGL.'
   s.version     = mod.version
 
-  s.authors  = %w[snori]
-  s.email    = 'snori@xord.org'
+  s.authors  = %w[xordog]
+  s.email    = 'xordog@gmail.com'
   s.homepage = "https://github.com/xord/rays"
 
   s.platform              = Gem::Platform::RUBY
