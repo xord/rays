@@ -1,11 +1,7 @@
 #include "rays/ruby/shader.h"
 
 
-#include <rucy.h>
 #include "defs.h"
-
-
-using namespace Rucy;
 
 
 RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Shader)

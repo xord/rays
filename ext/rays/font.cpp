@@ -1,13 +1,7 @@
 #include "rays/ruby/font.h"
 
 
-#include <rucy.h>
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Font)

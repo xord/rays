@@ -2,14 +2,8 @@
 
 
 #include <vector>
-#include <rucy.h>
 #include "rays/ruby/point.h"
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Polyline)
@@ -27,34 +21,15 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(set_points, points, loop)
+RUCY_DEF2(set_points, args, loop)
 {
 	CHECK;
 
-	std::vector<Rays::Point> array;
-	if (!points.empty() && points[0].is_num())
-	{
-		if (points.size() % 2 != 0)
-			argument_error(__FILE__, __LINE__);
+	std::vector<Rays::Point> points;
+	bool line_loop;
+	get_line_args(&points, &line_loop, args, loop);
 
-		size_t size = points.size();
-		array.reserve(size / 2);
-		for (size_t i = 0; i < size; i += 2)
-		{
-			coord x = to<coord>(points[i + 0]);
-			coord y = to<coord>(points[i + 1]);
-			array.emplace_back(Rays::Point(x, y));
-		}
-	}
-	else
-	{
-		size_t size = points.size();
-		array.reserve(size);
-		for (size_t i = 0; i < size; ++i)
-			array.emplace_back(to<Rays::Point>(points[i]));
-	}
-
-	*THIS = Rays::Polyline(&array[0], array.size(), loop);
+	*THIS = Rays::Polyline(&points[0], points.size(), line_loop);
 }
 RUCY_END
 

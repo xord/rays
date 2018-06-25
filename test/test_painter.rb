@@ -157,10 +157,10 @@ class TestPainter < Test::Unit::TestCase
 
     pa.push stroke:   [0, 0, 1] do |_|
       assert_equal rgb(0, 1, 0), pa.fill
-      pa.fill =       [0, 0, 1]
-      assert_equal rgb(0, 0, 1), pa.fill
+      pa.fill =       [1, 0, 0]
+      assert_equal rgb(1, 0, 0), pa.fill
     end
-    assert_equal   rgb(0, 0, 1), pa.fill
+    assert_equal   rgb(0, 1, 0), pa.fill
   end
 
   def test_shader ()

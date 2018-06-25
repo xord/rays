@@ -17,11 +17,16 @@ namespace Rays
 	Rucy::Class polygon_class ();
 	// class Rays::Polygon
 
+	Rucy::Class polygon_line_class ();
+	// class Rays::Polygon::Line
+
 
 }// Rays
 
 
 RUCY_DECLARE_VALUE_OR_ARRAY_FROM_TO(Rays::Polygon)
+
+RUCY_DECLARE_VALUE_OR_ARRAY_FROM_TO(Rays::Polygon::Line)
 
 
 namespace Rucy
@@ -32,6 +37,12 @@ namespace Rucy
 	get_ruby_class<Rays::Polygon> ()
 	{
 		return Rays::polygon_class();
+	}
+
+	template <> inline Class
+	get_ruby_class<Rays::Polygon::Line> ()
+	{
+		return Rays::polygon_line_class();
 	}
 
 

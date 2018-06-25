@@ -1,16 +1,10 @@
 #include "rays/ruby/image.h"
 
 
-#include <rucy.h>
 #include "rays/ruby/color_space.h"
 #include "rays/ruby/bitmap.h"
 #include "rays/ruby/painter.h"
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_FROM_TO(Rays::Image)

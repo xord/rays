@@ -107,7 +107,7 @@ namespace Rays
 	Matrix::rotate (float degree, coord x, coord y, coord z)
 	{
 		to_glm(*this) = glm::rotate(
-			to_glm(*this), Xot::deg2rad(degree), Vec3(x, y, z));
+			to_glm(*this), (float) Xot::deg2rad(degree), Vec3(x, y, z));
 		return *this;
 	}
 
@@ -115,7 +115,7 @@ namespace Rays
 	Matrix::rotate (float degree, const Coord3& axis)
 	{
 		to_glm(*this) = glm::rotate(
-			to_glm(*this), Xot::deg2rad(degree), to_glm(axis));
+			to_glm(*this), (float) Xot::deg2rad(degree), to_glm(axis));
 		return *this;
 	}
 

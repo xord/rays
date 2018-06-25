@@ -48,6 +48,8 @@ namespace Rays
 
 		Color background, colors[2];
 
+		uint nsegment;
+
 		Font font;
 
 		Shader shader;
@@ -58,6 +60,7 @@ namespace Rays
 			background     .reset(0, 0);
 			colors[FILL]   .reset(1, 1);
 			colors[STROKE] .reset(1, 0);
+			nsegment       = 0;
 			font           = default_font();
 			shader         = Shader();
 		}
@@ -68,33 +71,6 @@ namespace Rays
 		}
 
 	};// State
-
-
-	struct Vertex
-	{
-
-		typedef Coord4 Position;
-		typedef Coord4 TexCoord;
-
-		union
-		{
-			struct {coord x, y, z;};
-			Position position;
-		};
-
-		union
-		{
-			struct {float s, t;};
-			TexCoord texcoord;
-		};
-
-		void reset (coord x, coord y, coord s, coord t)
-		{
-			position.reset(x, y);
-			texcoord.reset(s, t);
-		}
-
-	};// Vertex
 
 
 	struct TextureInfo
@@ -190,6 +166,35 @@ namespace Rays
 	};// OpenGLState
 
 
+	class DefaultIndices
+	{
+
+		public:
+
+			void resize (size_t size)
+			{
+				indices.reserve(size);
+				while (indices.size() < size)
+					indices.emplace_back(indices.size());
+			}
+
+			void clear ()
+			{
+				decltype(indices)().swap(indices);
+			}
+
+			const uint* get () const
+			{
+				return &indices[0];
+			}
+
+		private:
+
+			std::vector<uint> indices;
+
+	};// DefaultIndices
+
+
 	#define  ATTRIB_POSITION        "a_Position"
 	#define VARYING_POSITION        "v_Position"
 	#define UNIFORM_POSITION_MATRIX "u_PositionMatrix"
@@ -220,20 +225,22 @@ namespace Rays
 	{
 		static const ShaderSource SOURCE(
 			GL_VERTEX_SHADER,
-			"attribute vec4 "  ATTRIB_POSITION ";"
+			"attribute vec3 "  ATTRIB_POSITION ";"
 			"varying   vec4 " VARYING_POSITION ";"
 			"uniform   mat4 " UNIFORM_POSITION_MATRIX ";"
-			"attribute vec4 "  ATTRIB_TEXCOORD ";"
+			"attribute vec3 "  ATTRIB_TEXCOORD ";"
 			"varying   vec4 " VARYING_TEXCOORD ";"
 			"uniform   mat4 " UNIFORM_TEXCOORD_MATRIX ";"
 			"attribute vec4 "  ATTRIB_COLOR ";"
 			"varying   vec4 " VARYING_COLOR ";"
 			"void main ()"
 			"{"
-			   VARYING_POSITION " = " ATTRIB_POSITION ";"
+			"  vec4 pos           = vec4(" ATTRIB_POSITION ", 1.0);"
+			"  vec4 texcoord      = vec4(" ATTRIB_TEXCOORD ", 1.0);"
+			   VARYING_POSITION " = pos;"
+			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * texcoord;"
 			   VARYING_COLOR    " = " ATTRIB_COLOR ";"
-			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * " ATTRIB_TEXCOORD ";"
-			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * " ATTRIB_POSITION ";"
+			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * pos;"
 			"}");
 		return SOURCE;
 	}
@@ -243,6 +250,9 @@ namespace Rays
 	{
 		static const ShaderSource SHARED_SOURCE(
 			GL_FRAGMENT_SHADER,
+			"#ifdef GL_ES\n"
+			"precision mediump float;\n"
+			"#endif\n"
 			"uniform sampler2D " UNIFORM_TEXTURE ";"
 			"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
 			"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
@@ -277,8 +287,8 @@ namespace Rays
 	get_default_shader_for_color_texture ()
 	{
 		static const Shader SHADER(
-			"varying vec4 " VARYING_COLOR ";"
 			"varying vec4 " VARYING_TEXCOORD ";"
+			"varying vec4 " VARYING_COLOR ";"
 			"vec4 sampleTexture(vec2);"
 			"void main ()"
 			"{"
@@ -292,8 +302,8 @@ namespace Rays
 	get_default_shader_for_alpha_texture ()
 	{
 		static const Shader SHADER(
-			"varying vec4 " VARYING_COLOR ";"
 			"varying vec4 " VARYING_TEXCOORD ";"
+			"varying vec4 " VARYING_COLOR ";"
 			"vec4 sampleTexture(vec2);"
 			"void main ()"
 			"{"
@@ -326,6 +336,8 @@ namespace Rays
 		Image text_image;
 
 		OpenGLState opengl_state;
+
+		DefaultIndices default_indices;
 
 		Data ()
 		{
@@ -372,18 +384,28 @@ namespace Rays
 		}
 
 		void draw_shape (
-			GLenum mode,
-			const Vertex* vertices, size_t nvertices,
-			const uint*   indices,  size_t nindices,
-			const Color& color,
-			const Shader& default_shader,
+			GLenum mode, const Color& color,
+			const Coord3* points,           size_t npoints,
+			const uint*   indices   = NULL, size_t nindices = 0,
+			const Coord3* texcoords = NULL,
+			const Shader& default_shader = get_default_shader_for_shape(),
 			const TextureInfo* texinfo = NULL)
 		{
-			if (nvertices <= 0 || nindices <= 0 || !vertices || !indices)
+			if (!points || npoints <= 0)
 				argument_error(__FILE__, __LINE__);
 
 			if (!painting)
 				invalid_state_error(__FILE__, __LINE__, "'painting' should be true.");
+
+			if (!indices || nindices <= 0)
+			{
+				default_indices.resize(npoints);
+				indices  = default_indices.get();
+				nindices = npoints;
+			}
+
+			if (!texcoords)
+				texcoords = points;
 
 			const ShaderProgram* program = Shader_get_program(state.shader);
 			if (!program || !*program)
@@ -396,13 +418,13 @@ namespace Rays
 			apply_builtin_uniforms(*program, texinfo);
 
 			GLint a_position = glGetAttribLocation(program->id(), ATTRIB_POSITION);
-			GLint a_color    = glGetAttribLocation(program->id(), ATTRIB_COLOR);
 			GLint a_texcoord = glGetAttribLocation(program->id(), ATTRIB_TEXCOORD);
-			if (a_position < 0 || a_color < 0 || a_texcoord < 0)
+			GLint a_color    = glGetAttribLocation(program->id(), ATTRIB_COLOR);
+			if (a_position < 0 || a_texcoord < 0 || a_color < 0)
 				opengl_error(__FILE__, __LINE__);
 
 			setup_vertices(
-				vertices, nvertices, color, a_position, a_color, a_texcoord);
+				points, npoints, texcoords, color, a_position, a_texcoord, a_color);
 			//activate_texture(texture);
 
 			glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
@@ -486,24 +508,25 @@ namespace Rays
 			}
 
 			void setup_vertices (
-				const Vertex* vertices, size_t nvertices, const Color& color,
-				GLuint a_position, GLuint a_color, GLuint a_texcoord)
+				const Coord3* points, size_t npoints,
+				const Coord3* texcoords, const Color& color,
+				GLuint a_position, GLuint a_texcoord, GLuint a_color)
 			{
-				assert(nvertices >= 0 && vertices);
-
-				glVertexAttrib4fv(a_color, color.array);
+				assert(points && npoints >= 0 && texcoords);
 
 				glEnableVertexAttribArray(a_position);
 				glVertexAttribPointer(
-					a_position, Vertex::Position::SIZE, get_gl_type<coord>(),
-					GL_FALSE, sizeof(Vertex), &vertices->position);
+					a_position, Coord3::SIZE, get_gl_type<coord>(),
+					GL_FALSE, sizeof(Coord3), points);
 				check_error(__FILE__, __LINE__);
 
 				glEnableVertexAttribArray(a_texcoord);
 				glVertexAttribPointer(
-					a_texcoord, Vertex::TexCoord::SIZE, GL_FLOAT,
-					GL_FALSE, sizeof(Vertex), &vertices->texcoord);
+					a_texcoord, Coord3::SIZE, get_gl_type<coord>(),
+					GL_FALSE, sizeof(Coord3), texcoords);
 				check_error(__FILE__, __LINE__);
+
+				glVertexAttrib4fv(a_color, color.array);
 			}
 
 			void cleanup_vertices (GLint a_position, GLint a_texcoord)
@@ -546,6 +569,55 @@ namespace Rays
 			}
 
 	};// Painter::Data
+
+
+	static void
+	draw_shape (
+		Painter* painter,
+		const GLenum* modes,
+		coord offset_x, coord offset_y,
+		bool nofill, bool nostroke,
+		const Coord3* points,           size_t npoints,
+		const uint*   indices   = NULL, size_t nindices = 0,
+		const Coord3* texcoords = NULL,
+		const Shader& default_shader = get_default_shader_for_shape(),
+		const TextureInfo* texinfo = NULL)
+	{
+		assert(painter);
+
+		bool offset = offset_x != 0 || offset_y != 0;
+		if (offset)
+		{
+			painter->push_matrix();
+			painter->translate(offset_x, offset_y);
+		}
+
+		Color color;
+		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
+		{
+			if (nofill && type == FILL || nostroke && type == STROKE)
+				continue;
+
+			if (!painter->self->get_color(&color, (ColorType) type))
+				continue;
+
+			painter->self->draw_shape(
+				modes[type], color, points, npoints, indices, nindices, texcoords,
+				default_shader, texinfo);
+		}
+
+		if (offset)
+			painter->pop_matrix();
+	}
+
+	void
+	Painter_fill_polygon (
+		Painter* painter, GLenum mode, const Color& color,
+		const Coord3* points,  size_t npoints,
+		const uint*   indices, size_t nindices)
+	{
+		painter->self->draw_shape(mode, color, points, npoints, indices, nindices);
+	}
 
 
 	Painter::Painter ()
@@ -677,6 +749,7 @@ namespace Rays
 
 		self->painting = false;
 		self->opengl_state.pop();
+		self->default_indices.clear();
 
 		glFinish();
 
@@ -701,42 +774,51 @@ namespace Rays
 		check_error(__FILE__, __LINE__);
 	}
 
-	static void
-	draw_line (Painter* painter, const Point* points, size_t npoints, bool loop)
+	static inline void
+	debug_draw_triangulation (
+		Painter* painter, const Polygon& polygon, const Color& color)
 	{
+#ifdef _DEBUG
 		assert(painter);
 
-		Painter::Data* self = painter->self.get();
+		Color invert_color(
+			1.f - color.red,
+			1.f - color.green,
+			1.f - color.blue);
 
+		TrianglePointList triangles;
+		if (Polygon_triangulate(&triangles, polygon))
+		{
+			for (size_t i = 0; i < triangles.size(); i += 3)
+				painter->self->draw_shape(GL_LINE_LOOP, invert_color, &triangles[i], 3);
+		}
+#endif
+	}
+
+	void
+	Painter::polygon (const Polygon& polygon)
+	{
 		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
 		if (!self->state.has_color())
 			return;
 
-		GLenum modes[] = {
-			GL_TRIANGLE_FAN,
-			(GLenum) (loop ? GL_LINE_LOOP : GL_LINE_STRIP)
-		};
-
-		std::unique_ptr<Vertex[]> vertices(new Vertex[npoints]);
-		std::unique_ptr<uint[]>   indices(new uint[npoints]);
-		for (size_t i = 0; i < npoints; ++i)
+		Color color;
+		if (self->get_color(&color, FILL))
 		{
-			vertices[i].position = points[i];
-			vertices[i].texcoord = points[i];
-			indices[i]           = (uint) i;
+			Polygon_fill(polygon, this, color);
+			debug_draw_triangulation(this, polygon, color);
 		}
 
-		Color color;
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
+		if (self->get_color(&color, STROKE))
 		{
-			if (!self->get_color(&color, (ColorType) type))
-				continue;
-
-			self->draw_shape(
-				modes[type], vertices.get(), npoints, indices.get(), npoints, color,
-				get_default_shader_for_shape());
+			for (const auto& polyline : polygon)
+			{
+				self->draw_shape(
+					polyline.loop() ? GL_LINE_LOOP : GL_LINE_STRIP,
+					color, &polyline[0], polyline.size());
+			}
 		}
 	}
 
@@ -750,428 +832,87 @@ namespace Rays
 	Painter::line (const Point& p1, const Point& p2)
 	{
 		const Point points[] = {p1, p2};
-		draw_line(this, points, 2, false);
+		line(points, 2, false);
 	}
 
 	void
 	Painter::line (const Point* points, size_t size, bool loop)
 	{
-		draw_line(this, points, size, loop);
+		polygon(Polygon(points, size, loop));
 	}
 
 	void
 	Painter::line (const Polyline& polyline)
 	{
-		draw_line(this, &polyline[0], polyline.size(), polyline.loop());
-	}
-
-	static void
-	fill_polygon (Painter* painter, const Polygon& polygon)
-	{
-		assert(painter);
-
-		Color color;
-		if (!painter->self->get_color(&color, FILL))
-			return;
-
-		std::vector<Point> triangles;
-		Polygon_triangulate(&triangles, polygon);
-
-		std::unique_ptr<Vertex[]> vertices(new Vertex[triangles.size()]);
-		std::unique_ptr<uint[]>   indices(new uint[triangles.size()]);
-		for (size_t i = 0; i < triangles.size(); ++i)
-		{
-			vertices[i].position = triangles[i];
-			vertices[i].texcoord = triangles[i];
-			indices[i]           = (uint) i;
-		}
-
-		painter->self->draw_shape(
-			GL_TRIANGLES,
-			&vertices[0], triangles.size(),
-			&indices[0],  triangles.size(),
-			color,
-			get_default_shader_for_shape());
-	}
-
-	static void
-	stroke_polygon (Painter* painter, const Polygon& polygon)
-	{
-		assert(painter);
-
-		Color color;
-		if (!painter->self->get_color(&color, STROKE))
-			return;
-
-		for (const auto& polyline : polygon)
-		{
-			std::unique_ptr<Vertex[]> vertices(new Vertex[polyline.size()]);
-			std::unique_ptr<uint[]>   indices(new uint[polyline.size()]);
-			for (size_t i = 0; i < polyline.size(); ++i)
-			{
-				vertices[i].position = polyline[i];
-				vertices[i].texcoord = polyline[i];
-				indices[i]           = (uint) i;
-			}
-
-			painter->self->draw_shape(
-				GL_LINE_LOOP,
-				&vertices[0], polyline.size(),
-				&indices[0],  polyline.size(),
-				color,
-				get_default_shader_for_shape());
-		}
+		polygon(Polygon(polyline));
 	}
 
 	void
-	Painter::line (const Polygon& poly)
+	Painter::rect (coord x, coord y, coord width, coord height, coord round)
 	{
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
-
-		if (!self->state.has_color())
-			return;
-
-		fill_polygon(this, poly);
-		stroke_polygon(this, poly);
-	}
-
-	static void
-	draw_rect (Painter* painter, coord x, coord y, coord width, coord height)
-	{
-		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		static const uint INDICES[] = {0, 1, 2, 3};
-
-		assert(painter);
-
-		Painter::Data* self = painter->self.get();
-
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
-
-		if (!self->state.has_color())
-			return;
-
-		Color color;
-		Vertex vertices[4];
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!self->get_color(&color, (ColorType) type))
-				continue;
-
-			vertices[0].reset(x,         y,          0,     0);
-			vertices[1].reset(x,         y + height, 0,     height);
-			vertices[2].reset(x + width, y + height, width, height);
-			vertices[3].reset(x + width, y,          width, 0);
-
-			self->draw_shape(
-				MODES[type], vertices, 4, INDICES, 4, color,
-				get_default_shader_for_shape());
-		}
-	}
-
-	static void
-	fix_rounds (
-		coord* left_top, coord* right_top, coord* left_bottom, coord* right_bottom,
-		coord width, coord height)
-	{
-		assert(left_top && right_top && left_bottom && right_bottom);
-
-		if (width  < 0) width  = -width;
-		if (height < 0) height = -height;
-
-		coord* rounds[] = {left_top, right_top, right_bottom, left_bottom, left_top};
-		coord sizes[]   = {width, height, width, height};
-
-		for (size_t i = 0; i < 4; ++i)
-		{
-			const coord& size = sizes[i];
-
-			coord* a = rounds[i];
-			coord* b = rounds[i + 1];
-			if (*a + *b <= size)
-				continue;
-
-			if (*a > *b)
-				std::swap(a, b);
-
-			if (*a * 2 > size)
-				*a = *b = size / 2;
-			else
-				*b = size - *a;
-		}
-	}
-
-	struct RoundedCorner
-	{
-		coord x, y, offset_sign_x, offset_sign_y, round;
-	};
-
-	static int
-	setup_round (
-		Vertex* vertex, coord x, coord y, const RoundedCorner& corner,
-		coord sign_x, coord sign_y, float radian_offset, uint nsegment)
-	{
-		if (corner.round <= 0)
-		{
-			vertex->reset(x + corner.x, y + corner.y, corner.x, corner.y);
-			return 1;
-		}
-
-		coord offset_x = corner.x + corner.round * corner.offset_sign_x * sign_x;
-		coord offset_y = corner.y + corner.round * corner.offset_sign_y * sign_y;
-
-		for (uint seg = 0; seg <= nsegment; ++seg, ++vertex)
-		{
-			float pos    = (float) seg / (float) nsegment;
-			float radian = radian_offset + pos * (M_PI / 2);
-			coord xx     = offset_x + cos(radian) * corner.round * sign_x;
-			coord yy     = offset_y - sin(radian) * corner.round * sign_y;
-			vertex->reset(x + xx, y + yy, xx, yy);
-		}
-		return nsegment + 1;
-	}
-
-	static void
-	draw_round_rect (
-		Painter* painter,
-		coord x, coord y, coord width, coord height,
-		coord round_left_top,    coord round_right_top,
-		coord round_left_bottom, coord round_right_bottom,
-		uint nsegment)
-	{
-		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-
-		assert(painter);
-
-		Painter::Data* self = painter->self.get();
-
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
-
-		if (!self->state.has_color())
-			return;
-
-		if (nsegment <= 0)
-			nsegment = NSEGMENT_ROUND;
-
-		fix_rounds(
-			&round_left_top,    &round_right_top,
-			&round_left_bottom, &round_right_bottom,
-			width, height);
-
-		coord sign_x = width  >= 0 ? +1 : -1;
-		coord sign_y = height >= 0 ? +1 : -1;
-		RoundedCorner corners[] =
-		{
-			{width,      0, -1, +1, round_right_top},
-			{    0,      0, +1, +1, round_left_top},
-			{    0, height, +1, -1, round_left_bottom},
-			{width, height, -1, -1, round_right_bottom}
-		};
-
-		size_t nvertices = 0;
-		for (size_t i = 0; i < 4; ++i)
-			nvertices += corners[i].round > 0 ? nsegment + 1 : 1;
-
-		std::unique_ptr<uint[]> indices(new uint[nvertices]);
-		for (size_t i = 0; i < nvertices; ++i)
-			indices[i] = (int) i;
-
-		std::unique_ptr<Vertex[]> vertices(new Vertex[nvertices]);
-		Vertex* vertex = vertices.get();
-
-		for (size_t i = 0; i < 4; ++i)
-		{
-			vertex += setup_round(
-				vertex, x, y, corners[i], sign_x, sign_y, (M_PI / 2) * i, nsegment);
-		}
-
-		Color color;
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!self->get_color(&color, (ColorType) type))
-				continue;
-
-			self->draw_shape(
-				MODES[type], vertices.get(), nvertices, indices.get(), nvertices, color,
-				get_default_shader_for_shape());
-		}
+		rect(x, y, width, height, round, round, round, round);
 	}
 
 	void
 	Painter::rect (
 		coord x, coord y, coord width, coord height,
-		coord round, uint nsegment)
+		coord round_lefttop,    coord round_righttop,
+		coord round_leftbottom, coord round_rightbottom)
 	{
-		rect(x, y, width, height, round, round, round, round, nsegment);
+		polygon(create_rect(
+			x, y, width, height,
+			round_lefttop, round_righttop, round_leftbottom, round_rightbottom,
+			nsegment()));
 	}
 
 	void
-	Painter::rect (
-		coord x, coord y, coord width, coord height,
-		coord round_left_top,    coord round_right_top,
-		coord round_left_bottom, coord round_right_bottom,
-		uint nsegment)
+	Painter::rect (const Bounds& bounds, coord round)
 	{
-		if (
-			round_left_top    == 0 && round_right_top    == 0 &&
-			round_left_bottom == 0 && round_right_bottom == 0)
-		{
-			draw_rect(this, x, y, width, height);
-		}
-		else
-		{
-			draw_round_rect(
-				this, x, y, width, height,
-				round_left_top, round_right_top, round_left_bottom, round_right_bottom,
-				nsegment);
-		}
-	}
-
-	void
-	Painter::rect (const Bounds& bounds, coord round, uint nsegment)
-	{
-		rect(
-			bounds.x, bounds.y, bounds.width, bounds.height,
-			round, nsegment);
+		rect(bounds.x, bounds.y, bounds.width, bounds.height, round);
 	}
 
 	void
 	Painter::rect (
 		const Bounds& bounds,
-		coord round_left_top,    coord round_right_top,
-		coord round_left_bottom, coord round_right_bottom,
-		uint nsegment)
+		coord round_lefttop,    coord round_righttop,
+		coord round_leftbottom, coord round_rightbottom)
 	{
 		rect(
 			bounds.x, bounds.y, bounds.width, bounds.height,
-			round_left_top, round_right_top, round_left_bottom, round_right_bottom,
-			nsegment);
-	}
-
-	static inline void
-	setup_ellipse_vertex (
-		Vertex* vertex, coord origin_x, coord origin_y, coord vertex_x, coord vertex_y)
-	{
-		assert(vertex);
-
-		vertex->position.reset(origin_x + vertex_x, origin_y + vertex_y);
-		vertex->texcoord.reset(vertex_x, vertex_y);
-	}
-
-	static void
-	draw_ellipse (
-		Painter* painter,
-		coord x, coord y, coord width, coord height,
-		float angle_from, float angle_to, coord hole_width, coord hole_height,
-		uint nsegment)
-	{
-		assert(painter);
-
-		Painter::Data* self = painter->self.get();
-
-		if (!self->painting)
-			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
-
-		if (!self->state.has_color() || width == 0 || height == 0)
-			return;
-
-		if (nsegment <= 0)
-			nsegment = NSEGMENT_ELLIPSE;
-
-		float from         = angle_from / 360.f;
-		float to           = angle_to   / 360.f;
-		bool hole          = hole_width != 0 && hole_height != 0;
-		coord hole_x       = x + (width  - hole_width)  / 2;
-		coord hole_y       = y + (height - hole_height) / 2;
-		int npoint         = nsegment + 1;
-		size_t nvertices   = hole ? npoint * 2 : npoint + 1;
-		GLenum modes[]     =
-		{
-			(GLenum) (hole ? GL_TRIANGLE_STRIP : GL_TRIANGLE_FAN),
-			GL_LINE_LOOP
-		};
-
-		std::unique_ptr<uint[]> indices(new uint[nvertices]);
-		for (size_t i = 0; i < nvertices; ++i)
-			indices[i] = (int) i;
-
-		std::unique_ptr<Vertex[]> vertices(new Vertex[nvertices]);
-		Vertex* vertex = vertices.get();
-
-		if (!hole)
-		{
-			(vertex++)->position.reset(
-				x + width  / 2,
-				y + height / 2);
-		}
-
-		for (uint seg = 0; seg <= nsegment; ++seg)
-		{
-			float pos    = (float) seg / (float) nsegment;
-			float radian = (from + (to - from) * pos) * (M_PI * 2);
-			float cos_   = (cos(radian)  + 1) / 2.;
-			float sin_   = (-sin(radian) + 1) / 2.;
-
-			if (hole)
-			{
-				setup_ellipse_vertex(
-					vertex++,
-					hole_x,
-					hole_y,
-					hole_width  * cos_,
-					hole_height * sin_);
-			}
-
-			setup_ellipse_vertex(
-				vertex++,
-				x,
-				y,
-				width  * cos_,
-				height * sin_);
-		}
-
-		Color color;
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (!self->get_color(&color, (ColorType) type))
-				continue;
-
-			self->draw_shape(
-				modes[type], vertices.get(), nvertices, indices.get(), nvertices, color,
-				get_default_shader_for_shape());
-		}
+			round_lefttop, round_righttop, round_leftbottom, round_rightbottom);
 	}
 
 	void
 	Painter::ellipse (
 		coord x, coord y, coord width, coord height,
-		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
+		const Point& hole_size,
+		float angle_from, float angle_to)
 	{
-		draw_ellipse(
-			this, x, y, width, height,
-			angle_from, angle_to, hole_size.x, hole_size.y, nsegment);
+		polygon(create_ellipse(
+			x, y, width, height, hole_size, angle_from, angle_to, nsegment()));
 	}
 
 	void
 	Painter::ellipse (
 		const Bounds& bounds,
-		float angle_from, float angle_to, const Point& hole_size, uint nsegment)
+		const Point& hole_size,
+		float angle_from, float angle_to)
 	{
 		ellipse(
 			bounds.x, bounds.y, bounds.width, bounds.height,
-			angle_from, angle_to, hole_size, nsegment);
+			hole_size, angle_from, angle_to);
 	}
 
 	void
 	Painter::ellipse (
-		const Point& center, coord radius,
-		float angle_from, float angle_to, coord hole_radius, uint nsegment)
+		const Point& center, const Point& radius, const Point& hole_radius,
+		float angle_from, float angle_to)
 	{
-		draw_ellipse(
-			this, center.x - radius, center.y - radius, radius * 2, radius * 2,
-			angle_from, angle_to, hole_radius * 2, hole_radius * 2, nsegment);
+		ellipse(
+			center.x - radius.x, center.y - radius.y,
+			           radius.x * 2,      radius.y * 2,
+			Point(hole_radius.x * 2, hole_radius.y * 2),
+			angle_from, angle_to);
 	}
 
 	static void
@@ -1182,7 +923,6 @@ namespace Rays
 		bool nostroke = false, const Shader* shader = NULL)
 	{
 		static const GLenum MODES[] = {GL_TRIANGLE_FAN, GL_LINE_LOOP};
-		static const uint INDICES[] = {0, 1, 2, 3};
 
 		assert(painter && image);
 
@@ -1204,35 +944,24 @@ namespace Rays
 		src_w *= density;
 		src_h *= density;
 
-		coord src_x2 = src_x + src_w;
-		coord src_y2 = src_y + src_h;
-		coord dst_x2 = dst_x + dst_w;
-		coord dst_y2 = dst_y + dst_h;
+		Point points[4], texcoords[4];
+		points[0]   .reset(dst_x,         dst_y);
+		points[1]   .reset(dst_x,         dst_y + dst_h);
+		points[2]   .reset(dst_x + dst_w, dst_y + dst_h);
+		points[3]   .reset(dst_x + dst_w, dst_y);
+		texcoords[0].reset(src_x,         src_y);
+		texcoords[1].reset(src_x,         src_y + src_h);
+		texcoords[2].reset(src_x + src_w, src_y + src_h);
+		texcoords[3].reset(src_x + src_w, src_y);
 
-		Vertex vertices[4];
-		vertices[0].reset(dst_x,  dst_y,  src_x,  src_y);
-		vertices[1].reset(dst_x,  dst_y2, src_x,  src_y2);
-		vertices[2].reset(dst_x2, dst_y2, src_x2, src_y2);
-		vertices[3].reset(dst_x2, dst_y,  src_x2, src_y);
-
-		TextureInfo texinfo(texture, src_x, src_y, src_x2, src_y2);
+		TextureInfo texinfo(texture, src_x, src_y, src_x + src_w, src_y + src_h);
 
 		if (!shader)
 			shader = &get_default_shader_for_color_texture();
 
-		Color color;
-		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
-		{
-			if (
-				(nostroke && type == STROKE) ||
-				!self->get_color(&color, (ColorType) type))
-			{
-				continue;
-			}
-
-			self->draw_shape(
-				MODES[type], vertices, 4, INDICES, 4, color, *shader, &texinfo);
-		}
+		draw_shape(
+			painter, MODES, 0, 0, false, nostroke, points, 4, NULL, 0, texcoords,
+			*shader, &texinfo);
 	}
 
 	void
@@ -1323,7 +1052,7 @@ namespace Rays
 			dst_bounds.x, dst_bounds.y, dst_bounds.width, dst_bounds.height);
 	}
 
-	static void
+	static inline void
 	debug_draw_text (
 		Painter* painter, const Font& font,
 		coord x, coord y, coord str_width, coord str_height)
@@ -1527,6 +1256,19 @@ namespace Rays
 	Painter::stroke () const
 	{
 		return self->state.colors[STROKE];
+	}
+
+	void
+	Painter::set_nsegment (int nsegment)
+	{
+		if (nsegment < 0) nsegment = 0;
+		self->state.nsegment = nsegment;
+	}
+
+	uint
+	Painter::nsegment () const
+	{
+		return self->state.nsegment;
 	}
 
 	void

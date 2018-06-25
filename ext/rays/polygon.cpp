@@ -2,15 +2,9 @@
 
 
 #include <vector>
-#include <rucy.h>
 #include "rays/ruby/bounds.h"
 #include "rays/ruby/polyline.h"
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_OR_ARRAY_FROM_TO(Rays::Polygon)
@@ -28,34 +22,15 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(set_points, points, loop)
+RUCY_DEF2(set_points, args, loop)
 {
 	CHECK;
 
-	std::vector<Rays::Point> array;
-	if (!points.empty() && points[0].is_num())
-	{
-		if (points.size() % 2 != 0)
-			argument_error(__FILE__, __LINE__);
+	std::vector<Rays::Point> points;
+	bool line_loop;
+	get_line_args(&points, &line_loop, args, loop);
 
-		size_t size = points.size();
-		array.reserve(size / 2);
-		for (size_t i = 0; i < size; i += 2)
-		{
-			coord x = to<coord>(points[i + 0]);
-			coord y = to<coord>(points[i + 1]);
-			array.emplace_back(Rays::Point(x, y));
-		}
-	}
-	else
-	{
-		size_t size = points.size();
-		array.reserve(size);
-		for (size_t i = 0; i < size; ++i)
-			array.emplace_back(to<Rays::Point>(points[i]));
-	}
-
-	*THIS = Rays::Polygon(&array[0], array.size(), loop);
+	*THIS = Rays::Polygon(&points[0], points.size(), line_loop);
 }
 RUCY_END
 
@@ -105,8 +80,8 @@ RUCY_DEF0(each)
 	CHECK;
 
 	Value ret;
-	for (const auto& polyline : *THIS)
-		ret = rb_yield(value(polyline));
+	for (const auto& line : *THIS)
+		ret = rb_yield(value(line));
 	return ret;
 }
 RUCY_END
@@ -144,34 +119,32 @@ RUCY_DEF1(op_xor, obj)
 RUCY_END
 
 static
-RUCY_DEFN(rect)
+RUCY_DEF7(create_rect,
+	args, round, lefttop, righttop, leftbottom, rightbottom, nsegment)
 {
-	check_arg_count(
-		__FILE__, __LINE__, "Polygon.rect", argc, 1, 2, 4, 5, 6, 8, 9);
+	coord x, y, w, h, lt, rt, lb, rb;
+	uint nseg;
+	get_rect_args(
+		&x, &y, &w, &h, &lt, &rt, &lb, &rb, &nseg,
+		args, round, lefttop, righttop, leftbottom, rightbottom, nsegment);
 
-	if (argv[0].is_kind_of(Rays::bounds_class()))
-	{
-		Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		coord lt        = argc >= 2 ? to<coord>(argv[1]) : 0;
-		coord rt        = argc >= 3 ? to<coord>(argv[2]) : lt;
-		coord lb        = argc >= 4 ? to<coord>(argv[3]) : lt;
-		coord rb        = argc >= 5 ? to<coord>(argv[4]) : lt;
-		uint nsegment   = argc >= 6 ? to<uint>(argv[5])  : 0;
-		return value(Rays::create_rect(b, lt, rt, lb, rb, nsegment));
-	}
-	else
-	{
-		coord x       = to<coord>(argv[0]);
-		coord y       = to<coord>(argv[1]);
-		coord w       = to<coord>(argv[2]);
-		coord h       = to<coord>(argv[3]);
-		coord lt      = argc >= 5 ? to<coord>(argv[4]) : 0;
-		coord rt      = argc >= 6 ? to<coord>(argv[5]) : lt;
-		coord lb      = argc >= 7 ? to<coord>(argv[6]) : lt;
-		coord rb      = argc >= 8 ? to<coord>(argv[7]) : lt;
-		uint nsegment = argc >= 9 ? to<uint>(argv[8])  : 0;
-		return value(Rays::create_rect(x, y, w, h, lt, rt, lb, rb, nsegment));
-	}
+	return value(Rays::create_rect(x, y, w, h, lt, rt, lb, rb, nseg));
+}
+RUCY_END
+
+static
+RUCY_DEF7(create_ellipse,
+	args, center, radius, hole, angle_from, angle_to, nsegment)
+{
+	coord x, y, w, h;
+	Rays::Point hole_size;
+	float from, to_;
+	uint nseg;
+	get_ellipse_args(
+		&x, &y, &w, &h, &hole_size, &from, &to_, &nseg,
+		args, center, radius, hole, angle_from, angle_to, nsegment);
+
+	return value(Rays::create_ellipse(x, y, w, h, hole_size, from, to_, nseg));
 }
 RUCY_END
 
@@ -195,7 +168,8 @@ Init_polygon ()
 	cPolygon.define_method("&", op_and);
 	cPolygon.define_method("|", op_or);
 	cPolygon.define_method("^", op_xor);
-	cPolygon.define_singleton_method("rect", rect);
+	cPolygon.define_singleton_method("create_rect",    create_rect);
+	cPolygon.define_singleton_method("create_ellipse", create_ellipse);
 }
 
 

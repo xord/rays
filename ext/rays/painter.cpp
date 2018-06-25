@@ -2,7 +2,6 @@
 
 
 #include <vector>
-#include <rucy.h>
 #include "rays/ruby/point.h"
 #include "rays/ruby/bounds.h"
 #include "rays/ruby/color.h"
@@ -11,11 +10,6 @@
 #include "rays/ruby/font.h"
 #include "rays/ruby/shader.h"
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_FROM_TO(Rays::Painter)
@@ -90,58 +84,26 @@ RUCY_DEF0(clear)
 }
 RUCY_END
 
-static void
-make_line_points (
-	std::vector<Rays::Coord3>* points, int argc, const Rucy::Value* argv)
-{
-	assert(points && argv);
-
-	points->clear();
-
-	if (argv[0].is_num())
-	{
-		points->reserve(argc / 2);
-		for (int i = 0; i < argc; i += 2)
-		{
-			coord x = to<coord>(argv[i + 0]);
-			coord y = to<coord>(argv[i + 1]);
-			points->emplace_back(Rays::Point(x, y));
-		}
-	}
-	else
-	{
-		points->reserve(argc);
-		for (int i = 0; i < argc; ++i)
-			points->emplace_back(to<Rays::Point>(argv[i]));
-	}
-}
-
 static
-RUCY_DEFN(line_strip)
+RUCY_DEF1(polygon, poly)
 {
 	CHECK;
-	if (argc <= 0)
-		argument_error(__FILE__, __LINE__);
 
-	std::vector<Rays::Coord3> points;
-	make_line_points(&points, argc, argv);
-
-	THIS->line((Rays::Point*) &points[0], points.size(), false);
+	THIS->polygon(to<Rays::Polygon&>(poly));
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEFN(line_loop)
+RUCY_DEF2(line, args, loop)
 {
 	CHECK;
-	if (argc <= 0)
-		argument_error(__FILE__, __LINE__);
 
-	std::vector<Rays::Coord3> points;
-	make_line_points(&points, argc, argv);
+	std::vector<Rays::Point> points;
+	bool line_loop;
+	get_line_args(&points, &line_loop, args, loop);
 
-	THIS->line((Rays::Point*) &points[0], points.size(), true);
+	THIS->line(&points[0], points.size(), line_loop);
 	return self;
 }
 RUCY_END
@@ -157,97 +119,35 @@ RUCY_DEF1(polyline, poly)
 RUCY_END
 
 static
-RUCY_DEF1(polygon, poly)
+RUCY_DEF6(rect, args, round, lefttop, righttop, leftbottom, rightbottom)
 {
 	CHECK;
 
-	THIS->line(to<Rays::Polygon&>(poly));
+	coord x, y, w, h, lt, rt, lb, rb;
+	uint _;
+	get_rect_args(
+		&x, &y, &w, &h, &lt, &rt, &lb, &rb, &_,
+		args, round, lefttop, righttop, leftbottom, rightbottom, nil());
+
+	THIS->rect(x, y, w, h, lt, rt, lb, rb);
 	return self;
 }
 RUCY_END
 
 static
-RUCY_DEFN(rect)
-{
-	CHECK;
-	check_arg_count(
-		__FILE__, __LINE__, "Painter#rect", argc, 1, 2, 4, 5, 6, 8, 9);
-
-	if (argv[0].is_kind_of(Rays::bounds_class()))
-	{
-		Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		coord lt        = argc >= 2 ? to<coord>(argv[1]) : 0;
-		coord rt        = argc >= 3 ? to<coord>(argv[2]) : lt;
-		coord lb        = argc >= 4 ? to<coord>(argv[3]) : lt;
-		coord rb        = argc >= 5 ? to<coord>(argv[4]) : lt;
-		uint nsegment   = argc >= 6 ? to<uint>(argv[5])  : 0;
-		THIS->rect(b, lt, rt, lb, rb, nsegment);
-	}
-	else
-	{
-		coord x       = to<coord>(argv[0]);
-		coord y       = to<coord>(argv[1]);
-		coord w       = to<coord>(argv[2]);
-		coord h       = to<coord>(argv[3]);
-		coord lt      = argc >= 5 ? to<coord>(argv[4]) : 0;
-		coord rt      = argc >= 6 ? to<coord>(argv[5]) : lt;
-		coord lb      = argc >= 7 ? to<coord>(argv[6]) : lt;
-		coord rb      = argc >= 8 ? to<coord>(argv[7]) : lt;
-		uint nsegment = argc >= 9 ? to<uint>(argv[8])  : 0;
-		THIS->rect(x, y, w, h, lt, rt, lb, rb, nsegment);
-	}
-
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEFN(ellipse)
+RUCY_DEF6(ellipse, args, center, radius, hole, angle_from, angle_to)
 {
 	CHECK;
 
-	if (argv[0].is_kind_of(Rays::bounds_class()))
-	{
-		check_arg_count(
-			__FILE__, __LINE__, "Painter#ellipse(Bounds, ...)", argc, 1, 2, 3, 4, 5);
+	coord x, y, w, h;
+	Rays::Point hole_size;
+	float from, to_;
+	uint _;
+	get_ellipse_args(
+		&x, &y, &w, &h, &hole_size, &from, &to_, &_,
+		args, center, radius, hole, angle_from, angle_to, nil());
 
-		const Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
-		float from       = (argc >= 2) ? to<float>(argv[1])       : 0;
-		float to_        = (argc >= 3) ? to<float>(argv[2])       : 360;
-		Rays::Point hole = (argc >= 4) ? to<Rays::Point>(argv[3]) : 0;
-		uint nseg        = (argc >= 5) ? to<uint> (argv[4])       : 0;
-		THIS->ellipse(b, from, to_, hole, nseg);
-	}
-	else if (argv[0].is_kind_of(Rays::point_class()))
-	{
-		check_arg_count(
-			__FILE__, __LINE__, "Painter#ellipse(Point, ...)", argc, 2, 3, 4, 5, 6);
-
-		const Rays::Point& p = to<Rays::Point&>(argv[0]);
-		coord radius = to<coord>(argv[1]);
-		float from   = (argc >= 3) ? to<float>(argv[2]) : 0;
-		float to_    = (argc >= 4) ? to<float>(argv[3]) : 360;
-		coord hole   = (argc >= 5) ? to<coord>(argv[4]) : 0;
-		uint nseg    = (argc >= 6) ? to<uint> (argv[5]) : 0;
-		THIS->ellipse(p, radius, from, to_, hole, nseg);
-	}
-	else
-	{
-		check_arg_count(
-			__FILE__, __LINE__,
-			"Painter#ellipse(Number, ...)", argc, 3, 4, 5, 6, 7, 8);
-
-		coord x          = to<coord>(argv[0]);
-		coord y          = to<coord>(argv[1]);
-		coord w          = to<coord>(argv[2]);
-		coord h          = (argc >= 4) ? to<coord>(argv[3])       : w;
-		float from       = (argc >= 5) ? to<float>(argv[4])       : 0;
-		float to_        = (argc >= 6) ? to<float>(argv[5])       : 360;
-		Rays::Point hole = (argc >= 7) ? to<Rays::Point>(argv[6]) : 0;
-		uint nseg        = (argc >= 8) ? to<uint> (argv[7])       : 0;
-		THIS->ellipse(x, y, w, h, from, to_, hole, nseg);
-	}
-
+	THIS->ellipse(x, y, w, h, hole_size, from, to_);
 	return self;
 }
 RUCY_END
@@ -396,6 +296,23 @@ RUCY_DEF0(no_stroke)
 	CHECK;
 	THIS->no_stroke();
 	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_nsegment, nsegment)
+{
+	CHECK;
+	THIS->set_nsegment(nsegment ? to<int>(nsegment) : 0);
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_nsegment)
+{
+	CHECK;
+	return value(THIS->nsegment());
 }
 RUCY_END
 
@@ -594,14 +511,13 @@ Init_painter ()
 	cPainter.define_private_method("begin_paint", begin_paint);
 	cPainter.define_private_method(  "end_paint",   end_paint);
 	cPainter.define_method("clear",   clear);
-	cPainter.define_private_method("line_strip", line_strip);
-	cPainter.define_private_method("line_loop",  line_loop);
-	cPainter.define_private_method("polyline",   polyline);
-	cPainter.define_private_method("polygon",    polygon);
-	cPainter.define_method("rect",    rect);
-	cPainter.define_method("ellipse", ellipse);
-	cPainter.define_method("image",   image);
-	cPainter.define_method("text",    text);
+	cPainter.define_method("polygon", polygon);
+	cPainter.define_private_method("draw_line",     line);
+	cPainter.define_private_method("draw_polyline", polyline);
+	cPainter.define_private_method("draw_rect",     rect);
+	cPainter.define_private_method("draw_ellipse",  ellipse);
+	cPainter.define_method("image", image);
+	cPainter.define_method("text",  text);
 
 	cPainter.define_method(   "background=", set_background);
 	cPainter.define_method(   "background",  get_background);
@@ -612,6 +528,8 @@ Init_painter ()
 	cPainter.define_method(   "stroke=", set_stroke);
 	cPainter.define_method(   "stroke",  get_stroke);
 	cPainter.define_method("no_stroke",   no_stroke);
+	cPainter.define_method("nsegment=", set_nsegment);
+	cPainter.define_method("nsegment",  get_nsegment);
 	cPainter.define_private_method("set_shader", set_shader);
 	cPainter.define_method(            "shader", get_shader);
 	cPainter.define_method(         "no_shader",  no_shader);

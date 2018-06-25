@@ -1,20 +1,10 @@
 #include "rays/ruby/bitmap.h"
 
 
-#include <rucy.h>
-#include "rays/exception.h"
 #include "rays/ruby/color_space.h"
 #include "rays/ruby/color.h"
 #include "rays/ruby/font.h"
 #include "defs.h"
-
-
-using namespace Rucy;
-
-using Rays::uchar;
-using Rays::ushort;
-using Rays::uint;
-using Rays::coord;
 
 
 RUCY_DEFINE_VALUE_FROM_TO(Rays::Bitmap)

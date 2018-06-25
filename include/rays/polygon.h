@@ -4,6 +4,7 @@
 #define __RAYS_POLYGON_H__
 
 
+#include <vector>
 #include <xot/pimpl.h>
 #include <rays/bounds.h>
 #include <rays/polyline.h>
@@ -23,13 +24,19 @@ namespace Rays
 
 				typedef Polyline Super;
 
-				bool hole;
+				public:
 
-				Line (const Polyline& polyline, bool hole);
+					Line (const Polyline& polyline, bool hole);
 
-				operator bool () const;
+					bool hole () const;
 
-				bool operator ! () const;
+					operator bool () const;
+
+					bool operator ! () const;
+
+				private:
+
+					bool hole_;
 
 			};// Line
 
@@ -79,6 +86,8 @@ namespace Rays
 
 			Xot::PSharedImpl<Data> self;
 
+			Polygon (Data* data);
+
 	};// Polygon
 
 
@@ -91,7 +100,8 @@ namespace Rays
 
 	Polygon create_rect (
 		coord x, coord y, coord width, coord height,
-		coord round = 0, uint nsegment = 0);
+		coord round = 0,
+		uint nsegment = 0);
 
 	Polygon create_rect (
 		coord x, coord y, coord width, coord height,
@@ -101,7 +111,8 @@ namespace Rays
 
 	Polygon create_rect (
 		const Bounds& bounds,
-		coord round = 0, uint nsegment = 0);
+		coord round = 0,
+		uint nsegment = 0);
 
 	Polygon create_rect (
 		const Bounds& bounds,
@@ -112,18 +123,21 @@ namespace Rays
 
 	Polygon create_ellipse (
 		coord x, coord y, coord width, coord height = 0,
+		const Point& hole_size = 0,
 		float angle_from = 0, float angle_to = 360,
-		const Point& hole_size = 0, uint nsegment = 0);
+		uint nsegment = 0);
 
 	Polygon create_ellipse (
 		const Bounds& bounds,
+		const Point& hole_size = 0,
 		float angle_from = 0, float angle_to = 360,
-		const Point& hole_size = 0, uint nsegment = 0);
+		uint nsegment = 0);
 
 	Polygon create_ellipse (
 		const Point& center, const Point& radius,
+		const Point& hole_radius = 0,
 		float angle_from = 0, float angle_to = 360,
-		const Point& hole_radius = 0, uint nsegment = 0);
+		uint nsegment = 0);
 
 
 }// Rays

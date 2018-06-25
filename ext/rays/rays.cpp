@@ -1,9 +1,5 @@
-#include <rucy.h>
 #include "rays/rays.h"
 #include "defs.h"
-
-
-using namespace Rucy;
 
 
 static

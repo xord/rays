@@ -73,7 +73,7 @@ namespace Rays
 	void
 	Point::rotate (float degree)
 	{
-		to_glm(*this) = glm::rotateZ(to_glm(*this), Xot::deg2rad(degree));
+		to_glm(*this) = glm::rotateZ(to_glm(*this), (float) Xot::deg2rad(degree));
 	}
 
 	coord

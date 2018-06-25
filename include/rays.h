@@ -16,6 +16,7 @@
 #include <rays/color_space.h>
 #include <rays/matrix.h>
 
+#include <rays/polyline.h>
 #include <rays/polygon.h>
 #include <rays/bitmap.h>
 #include <rays/image.h>

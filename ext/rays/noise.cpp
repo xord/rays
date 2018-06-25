@@ -1,14 +1,6 @@
-#include <rucy.h>
 #include "rays/noise.h"
-#include "defs.h"
-
-
 #include "rays/ruby/point.h"
-
-
-using namespace Rucy;
-
-using Rays::coord;
+#include "defs.h"
 
 
 static

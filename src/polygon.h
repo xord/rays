@@ -12,18 +12,18 @@ namespace Rays
 {
 
 
-	enum
-	{
-
-		NSEGMENT_ROUND   = 8,
-
-		NSEGMENT_ELLIPSE = NSEGMENT_ROUND * 4
-
-	};
+	class Painter;
+	struct Color;
 
 
-	void Polygon_triangulate (
-		std::vector<Point>* triangles, const Polygon& polygon);
+	typedef std::vector<Point> TrianglePointList;
+
+
+	void Polygon_fill (
+		const Polygon& polygon, Painter* painter, const Color& color);
+
+	bool Polygon_triangulate (
+		TrianglePointList* triangles, const Polygon& polygon);
 
 
 }// Rays

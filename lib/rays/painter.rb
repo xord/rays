@@ -12,7 +12,7 @@ module Rays
   class Painter
 
     def push (*types, **attributes, &block)
-      each_types types do |type|
+      each_type types do |type|
         case type
         when :state   then push_state
         when :matrix  then push_matrix
@@ -40,7 +40,7 @@ module Rays
     end
 
     def pop (*types)
-      each_types types, reverse: true do |type|
+      each_type types, reverse: true do |type|
         case type
         when :state   then pop_state
         when :matrix  then pop_matrix
@@ -57,11 +57,19 @@ module Rays
     end
 
     def line (*args, loop: false)
-      case first = args.first
-      when Polyline then polyline first
-      when Polygon  then polygon  first
-      else loop ? line_loop(*args) : line_strip(*args)
+      if args.first.kind_of?(Polyline)
+        draw_polyline args.first
+      else
+        draw_line args, loop
       end
+    end
+
+    def rect (*args, round: nil, lt: nil, rt: nil, lb: nil, rb: nil)
+      draw_rect args, round, lt, rt, lb, rb
+    end
+
+    def ellipse (*args, center: nil, radius: nil, hole: nil, from: nil, to: nil)
+      draw_ellipse args, center, radius, hole, from, to
     end
 
     def color= (fill, stroke = nil)
@@ -78,12 +86,13 @@ module Rays
       set_shader shader
     end
 
-    universal_accessor :background, :fill, :stroke, :color, :shader, :clip, :font
+    universal_accessor :background, :fill, :stroke, :color, :nsegment, :shader,
+      :clip, :font
 
     private
 
-      def each_types (types, reverse: false, &block)
-        types = [:state, :matrix] if types.include?(:all)
+      def each_type (types, reverse: false, &block)
+        types = [:state, :matrix] if types.empty? || types.include?(:all)
         types = types.reverse if reverse
         types.each &block
       end

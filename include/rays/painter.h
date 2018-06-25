@@ -63,6 +63,8 @@ namespace Rays
 
 			void clear ();
 
+			void polygon (const Polygon& polygon);
+
 			void line (coord x1, coord y1, coord x2, coord y2);
 
 			void line (const Point& p1, const Point& p2);
@@ -71,42 +73,38 @@ namespace Rays
 
 			void line (const Polyline& polyline);
 
-			void line (const Polygon& polygon);
-
 			void rect (
 				coord x, coord y, coord width, coord height,
-				coord round = 0, uint nsegment = 0);
+				coord round = 0);
 
 			void rect (
 				coord x, coord y, coord width, coord height,
 				coord round_left_top,    coord round_right_top,
-				coord round_left_bottom, coord round_right_bottom,
-				uint nsegment = 0);
+				coord round_left_bottom, coord round_right_bottom);
 
 			void rect (
 				const Bounds& bounds,
-				coord round = 0, uint nsegment = 0);
+				coord round = 0);
 
 			void rect (
 				const Bounds& bounds,
 				coord round_left_top,    coord round_right_top,
-				coord round_left_bottom, coord round_right_bottom,
-				uint nsegment = 0);
+				coord round_left_bottom, coord round_right_bottom);
 
 			void ellipse (
 				coord x, coord y, coord width, coord height = 0,
-				float angle_from = 0, float angle_to = 360,
-				const Point& hole_size = 0, uint nsegment = 0);
+				const Point& hole_size = 0,
+				float angle_from = 0, float angle_to = 360);
 
 			void ellipse (
 				const Bounds& bounds,
-				float angle_from = 0, float angle_to = 360,
-				const Point& hole_size = 0, uint nsegment = 0);
+				const Point& hole_size = 0,
+				float angle_from = 0, float angle_to = 360);
 
 			void ellipse (
-				const Point& center, coord radius,
-				float angle_from = 0, float angle_to = 360,
-				coord radius_min = 0, uint nsegment = 0);
+				const Point& center, const Point& radius,
+				const Point& hole_radius = 0,
+				float angle_from = 0, float angle_to = 360);
 
 			void image (
 				const Image& image, coord x = 0, coord y = 0);
@@ -173,6 +171,10 @@ namespace Rays
 			void      no_stroke ();
 
 			const Color& stroke () const;
+
+			void set_nsegment (int nsegment);
+
+			uint     nsegment () const;
 
 			void      set_shader (const Shader& shader);
 
