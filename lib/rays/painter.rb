@@ -86,8 +86,8 @@ module Rays
       set_shader shader
     end
 
-    universal_accessor :background, :fill, :stroke, :color, :nsegment, :shader,
-      :clip, :font
+    universal_accessor :background, :fill, :stroke, :color,
+      :stroke_width, :nsegment, :shader, :clip, :font
 
     private
 

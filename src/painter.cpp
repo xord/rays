@@ -44,11 +44,13 @@ namespace Rays
 	struct State
 	{
 
-		Bounds clip;
-
 		Color background, colors[2];
 
+		coord stroke_width;
+
 		uint nsegment;
+
+		Bounds clip;
 
 		Font font;
 
@@ -56,11 +58,12 @@ namespace Rays
 
 		void init ()
 		{
-			clip           .reset(-1);
 			background     .reset(0, 0);
 			colors[FILL]   .reset(1, 1);
 			colors[STROKE] .reset(1, 0);
+			stroke_width   = 0;
 			nsegment       = 0;
+			clip           .reset(-1);
 			font           = default_font();
 			shader         = Shader();
 		}
@@ -383,7 +386,7 @@ namespace Rays
 			return true;
 		}
 
-		void draw_shape (
+		void draw_polygon (
 			GLenum mode, const Color& color,
 			const Coord3* points,           size_t npoints,
 			const uint*   indices   = NULL, size_t nindices = 0,
@@ -572,7 +575,7 @@ namespace Rays
 
 
 	static void
-	draw_shape (
+	draw_polygon (
 		Painter* painter,
 		const GLenum* modes,
 		coord offset_x, coord offset_y,
@@ -601,7 +604,7 @@ namespace Rays
 			if (!painter->self->get_color(&color, (ColorType) type))
 				continue;
 
-			painter->self->draw_shape(
+			painter->self->draw_polygon(
 				modes[type], color, points, npoints, indices, nindices, texcoords,
 				default_shader, texinfo);
 		}
@@ -611,12 +614,12 @@ namespace Rays
 	}
 
 	void
-	Painter_fill_polygon (
+	Painter_draw_polygon (
 		Painter* painter, GLenum mode, const Color& color,
 		const Coord3* points,  size_t npoints,
 		const uint*   indices, size_t nindices)
 	{
-		painter->self->draw_shape(mode, color, points, npoints, indices, nindices);
+		painter->self->draw_polygon(mode, color, points, npoints, indices, nindices);
 	}
 
 
@@ -790,7 +793,7 @@ namespace Rays
 		if (Polygon_triangulate(&triangles, polygon))
 		{
 			for (size_t i = 0; i < triangles.size(); i += 3)
-				painter->self->draw_shape(GL_LINE_LOOP, invert_color, &triangles[i], 3);
+				painter->self->draw_polygon(GL_LINE_LOOP, invert_color, &triangles[i], 3);
 		}
 #endif
 	}
@@ -805,6 +808,7 @@ namespace Rays
 			return;
 
 		Color color;
+
 		if (self->get_color(&color, FILL))
 		{
 			Polygon_fill(polygon, this, color);
@@ -812,74 +816,69 @@ namespace Rays
 		}
 
 		if (self->get_color(&color, STROKE))
-		{
-			for (const auto& polyline : polygon)
-			{
-				self->draw_shape(
-					polyline.loop() ? GL_LINE_LOOP : GL_LINE_STRIP,
-					color, &polyline[0], polyline.size());
-			}
-		}
+			Polygon_stroke(polygon, this, color);
 	}
 
 	void
 	Painter::line (coord x1, coord y1, coord x2, coord y2)
 	{
-		line(Point(x1, y1, 0), Point(x2, y2, 0));
+		polygon(create_line(x1, y1, x2, y2));
 	}
 
 	void
 	Painter::line (const Point& p1, const Point& p2)
 	{
-		const Point points[] = {p1, p2};
-		line(points, 2, false);
+		polygon(create_line(p1, p2));
 	}
 
 	void
 	Painter::line (const Point* points, size_t size, bool loop)
 	{
-		polygon(Polygon(points, size, loop));
+		polygon(create_line(points, size, loop));
 	}
 
 	void
 	Painter::line (const Polyline& polyline)
 	{
-		polygon(Polygon(polyline));
+		polygon(create_line(polyline));
 	}
 
 	void
 	Painter::rect (coord x, coord y, coord width, coord height, coord round)
 	{
-		rect(x, y, width, height, round, round, round, round);
+		polygon(create_rect(x, y, width, height, round, nsegment()));
 	}
 
 	void
 	Painter::rect (
 		coord x, coord y, coord width, coord height,
-		coord round_lefttop,    coord round_righttop,
-		coord round_leftbottom, coord round_rightbottom)
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom)
 	{
 		polygon(create_rect(
 			x, y, width, height,
-			round_lefttop, round_righttop, round_leftbottom, round_rightbottom,
+			round_left_top,    round_right_top,
+			round_left_bottom, round_right_bottom,
 			nsegment()));
 	}
 
 	void
 	Painter::rect (const Bounds& bounds, coord round)
 	{
-		rect(bounds.x, bounds.y, bounds.width, bounds.height, round);
+		polygon(create_rect(bounds, round, nsegment()));
 	}
 
 	void
 	Painter::rect (
 		const Bounds& bounds,
-		coord round_lefttop,    coord round_righttop,
-		coord round_leftbottom, coord round_rightbottom)
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom)
 	{
-		rect(
-			bounds.x, bounds.y, bounds.width, bounds.height,
-			round_lefttop, round_righttop, round_leftbottom, round_rightbottom);
+		polygon(create_rect(
+			bounds,
+			round_left_top,    round_right_top,
+			round_left_bottom, round_right_bottom,
+			nsegment()));
 	}
 
 	void
@@ -898,9 +897,8 @@ namespace Rays
 		const Point& hole_size,
 		float angle_from, float angle_to)
 	{
-		ellipse(
-			bounds.x, bounds.y, bounds.width, bounds.height,
-			hole_size, angle_from, angle_to);
+		polygon(create_ellipse(
+			bounds, hole_size, angle_from, angle_to, nsegment()));
 	}
 
 	void
@@ -908,11 +906,8 @@ namespace Rays
 		const Point& center, const Point& radius, const Point& hole_radius,
 		float angle_from, float angle_to)
 	{
-		ellipse(
-			center.x - radius.x, center.y - radius.y,
-			           radius.x * 2,      radius.y * 2,
-			Point(hole_radius.x * 2, hole_radius.y * 2),
-			angle_from, angle_to);
+		polygon(create_ellipse(
+			center, radius, hole_radius, angle_from, angle_to, nsegment()));
 	}
 
 	static void
@@ -959,7 +954,7 @@ namespace Rays
 		if (!shader)
 			shader = &get_default_shader_for_color_texture();
 
-		draw_shape(
+		draw_polygon(
 			painter, MODES, 0, 0, false, nostroke, points, 4, NULL, 0, texcoords,
 			*shader, &texinfo);
 	}
@@ -1259,6 +1254,18 @@ namespace Rays
 	}
 
 	void
+	Painter::set_stroke_width (coord width)
+	{
+		self->state.stroke_width = width;
+	}
+
+	coord
+	Painter::stroke_width () const
+	{
+		return self->state.stroke_width;
+	}
+
+	void
 	Painter::set_nsegment (int nsegment)
 	{
 		if (nsegment < 0) nsegment = 0;
@@ -1269,24 +1276,6 @@ namespace Rays
 	Painter::nsegment () const
 	{
 		return self->state.nsegment;
-	}
-
-	void
-	Painter::set_shader (const Shader& shader)
-	{
-		self->state.shader = shader;
-	}
-
-	void
-	Painter::no_shader ()
-	{
-		self->state.shader = Shader();
-	}
-
-	const Shader&
-	Painter::shader () const
-	{
-		return self->state.shader;
 	}
 
 	void
@@ -1330,6 +1319,24 @@ namespace Rays
 	Painter::font () const
 	{
 		return self->state.font;
+	}
+
+	void
+	Painter::set_shader (const Shader& shader)
+	{
+		self->state.shader = shader;
+	}
+
+	void
+	Painter::no_shader ()
+	{
+		self->state.shader = Shader();
+	}
+
+	const Shader&
+	Painter::shader () const
+	{
+		return self->state.shader;
 	}
 
 	void

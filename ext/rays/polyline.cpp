@@ -96,11 +96,11 @@ Init_polyline ()
 	cPolyline = mRays.define_class("Polyline");
 	cPolyline.define_alloc_func(alloc);
 	cPolyline.define_private_method("set_points", set_points);
-	cPolyline.define_method("loop?",  loop);
-	cPolyline.define_method("size",   size);
+	cPolyline.define_method("loop?", loop);
+	cPolyline.define_method("size", size);
 	cPolyline.define_method("empty?", empty);
-	cPolyline.define_method("[]",     at);
-	cPolyline.define_method("each",   each);
+	cPolyline.define_method("[]", at);
+	cPolyline.define_method("each", each);
 }
 
 

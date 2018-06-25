@@ -47,15 +47,47 @@ namespace Rays
 		return nsegment > 0 ? nsegment : 1;
 	}
 
+#if 0
+	static String
+	path2str (const Path& path)
+	{
+		String s;
+		for (const auto& point : path)
+		{
+			if (!s.empty()) s += ", ";
+
+			Point p = from_clipper(point);
+			s += Xot::stringf("[%d,%d]", p.x, p.y);
+		}
+		return s;
+	}
+
+	static void
+	dout_node (const PolyNode& node)
+	{
+		doutln(
+			"path(open: %d, hole: %d, Contour: %s)",
+			(int) node.IsOpen(),
+			(int) node.IsHole(),
+			path2str(node.Contour).c_str());
+	}
+
+	static void
+	dout_tree (const PolyNode& node, int level = 0)
+	{
+		for (int i = 0; i < level; ++i) dout("  ");
+		dout_node(node);
+
+		for (const auto* child : node.Childs)
+			dout_tree(*child, level + 1);
+	}
+#endif
+
 
 	struct Polygon::Data
 	{
 
 		LineList lines;
-
-		Data ()
-		{
-		}
 
 		virtual ~Data ()
 		{
@@ -113,6 +145,18 @@ namespace Rays
 
 		virtual void fill (Painter* painter, const Color& color) const = 0;
 
+		virtual void stroke (
+			const Polygon& polygon, Painter* painter, const Color& color) const
+		{
+			assert(painter && color);
+
+			coord stroke_width = painter->stroke_width();
+			if (stroke_width > 0)
+				stroke_with_width(polygon, painter, color, stroke_width);
+			else
+				stroke_without_width(painter, color);
+		}
+
 		private:
 
 			bool can_triangulate () const
@@ -146,7 +190,159 @@ namespace Rays
 				}
 			}
 
+			void stroke_with_width (
+				const Polygon& polygon, Painter* painter,
+				const Color& color, coord stroke_width) const;
+
+			void stroke_without_width (Painter* painter, const Color& color) const
+			{
+				assert(painter && color);
+
+				for (const auto& line : lines)
+				{
+					Painter_draw_polygon(
+						painter, line.loop() ? GL_LINE_LOOP : GL_LINE_STRIP, color,
+						&line[0], line.size());
+				}
+			}
+
 	};// Polygon::Data
+
+
+	static void
+	add_polygon_to_clipper (
+		Clipper* clipper, const Polygon& polygon, PolyType type)
+	{
+		assert(clipper);
+
+		Path path;
+		for (const auto& line : polygon)
+		{
+			if (!line) continue;
+
+			Polyline_get_path(&path, line, line.hole());
+			if (path.empty()) continue;
+
+			clipper->AddPath(path, type, line.loop());
+		}
+	}
+
+	static void
+	add_polygon_to_offsetter (ClipperOffset* offsetter, const Polygon& polygon)
+	{
+		assert(offsetter);
+
+		Path path;
+		for (const auto& line : polygon)
+		{
+			if (!line) continue;
+
+			Polyline_get_path(&path, line, line.hole());
+			if (path.empty()) continue;
+
+			offsetter->AddPath(
+				path, jtMiter, line.loop() ? etClosedPolygon : etOpenButt);
+		}
+	}
+
+	static bool
+	append_outline (Polygon* polygon, const PolyNode& node)
+	{
+		assert(polygon);
+
+		if (node.Contour.empty() || node.IsHole())
+			return false;
+
+		Polyline polyline;
+		Polyline_create(&polyline, node.Contour, !node.IsOpen(), false);
+		if (!polyline)
+			return false;
+
+		polygon->self->append(polyline, false);
+		return true;
+	}
+
+	static void
+	append_hole (Polygon* polygon, const PolyNode& node)
+	{
+		assert(polygon);
+
+		for (const auto* child : node.Childs)
+		{
+			if (!child->IsHole())
+				return;
+
+			Polyline polyline;
+			Polyline_create(&polyline, child->Contour, !child->IsOpen(), true);
+			if (!polyline)
+				continue;
+
+			polygon->self->append(polyline, true);
+		}
+	}
+
+	static void
+	get_polygon (Polygon* polygon, const PolyNode& node)
+	{
+		assert(polygon);
+
+		if (append_outline(polygon, node))
+			append_hole(polygon, node);
+
+		for (const auto* child : node.Childs)
+			get_polygon(polygon, *child);
+	}
+
+	static Polygon
+	clip_polygon (const Polygon& clipped, const Polygon& clipper, ClipType type)
+	{
+		Clipper c;
+		c.StrictlySimple(true);
+
+		add_polygon_to_clipper(&c, clipped, ptSubject);
+		add_polygon_to_clipper(&c, clipper, ptClip);
+
+		PolyTree tree;
+		c.Execute(type, tree);
+		assert(tree.Contour.empty());
+
+		Polygon result;
+		get_polygon(&result, tree);
+
+		return result;
+	}
+
+	static Polygon
+	offset_polygon (const Polygon& polygon, coord width)
+	{
+		ClipperOffset co;
+		add_polygon_to_offsetter(&co, polygon);
+
+		PolyTree tree;
+		co.Execute(tree, to_clipper(width));
+		assert(tree.Contour.empty());
+
+		Polygon result;
+		get_polygon(&result, tree);
+
+		return result;
+	}
+
+
+	void
+	Polygon::Data::stroke_with_width (
+		const Polygon& polygon, Painter* painter,
+		const Color& color, coord stroke_width) const
+	{
+		assert(painter && color && stroke_width > 0);
+
+		if (!polygon) return;
+
+		Polygon stroke = polygon - offset_polygon(polygon, -stroke_width);
+		if (!stroke) return;
+
+		stroke.self->fill(painter, color);
+	}
 
 
 	struct PolygonData : public Polygon::Data
@@ -162,7 +358,7 @@ namespace Rays
 					return;
 			}
 
-			Painter_fill_polygon(
+			Painter_draw_polygon(
 				painter, GL_TRIANGLES, color, &triangles[0], triangles.size());
 		}
 
@@ -174,13 +370,13 @@ namespace Rays
 
 		RectData (
 			coord x, coord y, coord width, coord height,
-			coord round_lefttop,    coord round_righttop,
-			coord round_leftbottom, coord round_rightbottom,
+			coord round_left_top,    coord round_right_top,
+			coord round_left_bottom, coord round_right_bottom,
 			uint nsegment)
 		{
 			if (
-				round_lefttop    == 0 && round_righttop    == 0 &&
-				round_leftbottom == 0 && round_rightbottom == 0)
+				round_left_top    == 0 && round_right_top    == 0 &&
+				round_left_bottom == 0 && round_right_bottom == 0)
 			{
 				setup_rect(x, y, width, height, nsegment);
 			}
@@ -188,7 +384,8 @@ namespace Rays
 			{
 				setup_round_rect(
 					x, y, width, height,
-					round_lefttop, round_righttop, round_leftbottom, round_rightbottom,
+					round_left_top,    round_right_top,
+					round_left_bottom, round_right_bottom,
 					nsegment);
 			}
 		}
@@ -199,7 +396,7 @@ namespace Rays
 				invalid_state_error(__FILE__, __LINE__);
 
 			const auto& outline = lines[0];
-			Painter_fill_polygon(
+			Painter_draw_polygon(
 				painter, GL_TRIANGLE_FAN, color, &outline[0], outline.size());
 		}
 
@@ -225,27 +422,29 @@ namespace Rays
 
 			void setup_round_rect (
 				coord x, coord y, coord width, coord height,
-				coord lefttop, coord righttop, coord leftbottom, coord rightbottom,
+				coord left_top, coord right_top, coord left_bottom, coord right_bottom,
 				uint nsegment)
 			{
 				assert(width != 0 && height != 0);
 				assert(
-					lefttop    != 0 || righttop    != 0 ||
-					leftbottom != 0 || rightbottom != 0);
+					left_top    != 0 || right_top    != 0 ||
+					left_bottom != 0 || right_bottom != 0);
 
 				nsegment = get_nsegment(nsegment, 1, 0, 90);
 
 				fix_rounds(
-					&lefttop, &righttop, &leftbottom, &rightbottom, width, height);
+					&left_top,    &right_top,
+					&left_bottom, &right_bottom,
+					width, height);
 
 				coord sign_x            = width  >= 0 ? +1 : -1;
 				coord sign_y            = height >= 0 ? +1 : -1;
 				RoundedCorner corners[] =
 				{
-					{width,      0, -1, +1, righttop},
-					{    0,      0, +1, +1, lefttop},
-					{    0, height, +1, -1, leftbottom},
-					{width, height, -1, -1, rightbottom}
+					{width,      0, -1, +1, right_top},
+					{    0,      0, +1, +1,  left_top},
+					{    0, height, +1, -1,  left_bottom},
+					{width, height, -1, -1, right_bottom}
 				};
 
 				size_t npoints = 0;
@@ -265,15 +464,23 @@ namespace Rays
 			}
 
 			void fix_rounds (
-				coord* lefttop, coord* righttop, coord* leftbottom, coord* rightbottom,
+				coord* left_top,    coord* right_top,
+				coord* left_bottom, coord* right_bottom,
 				coord width, coord height)
 			{
-				assert(lefttop && righttop && leftbottom && rightbottom);
+				assert(
+					left_top    && right_top &&
+					left_bottom && right_bottom);
 
 				if (width  < 0) width  = -width;
 				if (height < 0) height = -height;
 
-				coord* rounds[] = {lefttop, righttop, rightbottom, leftbottom, lefttop};
+				coord* rounds[] = {
+					 left_top,
+					right_top,
+					right_bottom,
+					 left_bottom,
+					 left_top};
 				coord sizes[]   = {width, height, width, height};
 
 				for (size_t i = 0; i < 4; ++i)
@@ -363,7 +570,7 @@ namespace Rays
 				invalid_state_error(__FILE__, __LINE__);
 
 			const auto& outline = lines[0];
-			Painter_fill_polygon(
+			Painter_draw_polygon(
 				painter, mode, color,
 				&outline[0], outline.size(), &indices[0], indices.size());
 		}
@@ -486,7 +693,7 @@ namespace Rays
 
 
 	Polygon
-	create_line(coord x1, coord y1, coord x2, coord y2)
+	create_line (coord x1, coord y1, coord x2, coord y2)
 	{
 		const Point points[] = {
 			Point(x1, y1),
@@ -509,6 +716,12 @@ namespace Rays
 	}
 
 	Polygon
+	create_line (const Polyline& polyline)
+	{
+		return Polygon(polyline);
+	}
+
+	Polygon
 	create_rect (
 		coord x, coord y, coord width, coord height,
 		coord round, uint nsegment)
@@ -520,8 +733,8 @@ namespace Rays
 	Polygon
 	create_rect (
 		coord x, coord y, coord width, coord height,
-		coord round_lefttop,    coord round_righttop,
-		coord round_leftbottom, coord round_rightbottom,
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom,
 		uint nsegment)
 	{
 		if (width == 0 || height == 0)
@@ -529,7 +742,8 @@ namespace Rays
 
 		return Polygon(new RectData(
 			x, y, width, height,
-			round_lefttop, round_righttop, round_leftbottom, round_rightbottom,
+			round_left_top,    round_right_top,
+			round_left_bottom, round_right_bottom,
 			nsegment));
 	}
 
@@ -545,13 +759,14 @@ namespace Rays
 	Polygon
 	create_rect (
 		const Bounds& bounds,
-		coord round_lefttop,    coord round_righttop,
-		coord round_leftbottom, coord round_rightbottom,
+		coord round_left_top,    coord round_right_top,
+		coord round_left_bottom, coord round_right_bottom,
 		uint nsegment)
 	{
 		return create_rect(
 			bounds.x, bounds.y, bounds.width, bounds.height,
-			round_lefttop, round_righttop, round_leftbottom, round_rightbottom,
+			round_left_top,    round_right_top,
+			round_left_bottom, round_right_bottom,
 			nsegment);
 	}
 
@@ -598,6 +813,12 @@ namespace Rays
 	Polygon_fill (const Polygon& polygon, Painter* painter, const Color& color)
 	{
 		polygon.self->fill(painter, color);
+	}
+
+	void
+	Polygon_stroke (const Polygon& polygon, Painter* painter, const Color& color)
+	{
+		polygon.self->stroke(polygon, painter, color);
 	}
 
 	bool
@@ -676,132 +897,19 @@ namespace Rays
 		return !operator bool();
 	}
 
-#if 0
-	static String
-	path2str (const ClipperLib::Path& path)
-	{
-		String s;
-		for (const auto& point : path)
-		{
-			if (!s.empty()) s += ", ";
-			s += Xot::stringf("[%d,%d]", point.X / 1000, point.Y / 1000);
-		}
-		return s;
-	}
-
-	static void
-	dout_node (const ClipperLib::PolyNode& node)
-	{
-		doutln(
-			"path(open: %d, hole: %d, Contour: %s)",
-			(int) node.IsOpen(),
-			(int) node.IsHole(),
-			path2str(node.Contour).c_str());
-	}
-
-	static void
-	dout_tree (const PolyNode& node, int level = 0)
-	{
-		for (int i = 0; i < level; ++i) dout("  ");
-		dout_node(node);
-
-		for (const auto* child : node.Childs)
-			dout_tree(*child, level + 1);
-	}
-#endif
-
-	static void
-	add_polygon_to_clipper (
-		Clipper* clipper, const Polygon& polygon, PolyType polytype)
-	{
-		assert(clipper);
-
-		Path path;
-		for (const auto& line : polygon)
-		{
-			if (!line) continue;
-
-			Polyline_get_path(&path, line, line.hole());
-			if (path.empty()) continue;
-
-			clipper->AddPath(path, polytype, line.loop());
-		}
-	}
-
-	static bool
-	append_outline (Polygon* polygon, const PolyNode& node)
-	{
-		assert(polygon);
-
-		if (node.Contour.empty() || node.IsHole())
-			return false;
-
-		Polyline polyline;
-		Polyline_create(&polyline, node.Contour, !node.IsOpen(), false);
-		if (!polyline)
-			return false;
-
-		polygon->self->append(polyline, false);
-		return true;
-	}
-
-	static void
-	append_hole (Polygon* polygon, const PolyNode& node)
-	{
-		assert(polygon);
-
-		for (const auto* child : node.Childs)
-		{
-			if (!child->IsHole())
-				return;
-
-			Polyline polyline;
-			Polyline_create(&polyline, child->Contour, !child->IsOpen(), true);
-			if (!polyline)
-				continue;
-
-			polygon->self->append(polyline, true);
-		}
-	}
-
-	static void
-	get_polygon (Polygon* polygon, const PolyNode& node)
-	{
-		assert(polygon);
-
-		if (append_outline(polygon, node))
-			append_hole(polygon, node);
-
-		for (const auto* child : node.Childs)
-			get_polygon(polygon, *child);
-	}
-
-	static Polygon
-	clip (const Polygon& clipped, const Polygon& clipper, ClipType cliptype)
-	{
-		Clipper c;
-		c.StrictlySimple(true);
-
-		add_polygon_to_clipper(&c, clipped, ptSubject);
-		add_polygon_to_clipper(&c, clipper, ptClip);
-
-		PolyTree tree;
-		c.Execute(cliptype, tree);
-		assert(tree.Contour.empty());
-
-		Polygon result;
-		get_polygon(&result, tree);
-
-		return result;
-	}
-
 	Polygon&
 	Polygon::operator -= (const Polygon& rhs)
 	{
 		if (&rhs == this) return *this;
 
-		*this = clip(*this, rhs, ctDifference);
+		*this = clip_polygon(*this, rhs, ctDifference);
 		return *this;
+	}
+
+	Polygon&
+	Polygon::operator += (const Polygon& rhs)
+	{
+		return operator|=(rhs);
 	}
 
 	Polygon&
@@ -809,7 +917,7 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		*this = clip(*this, rhs, ctIntersection);
+		*this = clip_polygon(*this, rhs, ctIntersection);
 		return *this;
 	}
 
@@ -818,7 +926,7 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		*this = clip(*this, rhs, ctUnion);
+		*this = clip_polygon(*this, rhs, ctUnion);
 		return *this;
 	}
 
@@ -827,12 +935,12 @@ namespace Rays
 	{
 		if (&rhs == this) return *this;
 
-		*this = clip(*this, rhs, ctXor);
+		*this = clip_polygon(*this, rhs, ctXor);
 		return *this;
 	}
 
 	static Polygon
-	dup (const Polygon& obj)
+	duplicate (const Polygon& obj)
 	{
 		Polygon p;
 		p.self->lines = obj.self->lines;
@@ -842,25 +950,31 @@ namespace Rays
 	Polygon
 	operator - (const Polygon& lhs, const Polygon& rhs)
 	{
-		return dup(lhs) -= rhs;
+		return duplicate(lhs) -= rhs;
+	}
+
+	Polygon
+	operator + (const Polygon& lhs, const Polygon& rhs)
+	{
+		return duplicate(lhs) += rhs;
 	}
 
 	Polygon
 	operator & (const Polygon& lhs, const Polygon& rhs)
 	{
-		return dup(lhs) &= rhs;
+		return duplicate(lhs) &= rhs;
 	}
 
 	Polygon
 	operator | (const Polygon& lhs, const Polygon& rhs)
 	{
-		return dup(lhs) |= rhs;
+		return duplicate(lhs) |= rhs;
 	}
 
 	Polygon
 	operator ^ (const Polygon& lhs, const Polygon& rhs)
 	{
-		return dup(lhs) ^= rhs;
+		return duplicate(lhs) ^= rhs;
 	}
 
 

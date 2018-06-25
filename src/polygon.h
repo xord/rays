@@ -22,6 +22,9 @@ namespace Rays
 	void Polygon_fill (
 		const Polygon& polygon, Painter* painter, const Color& color);
 
+	void Polygon_stroke (
+		const Polygon& polygon, Painter* painter, const Color& color);
+
 	bool Polygon_triangulate (
 		TrianglePointList* triangles, const Polygon& polygon);
 

@@ -19,7 +19,7 @@ namespace Rays
 
 	const ShaderSource& Painter_get_fragment_shader_shared_source ();
 
-	void Painter_fill_polygon (
+	void Painter_draw_polygon (
 		Painter* painter, GLenum mode, const Color& color,
 		const Coord3* points,         size_t npoints,
 		const uint*   indices = NULL, size_t nindices = 0);

@@ -1,9 +1,7 @@
 #include "polyline.h"
 
 
-#include <float.h>
 #include <assert.h>
-#include "rays/exception.h"
 #include "rays/debug.h"
 
 
@@ -14,70 +12,26 @@ namespace Rays
 {
 
 
-	static const double CLIPPER_SCALE = 1000;
-
-
-	static inline cInt
-	to_clipper (coord value)
-	{
-		return (cInt) (value * CLIPPER_SCALE);
-	}
-
-	static inline coord
-	from_clipper (cInt value)
-	{
-		double v = value / CLIPPER_SCALE;
-		if (v <= -FLT_MAX || FLT_MAX <= v)
-			argument_error(__FILE__, __LINE__);
-
-		return (coord) v;
-	}
-
-	static inline IntPoint
-	to_clipper (const Point& point)
-	{
-		return IntPoint(
-			to_clipper(point.x),
-			to_clipper(point.y));
-	}
-
-	static inline Point
-	from_clipper (const IntPoint& point)
-	{
-		return Point(
-			from_clipper(point.X),
-			from_clipper(point.Y));
-	}
-
-
 	struct Polyline::Data
 	{
 
 		PointList points;
 
-		bool loop;
-
-		Data ()
-		:	loop(false)
-		{
-		}
+		bool loop = false;
 
 		template <typename I, typename FUN>
 		void reset (I begin, I end, bool loop_, FUN to_point_fun)
 		{
 			size_t size = end - begin;
-			if (size <= 0)
-				return;
-
-			if (size < 2 || (size == 2 && loop_))
+			if (size <= 2 && loop_)
 				argument_error(__FILE__, __LINE__);
-
-			loop = loop_;
 
 			points.clear();
 			points.reserve(size);
 			for (auto it = begin; it != end; ++it)
 				points.emplace_back(to_point_fun(*it));
+
+			loop = loop_;
 		}
 
 	};// Polyline::Data
@@ -96,7 +50,7 @@ namespace Rays
 		if (reverse)
 			polyline->self->reset(cleaned.rbegin(), cleaned.rend(), loop, to_point);
 		else
-			polyline->self->reset(cleaned.begin(), cleaned.end(), loop, to_point);
+			polyline->self->reset(cleaned. begin(), cleaned. end(), loop, to_point);
 	}
 
 	template <typename I>
@@ -117,7 +71,7 @@ namespace Rays
 		if (reverse)
 			reset_path(path, points.rbegin(), points.rend());
 		else
-			reset_path(path, points.begin(), points.end());
+			reset_path(path, points. begin(), points. end());
 	}
 
 

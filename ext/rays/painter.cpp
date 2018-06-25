@@ -300,6 +300,23 @@ RUCY_DEF0(no_stroke)
 RUCY_END
 
 static
+RUCY_DEF1(set_stroke_width, width)
+{
+	CHECK;
+	THIS->set_stroke_width(to<coord>(width));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_stroke_width)
+{
+	CHECK;
+	return value(THIS->stroke_width());
+}
+RUCY_END
+
+static
 RUCY_DEF1(set_nsegment, nsegment)
 {
 	CHECK;
@@ -313,34 +330,6 @@ RUCY_DEF0(get_nsegment)
 {
 	CHECK;
 	return value(THIS->nsegment());
-}
-RUCY_END
-
-static
-RUCY_DEFN(set_shader)
-{
-	CHECK;
-	check_arg_count(__FILE__, __LINE__, "Painter#set_shader", argc, 1);
-
-	THIS->set_shader(to<Rays::Shader>(argc, argv));
-	return self;
-}
-RUCY_END
-
-static
-RUCY_DEF0(get_shader)
-{
-	CHECK;
-	return value(THIS->shader());
-}
-RUCY_END
-
-static
-RUCY_DEF0(no_shader)
-{
-	CHECK;
-	THIS->no_shader();
-	return self;
 }
 RUCY_END
 
@@ -386,6 +375,34 @@ RUCY_DEF0(get_font)
 {
 	CHECK;
 	return value(THIS->font());
+}
+RUCY_END
+
+static
+RUCY_DEFN(set_shader)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Painter#set_shader", argc, 1);
+
+	THIS->set_shader(to<Rays::Shader>(argc, argv));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_shader)
+{
+	CHECK;
+	return value(THIS->shader());
+}
+RUCY_END
+
+static
+RUCY_DEF0(no_shader)
+{
+	CHECK;
+	THIS->no_shader();
+	return self;
 }
 RUCY_END
 
@@ -528,16 +545,18 @@ Init_painter ()
 	cPainter.define_method(   "stroke=", set_stroke);
 	cPainter.define_method(   "stroke",  get_stroke);
 	cPainter.define_method("no_stroke",   no_stroke);
+	cPainter.define_method(   "stroke_width=", set_stroke_width);
+	cPainter.define_method(   "stroke_width",  get_stroke_width);
 	cPainter.define_method("nsegment=", set_nsegment);
 	cPainter.define_method("nsegment",  get_nsegment);
-	cPainter.define_private_method("set_shader", set_shader);
-	cPainter.define_method(            "shader", get_shader);
-	cPainter.define_method(         "no_shader",  no_shader);
 	cPainter.define_method(   "clip=", set_clip);
 	cPainter.define_method(   "clip",  get_clip);
 	cPainter.define_method("no_clip",   no_clip);
 	cPainter.define_method("font=", set_font);
 	cPainter.define_method("font",  get_font);
+	cPainter.define_private_method("set_shader", set_shader);
+	cPainter.define_method(            "shader", get_shader);
+	cPainter.define_method(         "no_shader",  no_shader);
 	cPainter.define_method("push_state", push_state);
 	cPainter.define_method( "pop_state",  pop_state);
 

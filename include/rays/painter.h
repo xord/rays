@@ -172,15 +172,13 @@ namespace Rays
 
 			const Color& stroke () const;
 
+			void set_stroke_width (coord width);
+
+			coord    stroke_width () const;
+
 			void set_nsegment (int nsegment);
 
 			uint     nsegment () const;
-
-			void      set_shader (const Shader& shader);
-
-			void       no_shader ();
-
-			const Shader& shader () const;
 
 			void      set_clip (coord x, coord y, coord width, coord height);
 
@@ -195,6 +193,12 @@ namespace Rays
 			void    set_font (const Font& font);
 
 			const Font& font () const;
+
+			void      set_shader (const Shader& shader);
+
+			void       no_shader ();
+
+			const Shader& shader () const;
 
 			void push_state ();
 

@@ -68,6 +68,8 @@ namespace Rays
 
 			Polygon& operator -= (const Polygon& rhs);
 
+			Polygon& operator += (const Polygon& rhs);
+
 			Polygon& operator &= (const Polygon& rhs);
 
 			Polygon& operator |= (const Polygon& rhs);
@@ -75,6 +77,8 @@ namespace Rays
 			Polygon& operator ^= (const Polygon& rhs);
 
 			friend Polygon operator - (const Polygon& lhs, const Polygon& rhs);
+
+			friend Polygon operator + (const Polygon& lhs, const Polygon& rhs);
 
 			friend Polygon operator & (const Polygon& lhs, const Polygon& rhs);
 
@@ -95,12 +99,14 @@ namespace Rays
 
 	Polygon create_line (const Point& p1, const Point& p2);
 
-	Polygon create_line  (const Point* points, size_t size, bool loop = false);
+	Polygon create_line (const Point* points, size_t size, bool loop = false);
+
+	Polygon create_line (const Polyline& polyline);
 
 
 	Polygon create_rect (
 		coord x, coord y, coord width, coord height,
-		coord round = 0,
+		coord round   = 0,
 		uint nsegment = 0);
 
 	Polygon create_rect (
@@ -111,7 +117,7 @@ namespace Rays
 
 	Polygon create_rect (
 		const Bounds& bounds,
-		coord round = 0,
+		coord round   = 0,
 		uint nsegment = 0);
 
 	Polygon create_rect (
@@ -124,20 +130,23 @@ namespace Rays
 	Polygon create_ellipse (
 		coord x, coord y, coord width, coord height = 0,
 		const Point& hole_size = 0,
-		float angle_from = 0, float angle_to = 360,
-		uint nsegment = 0);
+		float angle_from       = 0,
+		float angle_to         = 360,
+		uint nsegment          = 0);
 
 	Polygon create_ellipse (
 		const Bounds& bounds,
 		const Point& hole_size = 0,
-		float angle_from = 0, float angle_to = 360,
-		uint nsegment = 0);
+		float angle_from       = 0,
+		float angle_to         = 360,
+		uint nsegment          = 0);
 
 	Polygon create_ellipse (
 		const Point& center, const Point& radius,
 		const Point& hole_radius = 0,
-		float angle_from = 0, float angle_to = 360,
-		uint nsegment = 0);
+		float angle_from         = 0,
+		float angle_to           = 360,
+		uint nsegment            = 0);
 
 
 }// Rays
