@@ -2,25 +2,30 @@
 
 
 %w[../xot ../rucy .]
-  .map  {|s| File.expand_path "../#{s}/lib", __FILE__}
+  .map  {|s| File.expand_path "#{s}/lib", __dir__}
   .each {|s| $:.unshift s if !$:.include?(s) && File.directory?(s)}
 
-require 'xot/rake'
+require 'rucy/rake'
+
 require 'xot/module'
 require 'rucy/module'
 require 'rays/module'
 
-include Xot::Rake
 
-
-MODULES     = [Xot, Rucy, Rays].map {|m| m.const_get :Module}
-MODULE      = MODULES.last
+MODULES     = [Xot, Rucy, Rays]
 TESTS_ALONE = ['test/test_rays.rb']
 
+use_external_library 'https://github.com/g-truc/glm',
+  tag: '0.9.8.5',
+  srcdir: 'NOSRC'
 
-task :default => :build
+use_boost_library %w[core preprocessor mpl polygon],
+  tag: 'boost-1.66.0'
 
-task :build => :ext
+build_native_library
+build_ruby_extension
+test_ruby_extension
+generate_documents
+build_ruby_gem
 
-
-MODULES.each {|m| m.load_tasks :lib, :ext, :test, :doc, :gem, :glm}
+task :default => :test
