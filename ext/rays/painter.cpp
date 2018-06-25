@@ -300,6 +300,24 @@ RUCY_DEFN(text)
 }
 RUCY_END
 
+static
+RUCY_DEFN(polygon)
+{
+	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Painter#polygon", argc, 1, 3);
+
+	if (argc == 1)
+		THIS->polygon(to<Rays::Polygon&>(argv[0]));
+	else if (argc == 3)
+	{
+		coord x = to<coord>(argv[1]), y = to<coord>(argv[2]);
+		THIS->polygon(to<Rays::Polygon&>(argv[0]), x, y);
+	}
+
+	return self;
+}
+RUCY_END
+
 
 static
 RUCY_DEFN(set_background)
@@ -580,6 +598,7 @@ Init_painter ()
 	cPainter.define_method("ellipse", ellipse);
 	cPainter.define_method("image",   image);
 	cPainter.define_method("text",    text);
+	cPainter.define_method("polygon", polygon);
 
 	cPainter.define_method(   "background=", set_background);
 	cPainter.define_method(   "background",  get_background);

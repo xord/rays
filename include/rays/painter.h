@@ -17,8 +17,9 @@ namespace Rays
 	struct Color;
 	struct Matrix;
 
-	class Font;
+	class Polygon;
 	class Image;
+	class Font;
 	class Shader;
 
 
@@ -26,15 +27,6 @@ namespace Rays
 	{
 
 		public:
-
-			enum
-			{
-
-				NSEGMENT_ROUND   = 8,
-
-				NSEGMENT_ELLIPSE = NSEGMENT_ROUND * 4
-
-			};
 
 			Painter ();
 
@@ -148,6 +140,10 @@ namespace Rays
 			void text (const char* str, coord x, coord y, coord width, coord height);
 
 			void text (const char* str, const Bounds& bounds);
+
+			void polygon (const Polygon& polygon, coord x = 0, coord y = 0);
+
+			void polygon (const Polygon& polygon, const Point& position);
 
 
 			//

@@ -14,6 +14,7 @@
 #include "opengl.h"
 #include "point.h"
 #include "matrix.h"
+#include "polygon.h"
 #include "bitmap.h"
 #include "texture.h"
 #include "image.h"
@@ -880,7 +881,7 @@ namespace Rays
 			return;
 
 		if (nsegment <= 0)
-			nsegment = Painter::NSEGMENT_ROUND;
+			nsegment = NSEGMENT_ROUND;
 
 		fix_rounds(
 			&round_left_top,    &round_right_top,
@@ -1005,7 +1006,7 @@ namespace Rays
 			return;
 
 		if (nsegment <= 0)
-			nsegment = Painter::NSEGMENT_ELLIPSE;
+			nsegment = NSEGMENT_ELLIPSE;
 
 		float from         = angle_from / 360.f;
 		float to           = angle_to   / 360.f;
@@ -1377,6 +1378,28 @@ namespace Rays
 	Painter::text (const char* str, const Bounds& bounds)
 	{
 		text(str, bounds.x, bounds.y, bounds.width, bounds.height);
+	}
+
+	void
+	Painter::polygon (const Polygon& poly, coord x, coord y)
+	{
+		std::vector<BoostPolygon> polygons;
+		Polygon_get_boost_polygons(poly).get(polygons);
+
+		for (const auto& polygon : polygons)
+		{
+			std::vector<Point> points;
+			for (const auto& point : polygon)
+				points.emplace_back(Point(x + point.x(), y + point.y()));
+
+			line(&points[0], points.size());
+		}
+	}
+
+	void
+	Painter::polygon (const Polygon& poly, const Point& position)
+	{
+		polygon(poly, position.x, position.y);
 	}
 
 	void
