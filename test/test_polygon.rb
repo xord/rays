@@ -6,8 +6,22 @@ require_relative 'helper'
 
 class TestPolygon < Test::Unit::TestCase
 
+  class Rays::Polygon
+    def dump ()
+      map {|l| l.map &:to_a}
+    end
+  end
+
   def polygon (*args)
     Rays::Polygon.new *args
+  end
+
+  def line (*args)
+    Rays::Polygon::Line.new *args
+  end
+
+  def polyline (*args)
+    Rays::Polyline.new *args
   end
 
   def point (*args)
@@ -22,19 +36,17 @@ class TestPolygon < Test::Unit::TestCase
     Rays::Polygon.rect *args
   end
 
-  def dump (polygon)
-    polygon.map {|polyline| polyline.map {|point| point.to_a}}
-  end
-
   def assert_equal_polygon (poly1, poly2)
-    assert_equal dump(poly1).map(&:sort).sort, dump(poly2).map(&:sort).sort
+    assert_equal *[poly1, poly2].map {|poly|
+      poly.dump.map {|l| l.map {|p| p.map &:round}}.map(&:sort).sort.flatten
+    }
   end
 
   def test_initialize ()
-    assert_equal [[[1, 2], [3, 4]]], dump(polygon    1, 2,     3, 4,  loop: false)
-    assert_equal [[[5, 6], [7, 8]]], dump(polygon   [5, 6],   [7, 8], loop: false)
-    assert_equal [[[1, 1], [2, 2]]], dump(polygon      [1],      [2], loop: false)
-    assert_equal [[[3, 3], [4, 4]]], dump(polygon point(3), point(4), loop: false)
+    assert_equal [[[1, 2], [3, 4]]], polygon(   1, 2,     3, 4,  loop: false).dump
+    assert_equal [[[5, 6], [7, 8]]], polygon(  [5, 6],   [7, 8], loop: false).dump
+    assert_equal [[[1, 1], [2, 2]]], polygon(     [1],      [2], loop: false).dump
+    assert_equal [[[3, 3], [4, 4]]], polygon(point(3), point(4), loop: false).dump
     assert_nothing_raised       {polygon(                  loop: true)}
     assert_nothing_raised       {polygon(                  loop: false)}
     assert_raise(ArgumentError) {polygon(1,                loop: true)}
@@ -60,6 +72,54 @@ class TestPolygon < Test::Unit::TestCase
       assert_equal 1, o   .size
       assert_equal 4, o[0].size
     }
+  end
+
+  def test_transform_with_matrix ()
+    m = Rays::Matrix.translate 10, 10
+    assert_equal_polygon rect(20, 20, 50, 50), rect(10, 10, 50, 50).transform(m)
+
+    m = Rays::Matrix.scale 2
+    assert_equal_polygon rect(20, 20, 40, 40), rect(10, 10, 20, 20).transform(m)
+
+    m = Rays::Matrix.rotate 90
+    assert_equal_polygon rect(-10, 0, 10, 10), rect(0, 0, 10, 10).transform(m)
+  end
+
+  def test_transform_block ()
+    o = rect(0, 0, 100, 100) - rect(10, 10, 50, 50)
+    assert_equal 2, o.size
+
+    o.transform {|lines|
+      lines.map {|l| l.transform Rays::Matrix.translate 10, 10}
+    }.tap {|x|
+      assert_equal_polygon (rect(10, 10, 100, 100) - rect(20, 20, 50, 50)), x
+    }
+
+    o.transform {|lines|
+      lines.reject {|l| l.to_a.include? point(10, 10)}
+    }.tap {|x|
+      assert_equal 1, x.size
+      assert_equal 2, o.size
+    }
+
+    o.transform {|lines|
+      lines.reject {|l| l.to_a.include? point(10, 10)}
+    }.tap {|x|
+      assert_equal 1, x.size
+      assert_equal 2, o.size
+    }
+
+    o.transform {|lines|
+      lines + [line(1, 2, 3, 4, 5, 6)]
+    }.tap {|x|
+      assert_equal 3, x.size
+      assert_equal 2, o.size
+    }
+  end
+
+  def test_intersects ()
+    assert     rect(10, 10, 20, 20).intersects(rect 20, 20, 20, 20)
+    assert_not rect(10, 10, 20, 20).intersects(rect 40, 40, 20, 20)
   end
 
   def test_bounds ()

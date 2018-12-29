@@ -23,23 +23,18 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(set_points, args, loop)
+RUCY_DEF2(setup, args, loop)
 {
 	CHECK;
 
-	std::vector<Rays::Point> points;
-	bool line_loop;
-	get_line_args(&points, &line_loop, args, loop);
-
-	*THIS = Rays::Polygon(&points[0], points.size(), line_loop);
-}
-RUCY_END
-
-static
-RUCY_DEF1(set_polyline, polyline)
-{
-	CHECK;
-	*THIS = Rays::Polygon(to<Rays::Polyline&>(polyline));
+	if (loop)
+		*THIS = to<Rays::Polygon>(args.size(), args.as_array());
+	else
+	{
+		std::vector<Rays::Point> points;
+		get_line_args(&points, args.size(), args.as_array());
+		*THIS = Rays::Polygon(&points[0], points.size(), loop);
+	}
 }
 RUCY_END
 
@@ -200,7 +195,8 @@ RUCY_DEF7(create_rect,
 	uint nseg;
 	get_rect_args(
 		&x, &y, &w, &h, &lt, &rt, &lb, &rb, &nseg,
-		args, round, lefttop, righttop, leftbottom, rightbottom, nsegment);
+		args.size(), args.as_array(),
+		round, lefttop, righttop, leftbottom, rightbottom, nsegment);
 
 	return value(Rays::create_rect(x, y, w, h, lt, rt, lb, rb, nseg));
 }
@@ -216,7 +212,8 @@ RUCY_DEF7(create_ellipse,
 	uint nseg;
 	get_ellipse_args(
 		&x, &y, &w, &h, &hole_size, &from, &to_, &nseg,
-		args, center, radius, hole, angle_from, angle_to, nsegment);
+		args.size(), args.as_array(),
+		center, radius, hole, angle_from, angle_to, nsegment);
 
 	return value(Rays::create_ellipse(x, y, w, h, hole_size, from, to_, nseg));
 }
@@ -232,8 +229,7 @@ Init_polygon ()
 
 	cPolygon = mRays.define_class("Polygon");
 	cPolygon.define_alloc_func(alloc);
-	cPolygon.define_private_method("set_points",   set_points);
-	cPolygon.define_private_method("set_polyline", set_polyline);
+	cPolygon.define_private_method("setup", setup);
 	cPolygon.define_method("expand", expand);
 	cPolygon.define_method("bounds", bounds);
 	cPolygon.define_method("size", size);
@@ -248,6 +244,47 @@ Init_polygon ()
 	cPolygon.define_singleton_method("create_rect",    create_rect);
 	cPolygon.define_singleton_method("create_ellipse", create_ellipse);
 }
+
+
+namespace Rucy
+{
+
+
+	template <> Rays::Polygon
+	value_to<Rays::Polygon> (int argc, const Value* argv, bool convert)
+	{
+		assert(argc == 0 || (argc > 0 && argv));
+
+		if (convert)
+		{
+			if (argc <= 0)
+				return Rays::Polygon();
+			else if (argv->is_kind_of(Rays::polygon_line_class()))
+			{
+				std::vector<Rays::Polygon::Line> lines;
+				lines.reserve(argc);
+				for (int i = 0; i < argc; ++i)
+					lines.emplace_back(to<Rays::Polygon::Line&>(argv[i]));
+				return Rays::Polygon(&lines[0], lines.size());
+			}
+			else if (argv->is_kind_of(Rays::polyline_class()))
+				return Rays::Polygon(to<Rays::Polyline&>(*argv));
+			else if (argv->is_num() || argv->is_array())
+			{
+				std::vector<Rays::Point> points;
+				get_line_args(&points, argc, argv);
+				return Rays::Polygon(&points[0], points.size());
+			}
+		}
+
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Polygon&>(*argv, convert);
+	}
+
+
+}// Rucy
 
 
 namespace Rays

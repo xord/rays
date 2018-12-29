@@ -13,11 +13,18 @@ module Rays
     include Enumerable
 
     def initialize (*args, loop: true)
-      if args.first.kind_of?(Polyline)
-        set_polyline args.first
-      else
-        set_points args, loop
-      end
+      setup args, loop
+    end
+
+    def transform (matrix = nil, &block)
+      lines = to_a
+      lines = lines.map {|line| line.transform matrix} if matrix
+      lines = block.call lines if block
+      self.class.new *lines
+    end
+
+    def intersects (obj)
+      !(self & obj).empty?
     end
 
     def self.line (*args, loop: false)

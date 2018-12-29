@@ -6,18 +6,14 @@ require_relative 'helper'
 
 class TestPolyline < Test::Unit::TestCase
 
-  class Polyline < Rays::Polyline
-    def initialize (*args, loop: false)
-      set_points args, loop
-    end
-
+  class Rays::Polyline
     def dump ()
-      map {|point| point.to_a}
+      map &:to_a
     end
   end
 
   def polyline (*args)
-    Polyline.new *args
+    Rays::Polyline.new *args
   end
 
   def point (*args)
@@ -30,9 +26,16 @@ class TestPolyline < Test::Unit::TestCase
 
   def test_initialize ()
     assert_equal [[1, 2], [3, 4]], polyline(   1, 2,     3, 4 ).dump
-    assert_equal [[5, 6], [7, 8]], polyline(  [5, 6],   [7, 8]).dump
+    assert_equal [[1, 2], [3, 4]], polyline(  [1, 2],   [3, 4]).dump
     assert_equal [[1, 1], [2, 2]], polyline(     [1],      [2]).dump
-    assert_equal [[3, 3], [4, 4]], polyline(point(3), point(4)).dump
+    assert_equal [[1, 1], [2, 2]], polyline(point(1), point(2)).dump
+
+    assert_equal false, polyline(1, 2, 3, 4, 5, 6             ).loop?
+    assert_equal true,  polyline(1, 2, 3, 4, 5, 6, loop: true ).loop?
+    assert_equal false, polyline(1, 2, 3, 4, 5, 6, loop: false).loop?
+    assert_equal false, polyline(                  loop: true ).loop?
+    assert_equal false, polyline(                  loop: false).loop?
+
     assert_nothing_raised       {polyline(                  loop: true)}
     assert_nothing_raised       {polyline(                  loop: false)}
     assert_raise(ArgumentError) {polyline(1,                loop: true)}
@@ -65,18 +68,53 @@ class TestPolyline < Test::Unit::TestCase
     }
   end
 
+  def test_transform_with_materix ()
+    m = Rays::Matrix.translate 100, 200
+    polyline([10,10], [20,20]).transform(m).tap {|o|
+      assert_equal [[110,210], [120,220]], o.dump
+    }
+
+    m = Rays::Matrix.scale 2
+    polyline([10,10], [20,20]).transform(m).tap {|o|
+      assert_equal [[20,20],   [40,40]],   o.dump
+    }
+
+    m = Rays::Matrix.rotate 90
+    polyline([10,10], [20,20]).transform(m).tap {|o|
+      assert_equal [[-10,10],  [-20,20]],  o.dump
+    }
+  end
+
+  def test_transform_with_block ()
+    polyline([10,10], [20,20]                      ).transform {|points|
+      points.map {|p| p + [10, 20]}
+    }.tap {|o|
+      assert_equal [[20,30], [30,40]], o.dump
+    }
+
+    polyline([10,10], [20,20], [30,30]             ).transform {|points|
+      points.reject {|p| p == point(20, 20)}
+    }.tap {|o|
+      assert_equal [[10,10], [30,30]], o.dump
+    }
+
+    polyline([10,10], [20,20], [30,30]             ).transform {|points|
+      points + [[40, 40]]
+    }.tap {|o|
+      assert_equal [[10,10], [20,20], [30,30], [40,40]], o.dump
+    }
+
+    polyline([10,10], [20,20], [30,30], loop: false).transform(loop: true).tap {|o|
+      assert_equal [[10,10], [20,20], [30,30]], o.dump
+      assert o.loop?
+    }
+  end
+
   def test_bounds ()
     assert_equal bounds(10, 20, 0, 20, 10, 0), polyline(10, 20, 30, 20, 20, 30).bounds
 
     assert     polyline(10, 20, 30, 20, 20, 30).bounds.valid?
     assert_not polyline()                      .bounds.valid?
-  end
-
-  def test_loop ()
-    assert_equal true,  polyline(1, 2, 3, 4, 5, 6, loop: true ).loop?
-    assert_equal false, polyline(1, 2, 3, 4, 5, 6, loop: false).loop?
-    assert_equal false, polyline(                  loop: true ).loop?
-    assert_equal false, polyline(                  loop: false).loop?
   end
 
   def test_size ()

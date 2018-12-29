@@ -100,10 +100,9 @@ RUCY_DEF2(line, args, loop)
 	CHECK;
 
 	std::vector<Rays::Point> points;
-	bool line_loop;
-	get_line_args(&points, &line_loop, args, loop);
+	get_line_args(&points, args.size(), args.as_array());
 
-	THIS->line(&points[0], points.size(), line_loop);
+	THIS->line(&points[0], points.size(), loop);
 	return self;
 }
 RUCY_END
@@ -127,7 +126,8 @@ RUCY_DEF6(rect, args, round, lefttop, righttop, leftbottom, rightbottom)
 	uint _;
 	get_rect_args(
 		&x, &y, &w, &h, &lt, &rt, &lb, &rb, &_,
-		args, round, lefttop, righttop, leftbottom, rightbottom, nil());
+		args.size(), args.as_array(),
+		round, lefttop, righttop, leftbottom, rightbottom, nil());
 
 	THIS->rect(x, y, w, h, lt, rt, lb, rb);
 	return self;
@@ -145,7 +145,8 @@ RUCY_DEF6(ellipse, args, center, radius, hole, angle_from, angle_to)
 	uint _;
 	get_ellipse_args(
 		&x, &y, &w, &h, &hole_size, &from, &to_, &_,
-		args, center, radius, hole, angle_from, angle_to, nil());
+		args.size(), args.as_array(),
+		center, radius, hole, angle_from, angle_to, nil());
 
 	THIS->ellipse(x, y, w, h, hole_size, from, to_);
 	return self;

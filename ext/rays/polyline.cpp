@@ -23,15 +23,13 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(set_points, args, loop)
+RUCY_DEF2(setup, points, loop)
 {
 	CHECK;
 
-	std::vector<Rays::Point> points;
-	bool line_loop;
-	get_line_args(&points, &line_loop, args, loop);
-
-	*THIS = Rays::Polyline(&points[0], points.size(), line_loop);
+	std::vector<Rays::Point> array;
+	get_line_args(&array, points.size(), points.as_array());
+	*THIS = Rays::Polyline(&array[0], array.size(), loop);
 }
 RUCY_END
 
@@ -116,7 +114,7 @@ Init_polyline ()
 
 	cPolyline = mRays.define_class("Polyline");
 	cPolyline.define_alloc_func(alloc);
-	cPolyline.define_private_method("set_points", set_points);
+	cPolyline.define_private_method("setup", setup);
 	cPolyline.define_method("expand", expand);
 	cPolyline.define_method("bounds", bounds);
 	cPolyline.define_method("loop?", loop);
@@ -125,6 +123,37 @@ Init_polyline ()
 	cPolyline.define_method("[]", at);
 	cPolyline.define_method("each", each);
 }
+
+
+namespace Rucy
+{
+
+
+	template <> Rays::Polyline
+	value_to<Rays::Polyline> (int argc, const Value* argv, bool convert)
+	{
+		assert(argc == 0 || (argc > 0 && argv));
+
+		if (convert)
+		{
+			if (argc <= 0)
+				return Rays::Polyline();
+			else if (argv->is_num() || argv->is_array())
+			{
+				std::vector<Rays::Point> points;
+				get_line_args(&points, argc, argv);
+				return Rays::Polyline(&points[0], points.size());
+			}
+		}
+
+		if (argc != 1)
+			argument_error(__FILE__, __LINE__);
+
+		return value_to<Rays::Polyline&>(*argv, convert);
+	}
+
+
+}// Rucy
 
 
 namespace Rays

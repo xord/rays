@@ -50,6 +50,14 @@ namespace Rays
 			lines.emplace_back(Line(polyline, hole));
 		}
 
+		void append (const Line& line)
+		{
+			if (line.empty())
+				return;
+
+			lines.emplace_back(line);
+		}
+
 		bool triangulate (TrianglePointList* triangles) const
 		{
 			assert(triangles);
@@ -908,6 +916,15 @@ namespace Rays
 		self->append(polyline);
 	}
 
+	Polygon::Polygon (const Line* lines, size_t size)
+	:	self(new PolygonData())
+	{
+		if (!lines || size <= 0) return;
+
+		for (size_t i = 0; i < size; ++i)
+			self->append(lines[i]);
+	}
+
 	Polygon::Polygon (Data* data)
 	:	self(data)
 	{
@@ -944,8 +961,17 @@ namespace Rays
 	}
 
 	bool
-	Polygon::empty () const
+	Polygon::empty (bool deep) const
 	{
+		if (deep)
+		{
+			for (const auto& line : self->lines)
+			{
+				if (!line.empty())
+					return false;
+			}
+		}
+
 		return size() <= 0;
 	}
 
@@ -1031,9 +1057,23 @@ namespace Rays
 	}
 
 
+	Polygon::Line::Line ()
+	:	Super(), hole_(false)
+	{
+	}
+
+	Polygon::Line::Line (const Point* points, size_t size, bool loop, bool hole)
+	:	Super(points, size, loop), hole_(hole)
+	{
+		if (!*this)
+			argument_error(__FILE__, __LINE__);
+	}
+
 	Polygon::Line::Line (const Polyline& polyline, bool hole)
 	:	Super(polyline), hole_(hole)
 	{
+		if (!*this)
+			argument_error(__FILE__, __LINE__);
 	}
 
 	bool

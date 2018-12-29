@@ -12,6 +12,7 @@ require 'rays/matrix'
 
 require 'rays/polyline'
 require 'rays/polygon'
+require 'rays/polygon_line'
 require 'rays/bitmap'
 require 'rays/image'
 require 'rays/font'

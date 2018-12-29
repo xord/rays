@@ -26,7 +26,14 @@ namespace Rays
 
 				public:
 
-					Line (const Polyline& polyline, bool hole);
+					Line ();
+
+					Line (
+						const Point* points, size_t size,
+						bool loop = true,
+						bool hole = false);
+
+					Line (const Polyline& polyline, bool hole = false);
 
 					bool hole () const;
 
@@ -50,6 +57,8 @@ namespace Rays
 
 			Polygon (const Polyline& polyline);
 
+			Polygon (const Line* lines, size_t size);
+
 			~Polygon ();
 
 			bool expand (Polygon* result, coord width) const;
@@ -58,7 +67,7 @@ namespace Rays
 
 			size_t size () const;
 
-			bool empty () const;
+			bool empty (bool deep = false) const;
 
 			const_iterator begin () const;
 
