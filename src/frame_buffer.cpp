@@ -37,7 +37,7 @@ namespace Rays
 
 			GLuint id_ = 0;
 			glGenFramebuffers(1, &id_);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			id = id_;
 		}
@@ -51,7 +51,7 @@ namespace Rays
 			{
 				GLuint id_ = id;
 				glDeleteFramebuffers(1, &id_);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 			id = -1;
@@ -111,7 +111,7 @@ namespace Rays
 
 		glFramebufferTexture2D(
 			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id(), 0);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 
 		self->texture = texture;
 
@@ -126,7 +126,7 @@ namespace Rays
 			glFramebufferRenderbuffer(
 				GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 				GL_RENDERBUFFER, rb.id());
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			self->render_buffer = rb;
 		}
@@ -221,12 +221,12 @@ namespace Rays
 	{
 		GLuint current = 0;
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*) &current);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 
 		frame_buffer_bind_stack.push_back(current);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, id);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
 	void
@@ -239,7 +239,7 @@ namespace Rays
 		frame_buffer_bind_stack.pop_back();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, id);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
 

@@ -111,7 +111,7 @@ namespace Rays
 			GL_TEXTURE_2D, 0, format, self->width_pow2, self->height_pow2, 0,
 			format, type, pixels);
 
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
 	template <int BytesPerPixel>

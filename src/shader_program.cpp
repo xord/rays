@@ -22,7 +22,7 @@ namespace Rays
 		if (value < 0)
 		{
 			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &value);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 		}
 		return value;
 	}
@@ -86,7 +86,7 @@ namespace Rays
 			void apply (GLint location) const
 			{
 				apply_value(location);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 			void apply_value (GLint location) const;
@@ -160,7 +160,7 @@ namespace Rays
 
 				glBindTexture(GL_TEXTURE_2D, texture.id());
 				glUniform1i(location, unit);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 		private:
@@ -321,7 +321,7 @@ namespace Rays
 				attach_shader(source);
 
 			glLinkProgram(id);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			for (const auto* source : shared_sources)
 				detach_shader(*source);
@@ -337,13 +337,13 @@ namespace Rays
 		void attach_shader (const ShaderSource& source) const
 		{
 			glAttachShader(id, source.id());
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 		}
 
 		void detach_shader (const ShaderSource& source) const
 		{
 			glDetachShader(id, source.id());
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 		}
 
 		String get_link_log () const
@@ -373,7 +373,7 @@ namespace Rays
 				texture.apply(program);
 			}
 
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 		}
 
 	};// ShaderProgram::Data
@@ -389,7 +389,7 @@ namespace Rays
 		self->link_sources();
 
 		glUseProgram(program.id());
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 
 		self->apply_uniforms(program);
 	}
@@ -398,7 +398,7 @@ namespace Rays
 	ShaderProgram_deactivate ()
 	{
 		glUseProgram(0);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
 

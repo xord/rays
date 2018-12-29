@@ -374,7 +374,7 @@ namespace Rays
 				glDisable(GL_SCISSOR_TEST);
 			}
 
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 		}
 
 		bool get_color (Color* color, ColorType type)
@@ -431,7 +431,7 @@ namespace Rays
 			//activate_texture(texture);
 
 			glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			//deactivate_texture(texture);
 			cleanup_vertices(a_position, a_texcoord);
@@ -450,7 +450,7 @@ namespace Rays
 				{
 					glUniformMatrix4fv(
 						pos_matrix_loc, 1, GL_FALSE, position_matrix.array);
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
 				GLint texcoord_matrix_loc =
@@ -460,7 +460,7 @@ namespace Rays
 					static const Matrix TEXCOORD_MATRIX(1);
 					glUniformMatrix4fv(
 						texcoord_matrix_loc, 1, GL_FALSE, TEXCOORD_MATRIX.array);
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
 				apply_texture_uniforms(program, texinfo);
@@ -481,7 +481,7 @@ namespace Rays
 					glBindTexture(GL_TEXTURE_2D, texture.id());
 
 					glUniform1i(texture_loc, 0);
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
 				GLint size_loc =
@@ -490,7 +490,7 @@ namespace Rays
 				{
 					glUniform2f(
 						size_loc, texture.reserved_width(), texture.reserved_height());
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
 				GLint min_loc =
@@ -498,7 +498,7 @@ namespace Rays
 				if (min_loc >= 0)
 				{
 					glUniform2fv(min_loc, 1, texinfo->texcoord_min.array);
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
 				GLint max_loc =
@@ -506,7 +506,7 @@ namespace Rays
 				if (max_loc >= 0)
 				{
 					glUniform2fv(max_loc, 1, texinfo->texcoord_max.array);
-					check_error(__FILE__, __LINE__);
+					OpenGL_check_error(__FILE__, __LINE__);
 				}
 			}
 
@@ -521,13 +521,13 @@ namespace Rays
 				glVertexAttribPointer(
 					a_position, Coord3::SIZE, get_gl_type<coord>(),
 					GL_FALSE, sizeof(Coord3), points);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 
 				glEnableVertexAttribArray(a_texcoord);
 				glVertexAttribPointer(
 					a_texcoord, Coord3::SIZE, get_gl_type<coord>(),
 					GL_FALSE, sizeof(Coord3), texcoords);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 
 				glVertexAttrib4fv(a_color, color.array);
 			}
@@ -536,7 +536,7 @@ namespace Rays
 			{
 				glDisableVertexAttribArray(a_position);
 				glDisableVertexAttribArray(a_texcoord);
-				check_error(__FILE__, __LINE__);
+				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 			void activate_texture (const Texture* texture)
@@ -731,7 +731,7 @@ namespace Rays
 		//glEnable(GL_CULL_FACE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 
 		self->painting = true;
 
@@ -774,7 +774,7 @@ namespace Rays
 		const Color& c = self->state.background;
 		glClearColor(c.red, c.green, c.blue, c.alpha);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		check_error(__FILE__, __LINE__);
+		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
 	static inline void

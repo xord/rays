@@ -41,11 +41,11 @@ namespace Rays
 
 			GLuint id_ = 0;
 			glGenRenderbuffers(1, &id_);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			id = id_;
 			glBindRenderbuffer(GL_RENDERBUFFER, id_);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			glRenderbufferStorage(
 				GL_RENDERBUFFER,
@@ -56,7 +56,7 @@ namespace Rays
 				#endif
 				width,
 				height);
-			check_error(__FILE__, __LINE__);
+			OpenGL_check_error(__FILE__, __LINE__);
 
 			width  = width_;
 			height = height_;

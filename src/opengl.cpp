@@ -9,21 +9,9 @@ namespace Rays
 
 
 	GLenum
-	get_error ()
+	OpenGL_get_error ()
 	{
 		return glGetError();
-	}
-
-	bool
-	no_error ()
-	{
-		return get_error() == GL_NO_ERROR;
-	}
-
-	bool
-	is_error (GLenum err)
-	{
-		return get_error() == err;
 	}
 
 	static String
@@ -42,22 +30,16 @@ namespace Rays
 			#endif
 			case 0x506:                return "GL_INVALID_FRAMEBUFFER_OPERATION";
 			case 0x8031:               return "GL_TABLE_TOO_LARGE";
+			default:                   return "UNKNOWN ERROR";
 		}
-		return "UNKNOWN ERROR";
 	}
 
 	void
-	check_error (const char* file, int line)
+	OpenGL_check_error (const char* file, int line)
 	{
-		GLenum e = get_error();
+		GLenum e = OpenGL_get_error();
 		if (e != GL_NO_ERROR)
 			opengl_error(file, line, "OpenGL error %s", get_error_name(e).c_str());
-	}
-
-	void
-	clear_error ()
-	{
-		get_error();
 	}
 
 
