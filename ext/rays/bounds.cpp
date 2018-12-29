@@ -85,7 +85,7 @@ RUCY_DEFN(move_to)
 		}
 
 		const Rays::Point& p = THIS->position();
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : p.x;
+		coord x =               argv[0]  ? to<coord>(argv[0]) : p.x;
 		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : p.y;
 		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : p.z;
 		THIS->move_to(x, y, z);
@@ -111,7 +111,7 @@ RUCY_DEFN(move_by)
 			argv = argv[0].as_array();
 		}
 
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : 0;
+		coord x =               argv[0]  ? to<coord>(argv[0]) : 0;
 		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : 0;
 		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : 0;
 		THIS->move_by(x, y, z);
@@ -138,7 +138,7 @@ RUCY_DEFN(resize_to)
 		}
 
 		const Rays::Point& p = THIS->size();
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : p.x;
+		coord x =               argv[0]  ? to<coord>(argv[0]) : p.x;
 		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : p.y;
 		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : p.z;
 		THIS->resize_to(x, y, z);
@@ -164,7 +164,7 @@ RUCY_DEFN(resize_by)
 			argv = argv[0].as_array();
 		}
 
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : 0;
+		coord x =               argv[0]  ? to<coord>(argv[0]) : 0;
 		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : 0;
 		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : 0;
 		THIS->resize_by(x, y, z);
@@ -190,13 +190,22 @@ RUCY_DEFN(inset_by)
 			argv = argv[0].as_array();
 		}
 
-		coord x = (argc >= 1 && argv[0]) ? to<coord>(argv[0]) : 0;
+		coord x =               argv[0]  ? to<coord>(argv[0]) : 0;
 		coord y = (argc >= 2 && argv[1]) ? to<coord>(argv[1]) : 0;
 		coord z = (argc >= 3 && argv[2]) ? to<coord>(argv[2]) : 0;
 		THIS->inset_by(x, y, z);
 	}
 
 	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(is_valid)
+{
+	CHECK;
+
+	return value(THIS->operator bool());
 }
 RUCY_END
 
@@ -524,12 +533,18 @@ RUCY_DEF1(op_and, bounds)
 RUCY_END
 
 static
-RUCY_DEF1(op_or, bounds)
+RUCY_DEF1(op_or, arg)
 {
 	CHECK;
 
 	Rays::Bounds b = *THIS;
-	b |= to<Rays::Bounds&>(bounds);
+	if (arg.is_kind_of(Rays::bounds_class()))
+		b |= to<Rays::Bounds&>(arg);
+	else if (arg.is_kind_of(Rays::point_class()))
+		b |= to<Rays::Point&>(arg);
+	else
+		argument_error(__FILE__, __LINE__);
+
 	return value(b);
 }
 RUCY_END
@@ -540,6 +555,13 @@ RUCY_DEF0(inspect)
 	CHECK;
 
 	return value(Xot::stringf("#<Rays::Bounds %s>", THIS->inspect().c_str()));
+}
+RUCY_END
+
+static
+RUCY_DEF0(invalid)
+{
+	return value(Rays::invalid_bounds());
 }
 RUCY_END
 
@@ -562,6 +584,7 @@ Init_bounds ()
 	cBounds.define_method("resize_to!", resize_to);
 	cBounds.define_method("resize_by!", resize_by);
 	cBounds.define_method("inset_by!",  inset_by);
+	cBounds.define_method("valid?", is_valid);
 	cBounds.define_method("x=",      set_x);
 	cBounds.define_method("x",       get_x);
 	cBounds.define_method("y=",      set_y);
@@ -597,6 +620,7 @@ Init_bounds ()
 	cBounds.define_method("&", op_and);
 	cBounds.define_method("|", op_or);
 	cBounds.define_method("inspect", inspect);
+	cBounds.define_singleton_method("invalid", invalid);
 }
 
 

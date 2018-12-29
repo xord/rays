@@ -190,9 +190,9 @@ namespace Rays
 	}
 
 	Image
-	Image::copy () const
+	Image::dup () const
 	{
-		return Image(bitmap(), pixel_density());
+		return Image(bitmap().dup(), pixel_density());
 	}
 
 	coord

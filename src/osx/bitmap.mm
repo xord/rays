@@ -271,7 +271,7 @@ namespace Rays
 	}
 
 	Bitmap
-	Bitmap::copy () const
+	Bitmap::dup () const
 	{
 		return Bitmap(width(), height(), color_space(), pixels());
 	}

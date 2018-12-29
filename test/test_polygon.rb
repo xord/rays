@@ -14,6 +14,10 @@ class TestPolygon < Test::Unit::TestCase
     Rays::Point.new *args
   end
 
+  def bounds (*args)
+    Rays::Bounds.new *args
+  end
+
   def rect (*args)
     Rays::Polygon.rect *args
   end
@@ -48,9 +52,21 @@ class TestPolygon < Test::Unit::TestCase
   end
 
   def test_expand ()
-    expanded = polygon(0, 0, 1, 0, loop: false).expand 2
-    assert_equal 1, expanded.size
-    assert_equal 4, expanded[0].size
+    polygon([10,10], [20,10], [30,20],          loop: false).expand(1).tap {|o|
+      assert_equal 1, o   .size
+      assert_equal 6, o[0].size
+    }
+    polygon([10,10], [20,10], [20,20], [10,20], loop: true) .expand(1).tap {|o|
+      assert_equal 1, o   .size
+      assert_equal 4, o[0].size
+    }
+  end
+
+  def test_bounds ()
+    assert_equal bounds(10, 20, 0, 20, 10, 0), polygon(10, 20, 30, 20, 20, 30).bounds
+
+    assert     polygon(10, 20, 30, 20, 20, 30).bounds.valid?
+    assert_not polygon()                      .bounds.valid?
   end
 
   def test_loop ()
@@ -84,31 +100,75 @@ class TestPolygon < Test::Unit::TestCase
   end
 
   def test_sub ()
-    o1 = rect 0, 0, 10, 10
-    o2 = rect 5, 0, 10, 10
-    o  = o1 - o2
+    rect10 = rect 0, 0, 10, 10
+
+    o = rect10 - rect(5, 0, 10, 10)
     assert_equal_polygon rect(0, 0, 5, 10), o
+
+    o = rect10 - rect(5, 0, 10, 10) - rect(0, 0, 2, 10)
+    assert_equal_polygon rect(2, 0, 3, 10), o
+
+    o = rect10 - [rect(5, 0, 10, 10), rect(0, 0, 3, 10)]
+    assert_equal_polygon rect(3, 0, 2, 10), o
+
+    assert_equal_polygon rect10,    rect10    - polygon()
+    assert_equal_polygon polygon(), polygon() - rect10
+    assert_equal_polygon rect10,    rect10    - []
+    assert_equal_polygon polygon(), rect10    - rect10
   end
 
   def test_and ()
-    o1 = rect 0, 0, 10, 10
-    o2 = rect 5, 0, 10, 10
-    o  = o1 & o2
+    rect10 = rect 0, 0, 10, 10
+
+    o = rect10 & rect(5, 0, 10, 10)
     assert_equal_polygon rect(5, 0, 5, 10), o
+
+    o = rect10 & rect(5, 0, 10, 10) & rect(0, 5, 10, 10)
+    assert_equal_polygon rect(5, 5, 5, 5), o
+
+    o = rect10 & [rect(5, 0, 10, 10), rect(0, 6, 10, 10)]
+    assert_equal_polygon rect(5, 6, 5, 4), o
+
+    assert_equal_polygon polygon(), rect10    & polygon()
+    assert_equal_polygon polygon(), polygon() & rect10
+    assert_equal_polygon rect10,    rect10    & []
+    assert_equal_polygon rect10,    rect10    & rect10
   end
 
   def test_or ()
-    o1 = rect 0, 0, 10, 10
-    o2 = rect 5, 0, 10, 10
-    o  = o1 | o2
-    assert_equal_polygon polygon(0, 0, 0, 10, 15, 10, 15, 0), o
+    rect10 = rect 0, 0, 10, 10
+
+    o = rect10 | rect(5, 0, 10, 10)
+    assert_equal_polygon rect(0, 0, 15, 10), o
+
+    o = rect10 | rect(5, 0, 10, 10) | rect(-5, 0, 10, 10)
+    assert_equal_polygon rect(-5, 0, 20, 10), o
+
+    o = rect10 | [rect(5, 0, 10, 10), rect(-6, 0, 10, 10)]
+    assert_equal_polygon rect(-6, 0, 21, 10), o
+
+    assert_equal_polygon rect10, rect10    | polygon()
+    assert_equal_polygon rect10, polygon() | rect10
+    assert_equal_polygon rect10, rect10    | []
+    assert_equal_polygon rect10, rect10    | rect10
   end
 
   def test_xor ()
-    o1 = rect 0, 0, 10, 10
-    o2 = rect 5, 0, 10, 10
-    o  = o1 ^ o2
-    assert_equal_polygon (rect(0, 0, 5, 10) | rect(10, 0, 5, 10)), o
+    rect10 = rect 0, 0, 10, 10
+
+    o = rect10 ^ rect(5, 0, 10, 10)
+    assert_equal_polygon rect(0, 0, 5, 10) | rect(10, 0, 5, 10), o
+
+    o = rect10 ^ rect(5, 0, 10, 10) ^ rect(0, 0, 15, 5)
+    assert_equal_polygon rect(0, 5, 5, 5) | rect(5, 0, 5, 5) | rect(10, 5, 5, 5), o
+
+    o = rect10 ^ [rect(5, 0, 10, 10), rect(0, 0, 15, 6)]
+    assert_equal_polygon rect(0, 6, 5, 4) | rect(5, 0, 5, 6) | rect(10, 6, 5, 4), o
+
+    assert_equal_polygon rect10,    rect10    ^ polygon()
+    assert_equal_polygon rect10,    polygon() ^ rect10
+    assert_equal_polygon rect10,    rect10    ^ []
+    assert_equal_polygon polygon(), rect10    ^ rect10
   end
 
 end# TestPolygon

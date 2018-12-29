@@ -24,7 +24,7 @@ class TestColor < Test::Unit::TestCase
     assert_raise(ArgumentError) {color(1, 2, 3, 4, 5)}
   end
 
-  def test_color ()
+  def test_initialize_with_string ()
     assert_equal color(0, 0, 0, 1), color('#000')
     assert_equal color(0, 0, 0, 1), color('#000000')
     assert_equal color(0, 0, 0, 0), color('#0000')
@@ -40,6 +40,18 @@ class TestColor < Test::Unit::TestCase
     assert_raise(ArgumentError) {color '#00'}
     assert_raise(ArgumentError) {color '#00000'}
     assert_raise(ArgumentError) {color '#0000000'}
+  end
+
+  def test_dup ()
+    o     = color
+    assert_equal color(0, 0, 0), o
+    o.red = 1
+    assert_equal color(1, 0, 0), o
+    x     = o.dup
+    assert_equal color(1, 0, 0), x
+    x.red = 2
+    assert_equal color(2, 0, 0), x
+    assert_equal color(1, 0, 0), o
   end
 
   def test_get_rgb ()

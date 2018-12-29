@@ -25,6 +25,18 @@ class TestBounds < Test::Unit::TestCase
     assert_raise(ArgumentError) {bounds(1, 2, 3, 4, 5, 6, 7)}
   end
 
+  def test_dup ()
+    o   = bounds
+    assert_equal bounds(0, 0, 0, 0, 0, 0), o
+    o.x = 1
+    assert_equal bounds(1, 0, 0, 0, 0, 0), o
+    x   = o.dup
+    assert_equal bounds(1, 0, 0, 0, 0, 0), x
+    x.x = 2
+    assert_equal bounds(2, 0, 0, 0, 0, 0), x
+    assert_equal bounds(1, 0, 0, 0, 0, 0), o
+  end
+
   def test_intersect? ()
     assert     bounds(10, 20, 30, 100, 100, 100).intersect?(bounds 50, 60, 70, 100, 100, 100)
     assert_not bounds(10, 20, 30,  10,  10,  10).intersect?(bounds 50, 60, 70, 100, 100, 100)
@@ -33,6 +45,16 @@ class TestBounds < Test::Unit::TestCase
   def test_include? ()
     assert     bounds(10, 20, 30, 100, 100, 100).include?(point 50, 60)
     assert_not bounds(10, 20, 30,  10,  10,  10).include?(point 50, 60)
+  end
+
+  def test_valid? ()
+    assert     bounds(0, 0, 0,  0,  0,  0).valid?
+    assert     bounds(0, 0, 0,  1,  0,  0).valid?
+    assert     bounds(0, 0, 0,  0,  1,  0).valid?
+    assert     bounds(0, 0, 0,  0,  0,  1).valid?
+    assert_not bounds(0, 0, 0, -1,  0,  0).valid?
+    assert_not bounds(0, 0, 0,  0, -1,  0).valid?
+    assert_not bounds(0, 0, 0,  0,  0, -1).valid?
   end
 
   def test_get_xyzwhd ()
@@ -285,8 +307,22 @@ class TestBounds < Test::Unit::TestCase
   def test_operators ()
     assert_equal bounds(50, 60, 70,  60,  60,  60), bounds(10, 20, 30, 100, 100, 100) & bounds(50, 60, 70, 100, 100, 100)
     assert_equal bounds(10, 20, 30, 140, 140, 140), bounds(10, 20, 30, 100, 100, 100) | bounds(50, 60, 70, 100, 100, 100)
+    assert_equal bounds(10, 20, 30,  20,  20,  20), bounds(20, 30, 40, 10, 10, 10)    | point(10, 20, 30)
+    assert_equal bounds(10, 20, 30,  30,  30,  30), bounds(10, 20, 30, 10, 10, 10)    | point(40, 50, 60)
 
     assert_equal point(0), (bounds(10, 20, 30, 10, 10, 10) & bounds(50, 60, 70, 10, 10, 10)).size
+  end
+
+  def test_invalid ()
+    o = Rays::Bounds.invalid
+    assert_not o.valid?
+
+    o |= point(1, 2)
+    assert o.valid?
+    assert_equal bounds(1, 2, 0, 0), o
+
+    o |= point(10, 20)
+    assert_equal bounds(1, 2, 9, 18), o
   end
 
 end# TestBounds

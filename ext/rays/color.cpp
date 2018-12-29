@@ -188,14 +188,14 @@ Init_color ()
 	cColor.define_alloc_func(alloc);
 	cColor.define_private_method("initialize",      initialize);
 	cColor.define_private_method("initialize_copy", initialize_copy);
-	cColor.define_method("red=", set_red);
-	cColor.define_method("red", get_red);
+	cColor.define_method("red=",   set_red);
+	cColor.define_method("red",    get_red);
 	cColor.define_method("green=", set_green);
-	cColor.define_method("green", get_green);
-	cColor.define_method("blue=", set_blue);
-	cColor.define_method("blue", get_blue);
+	cColor.define_method("green",  get_green);
+	cColor.define_method("blue=",  set_blue);
+	cColor.define_method("blue",   get_blue);
 	cColor.define_method("alpha=", set_alpha);
-	cColor.define_method("alpha", get_alpha);
+	cColor.define_method("alpha",  get_alpha);
 
 	cColor.define_function("set_palette_color", set_palette_color);
 }

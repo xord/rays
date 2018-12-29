@@ -41,15 +41,15 @@ class TestMatrix < Test::Unit::TestCase
   end
 
   def test_dup ()
-    o = matrix
+    o       = matrix
     assert_equal mat_str('1000 0100 0010 0001'), o
     o[0, 0] = 9
     assert_equal mat_str('9000 0100 0010 0001'), o
-    x = o.dup
+    x       = o.dup
     assert_equal mat_str('9000 0100 0010 0001'), x
-    o[0, 0] = 5
-    assert_equal mat_str('5000 0100 0010 0001'), o
-    assert_equal mat_str('9000 0100 0010 0001'), x
+    x[0, 0] = 5
+    assert_equal mat_str('5000 0100 0010 0001'), x
+    assert_equal mat_str('9000 0100 0010 0001'), o
   end
 
   def test_mult ()

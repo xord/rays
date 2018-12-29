@@ -12,6 +12,18 @@ module Rays
     include Comparable
     include Enumerable
 
+    alias r= red=
+    alias r  red
+
+    alias g= green=
+    alias g  green
+
+    alias b= blue=
+    alias b  blue
+
+    alias a= alpha=
+    alias a  alpha
+
     def opaque? ()
       alpha >= 1
     end

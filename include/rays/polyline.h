@@ -7,10 +7,14 @@
 #include <vector>
 #include <xot/pimpl.h>
 #include <rays/point.h>
+#include <rays/bounds.h>
 
 
 namespace Rays
 {
+
+
+	class Polygon;
 
 
 	class Polyline
@@ -24,9 +28,13 @@ namespace Rays
 
 			Polyline ();
 
-			Polyline (const Point* points, size_t size, bool loop = true);
+			Polyline (const Point* points, size_t size, bool loop = false);
 
 			~Polyline ();
+
+			bool expand (Polygon* result, coord width) const;
+
+			Bounds bounds () const;
 
 			bool loop () const;
 

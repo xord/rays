@@ -4,7 +4,7 @@
 require_relative 'helper'
 
 
-class TestPolylineLine < Test::Unit::TestCase
+class TestPolygonLine < Test::Unit::TestCase
 
   def rect (*args)
     Rays::Polygon.rect *args
@@ -22,4 +22,4 @@ class TestPolylineLine < Test::Unit::TestCase
     assert_equal 0, o.select {|line| line.hole?}.size
   end
 
-end# TestPolyline
+end# TestPolygonLine

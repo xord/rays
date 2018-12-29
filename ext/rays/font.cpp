@@ -30,16 +30,6 @@ RUCY_DEFN(initialize)
 RUCY_END
 
 static
-RUCY_DEF1(initialize_copy, obj)
-{
-	RUCY_CHECK_OBJ(Rays::Font, self);
-
-	*THIS = to<Rays::Font&>(obj).copy();
-	return self;
-}
-RUCY_END
-
-static
 RUCY_DEF0(name)
 {
 	CHECK;
@@ -81,8 +71,7 @@ Init_font ()
 
 	cFont = mRays.define_class("Font");
 	cFont.define_alloc_func(alloc);
-	cFont.define_private_method("initialize",      initialize);
-	cFont.define_private_method("initialize_copy", initialize_copy);
+	cFont.define_private_method("initialize", initialize);
 	cFont.define_method("name", name);
 	cFont.define_method("size", size);
 	cFont.define_method("width", width);

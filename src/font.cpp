@@ -79,12 +79,6 @@ namespace Rays
 	{
 	}
 
-	Font
-	Font::copy () const
-	{
-		return Font(self->rawfont.name(), self->rawfont.size());
-	}
-
 	String
 	Font::name () const
 	{

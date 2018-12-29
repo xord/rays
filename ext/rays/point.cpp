@@ -176,6 +176,14 @@ RUCY_DEF0(get_z)
 RUCY_END
 
 static
+RUCY_DEF0(negate)
+{
+	CHECK;
+	return value(-*THIS);
+}
+RUCY_END
+
+static
 RUCY_DEFN(add)
 {
 	CHECK;
@@ -279,6 +287,7 @@ Init_point ()
 	cPoint.define_method("y",  get_y);
 	cPoint.define_method("z=", set_z);
 	cPoint.define_method("z",  get_z);
+	cPoint.define_method("-@", negate);
 	cPoint.define_method("+", add);
 	cPoint.define_method("-", sub);
 	cPoint.define_method("*", mult);

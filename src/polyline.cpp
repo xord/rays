@@ -89,6 +89,24 @@ namespace Rays
 	}
 
 	bool
+	Polyline::expand (Polygon* result, coord width) const
+	{
+		return Polyline_expand(result, *this, width);
+	}
+
+	Bounds
+	Polyline::bounds () const
+	{
+		if (empty()) return Bounds(-1, -1, -1);
+
+		auto it = begin();
+		Bounds b(*it++, 0);
+		for (auto end = this->end(); it != end; ++it)
+			b |= *it;
+		return b;
+	}
+
+	bool
 	Polyline::loop () const
 	{
 		return self->loop;

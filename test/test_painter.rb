@@ -14,54 +14,54 @@ class TestPainter < Test::Unit::TestCase
     Rays::Font.new name, size
   end
 
-  def rgb (*args)
+  def color (*args)
     Rays::Color.new *args
   end
 
   def setup ()
-    Rays::Color.set_palette_color :rgb001, rgb(0, 0, 1)
+    Rays::Color.set_palette_color :rgb001, color(0, 0, 1)
   end
 
   def test_background_accessor ()
     pa = painter
     pa.background = 1
-    assert_equal rgb(1, 1, 1, 1), pa.background
+    assert_equal   color(1, 1, 1, 1), pa.background
     pa.background = 0
-    assert_equal rgb(0, 0, 0, 1), pa.background
+    assert_equal   color(0, 0, 0, 1), pa.background
     pa.background 1
-    assert_equal rgb(1, 1, 1, 1), pa.background
+    assert_equal   color(1, 1, 1, 1), pa.background
     pa.push background: 0 do |_|
-      assert_equal rgb(0, 0, 0, 1), pa.background
+      assert_equal color(0, 0, 0, 1), pa.background
     end
-    assert_equal rgb(1, 1, 1, 1), pa.background
+    assert_equal   color(1, 1, 1, 1), pa.background
   end
 
   def test_fill_accessor ()
     pa = painter
     pa.fill = 1
-    assert_equal rgb(1, 1, 1, 1), pa.fill
+    assert_equal   color(1, 1, 1, 1), pa.fill
     pa.fill = 0
-    assert_equal rgb(0, 0, 0, 1), pa.fill
+    assert_equal   color(0, 0, 0, 1), pa.fill
     pa.fill 1
-    assert_equal rgb(1, 1, 1, 1), pa.fill
+    assert_equal   color(1, 1, 1, 1), pa.fill
     pa.push fill: 0 do |_|
-      assert_equal rgb(0, 0, 0, 1), pa.fill
+      assert_equal color(0, 0, 0, 1), pa.fill
     end
-    assert_equal rgb(1, 1, 1, 1), pa.fill
+    assert_equal   color(1, 1, 1, 1), pa.fill
   end
 
   def test_stroke_accessor ()
     pa = painter
     pa.stroke = 1
-    assert_equal rgb(1, 1, 1, 1), pa.stroke
+    assert_equal   color(1, 1, 1, 1), pa.stroke
     pa.stroke = 0
-    assert_equal rgb(0, 0, 0, 1), pa.stroke
+    assert_equal   color(0, 0, 0, 1), pa.stroke
     pa.stroke 1
-    assert_equal rgb(1, 1, 1, 1), pa.stroke
+    assert_equal   color(1, 1, 1, 1), pa.stroke
     pa.push stroke: 0 do |_|
-      assert_equal rgb(0, 0, 0, 1), pa.stroke
+      assert_equal color(0, 0, 0, 1), pa.stroke
     end
-    assert_equal rgb(1, 1, 1, 1), pa.stroke
+    assert_equal   color(1, 1, 1, 1), pa.stroke
   end
 
   def test_clip_accessor ()
@@ -106,61 +106,61 @@ class TestPainter < Test::Unit::TestCase
 
   def test_color_by_name ()
     pa = painter
-    pa.fill =       :rgb001
-    assert_equal rgb(0, 0, 1), pa.fill
-    pa.fill =       [1, 0, 0]
-    assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill          0, 1, 0
-    assert_equal rgb(0, 1, 0), pa.fill
-    pa.fill =       '#f00'
-    assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill         '#0f0'
-    assert_equal rgb(0, 1, 0), pa.fill
-    pa.fill =       '#ff0000'
-    assert_equal rgb(1, 0, 0), pa.fill
-    pa.fill         '#00ff00'
-    assert_equal rgb(0, 1, 0), pa.fill
+    pa.fill =         :rgb001
+    assert_equal color(0, 0, 1), pa.fill
+    pa.fill =         [1, 0, 0]
+    assert_equal color(1, 0, 0), pa.fill
+    pa.fill            0, 1, 0
+    assert_equal color(0, 1, 0), pa.fill
+    pa.fill =         '#f00'
+    assert_equal color(1, 0, 0), pa.fill
+    pa.fill           '#0f0'
+    assert_equal color(0, 1, 0), pa.fill
+    pa.fill =         '#ff0000'
+    assert_equal color(1, 0, 0), pa.fill
+    pa.fill           '#00ff00'
+    assert_equal color(0, 1, 0), pa.fill
   end
 
   def test_push ()
     pa = painter
-    pa.fill =         [1, 0, 0]
-    assert_equal   rgb(1, 0, 0), pa.fill
+    pa.fill =           [1, 0, 0]
+    assert_equal   color(1, 0, 0), pa.fill
 
     pa.push :all do |_|
-      assert_equal rgb(1, 0, 0), pa.fill
-      pa.fill =       [0, 1, 0]
-      assert_equal rgb(0, 1, 0), pa.fill
+      assert_equal color(1, 0, 0), pa.fill
+      pa.fill =         [0, 1, 0]
+      assert_equal color(0, 1, 0), pa.fill
     end
-    assert_equal   rgb(1, 0, 0), pa.fill
+    assert_equal   color(1, 0, 0), pa.fill
 
     pa.push :state do |_|
-      assert_equal rgb(1, 0, 0), pa.fill
-      pa.fill =       [0, 1, 0]
-      assert_equal rgb(0, 1, 0), pa.fill
+      assert_equal color(1, 0, 0), pa.fill
+      pa.fill =         [0, 1, 0]
+      assert_equal color(0, 1, 0), pa.fill
     end
-    assert_equal   rgb(1, 0, 0), pa.fill
+    assert_equal   color(1, 0, 0), pa.fill
 
     pa.push :matrix do |_|
-      assert_equal rgb(1, 0, 0), pa.fill
-      pa.fill =       [0, 1, 0]
-      assert_equal rgb(0, 1, 0), pa.fill
+      assert_equal color(1, 0, 0), pa.fill
+      pa.fill =         [0, 1, 0]
+      assert_equal color(0, 1, 0), pa.fill
     end
-    assert_equal   rgb(0, 1, 0), pa.fill
+    assert_equal   color(0, 1, 0), pa.fill
 
-    pa.push fill:     [0, 0, 1] do |_|
-      assert_equal rgb(0, 0, 1), pa.fill
-      pa.fill =       [1, 0, 0]
-      assert_equal rgb(1, 0, 0), pa.fill
+    pa.push fill:       [0, 0, 1] do |_|
+      assert_equal color(0, 0, 1), pa.fill
+      pa.fill =         [1, 0, 0]
+      assert_equal color(1, 0, 0), pa.fill
     end
-    assert_equal   rgb(0, 1, 0), pa.fill
+    assert_equal   color(0, 1, 0), pa.fill
 
-    pa.push stroke:   [0, 0, 1] do |_|
-      assert_equal rgb(0, 1, 0), pa.fill
-      pa.fill =       [1, 0, 0]
-      assert_equal rgb(1, 0, 0), pa.fill
+    pa.push stroke:     [0, 0, 1] do |_|
+      assert_equal color(0, 1, 0), pa.fill
+      pa.fill =         [1, 0, 0]
+      assert_equal color(1, 0, 0), pa.fill
     end
-    assert_equal   rgb(0, 1, 0), pa.fill
+    assert_equal   color(0, 1, 0), pa.fill
   end
 
   def test_shader ()

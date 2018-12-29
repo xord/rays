@@ -58,6 +58,8 @@ namespace Rays
 		ClipperLib::Path* path, const Polyline& polyline,
 		bool reverse = false);
 
+	bool Polyline_expand (Polygon* result, const Polyline& polyline, coord width);
+
 
 }// Rays
 

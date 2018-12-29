@@ -14,7 +14,7 @@ class TestShader < Test::Unit::TestCase
     Rays::Image.new w, h
   end
 
-  def rgb (*args)
+  def color (*args)
     Rays::Color.new *args
   end
 
@@ -31,7 +31,7 @@ class TestShader < Test::Unit::TestCase
       fill 0, 1, 0, 1
       rect *bounds.move_to(0, 0).to_a
     end
-    assert_equal rgb(1, 0, 0, 1), i[0, 0]
+    assert_equal color(1, 0, 0, 1), i[0, 0]
   end
 
 end# TestShader

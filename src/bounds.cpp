@@ -1,6 +1,7 @@
 #include "rays/bounds.h"
 
 
+#include <float.h>
 #include <algorithm>
 #include "rays/exception.h"
 
@@ -402,12 +403,15 @@ namespace Rays
 	Bounds&
 	Bounds::operator &= (const Bounds& rhs)
 	{
-		if (!*this || !rhs)
+		if (!rhs)
 			argument_error(__FILE__, __LINE__);
 
-		coord x = std::max(this->x, rhs.x);
-		coord y = std::max(this->y, rhs.y);
-		coord z = std::max(this->z, rhs.z);
+		if (!*this)
+			invalid_state_error(__FILE__, __LINE__);
+
+		coord x = std::max(this->x,           rhs.x);
+		coord y = std::max(this->y,           rhs.y);
+		coord z = std::max(this->z,           rhs.z);
 		coord w = std::min(this->x + this->w, rhs.x + rhs.w) - x;
 		coord h = std::min(this->y + this->h, rhs.y + rhs.h) - y;
 		coord d = std::min(this->z + this->d, rhs.z + rhs.d) - z;
@@ -422,15 +426,27 @@ namespace Rays
 	Bounds&
 	Bounds::operator |= (const Bounds& rhs)
 	{
-		if (!*this || !rhs)
-			argument_error(__FILE__, __LINE__);
+		if (!rhs) return *this;
 
-		coord x = std::min(this->x, rhs.x);
-		coord y = std::min(this->y, rhs.y);
-		coord z = std::min(this->z, rhs.z);
+		coord x = std::min(this->x,           rhs.x);
+		coord y = std::min(this->y,           rhs.y);
+		coord z = std::min(this->z,           rhs.z);
 		coord w = std::max(this->x + this->w, rhs.x + rhs.w) - x;
 		coord h = std::max(this->y + this->h, rhs.y + rhs.h) - y;
 		coord d = std::max(this->z + this->d, rhs.z + rhs.d) - z;
+
+		return reset(x, y, z, w, h, d);
+	}
+
+	Bounds&
+	Bounds::operator |= (const Point& rhs)
+	{
+		coord x = std::min(this->x,           rhs.x);
+		coord y = std::min(this->y,           rhs.y);
+		coord z = std::min(this->z,           rhs.z);
+		coord w = std::max(this->x + this->w, rhs.x) - x;
+		coord h = std::max(this->y + this->h, rhs.y) - y;
+		coord d = std::max(this->z + this->d, rhs.z) - z;
 
 		return reset(x, y, z, w, h, d);
 	}
@@ -467,6 +483,23 @@ namespace Rays
 		Bounds t = lhs;
 		t |= rhs;
 		return t;
+	}
+
+	Bounds
+	operator | (const Bounds& lhs, const Point& rhs)
+	{
+		Bounds t = lhs;
+		t |= rhs;
+		return t;
+	}
+
+
+	Bounds
+	invalid_bounds ()
+	{
+		coord max  =  FLT_MAX / 2;
+		coord size = -FLT_MAX;
+		return Bounds(max, max, max, size, size, size);
 	}
 
 

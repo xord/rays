@@ -29,7 +29,7 @@ namespace Rays
 
 			~Bitmap ();
 
-			Bitmap copy () const;
+			Bitmap dup () const;
 
 			int width () const;
 

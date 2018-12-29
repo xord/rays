@@ -40,7 +40,7 @@ RUCY_DEF1(initialize_copy, obj)
 {
 	RUCY_CHECK_OBJ(Rays::Bitmap, self);
 
-	*THIS = to<Rays::Bitmap&>(obj).copy();
+	*THIS = to<Rays::Bitmap&>(obj).dup();
 	return self;
 }
 RUCY_END
@@ -78,12 +78,12 @@ RUCY_DEFN(set_at)
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Bitmap#set_at", argc, 3, 4, 5, 6);
 
-	int x = argv[0].to_i();
-	int y = argv[1].to_i();
+	int x = to<int>(argv[0]);
+	int y = to<int>(argv[1]);
 	Rays::Color color = to<Rays::Color>(argc - 2, argv + 2);
 
 	color.get(THIS->at<void>(x, y), THIS->color_space());
-	return color;
+	return value(color);
 }
 RUCY_END
 
@@ -92,7 +92,9 @@ RUCY_DEF2(get_at, x, y)
 {
 	CHECK;
 
-	return value(Rays::Color(THIS->at<void>(x.as_i(), y.as_i()), THIS->color_space()));
+	int xx = to<int>(x);
+	int yy = to<int>(y);
+	return value(Rays::Color(THIS->at<void>(xx, yy), THIS->color_space()));
 }
 RUCY_END
 

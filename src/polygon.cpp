@@ -159,16 +159,18 @@ namespace Rays
 						continue;
 					}
 
-					Polygon_fill(
-						Polygon(polyline).expand(stroke_width / 2),
-						painter, color);
+					Polygon stroke;
+					if (!polyline.expand(&stroke, stroke_width / 2))
+						continue;
+
+					Polygon_fill(stroke, painter, color);
 				}
 
 				if (has_loop)
 				{
-					Polygon_fill(
-						polygon - polygon.expand(-stroke_width),
-						painter, color);
+					Polygon hole;
+					if (polygon.expand(&hole, -stroke_width))
+						Polygon_fill(polygon - hole, painter, color);
 				}
 			}
 
@@ -257,22 +259,38 @@ namespace Rays
 		}
 	}
 
-	static void
+	static EndType
+	get_end_type (const Polyline& polyline, bool fill)
+	{
+		if (polyline.loop())
+			return fill ? etClosedPolygon : etClosedLine;
+		else
+			return etOpenButt;
+	}
+
+	static bool
+	add_polyline_to_offsetter (
+		ClipperOffset* offsetter, const Polyline& polyline, bool hole, bool fill)
+	{
+		assert(offsetter);
+
+		if (!polyline) return false;
+
+		Path path;
+		Polyline_get_path(&path, polyline, hole);
+		offsetter->AddPath(path, jtMiter, get_end_type(polyline, fill));
+		return true;
+	}
+
+	static bool
 	add_polygon_to_offsetter (ClipperOffset* offsetter, const Polygon& polygon)
 	{
 		assert(offsetter);
 
-		Path path;
-		for (const auto& line : polygon)
-		{
-			if (!line) continue;
-
-			Polyline_get_path(&path, line, line.hole());
-			if (path.empty()) continue;
-
-			offsetter->AddPath(
-				path, jtMiter, line.loop() ? etClosedPolygon : etOpenButt);
-		}
+		bool added = false;
+		for (const auto& line : polygon.self->lines)
+			added |= add_polyline_to_offsetter(offsetter, line, line.hole(), true);
+		return added;
 	}
 
 	static bool
@@ -324,13 +342,13 @@ namespace Rays
 	}
 
 	static Polygon
-	clip_polygon (const Polygon& clipped, const Polygon& clipper, ClipType type)
+	clip_polygons (const Polygon& subject, const Polygon& clip, ClipType type)
 	{
 		Clipper c;
 		c.StrictlySimple(true);
 
-		add_polygon_to_clipper(&c, clipped, ptSubject);
-		add_polygon_to_clipper(&c, clipper, ptClip);
+		add_polygon_to_clipper(&c, subject, ptSubject);
+		add_polygon_to_clipper(&c, clip,    ptClip);
 
 		PolyTree tree;
 		c.Execute(type, tree);
@@ -342,20 +360,40 @@ namespace Rays
 		return result;
 	}
 
-	static Polygon
-	offset_polygon (const Polygon& polygon, coord width)
+	static bool
+	expand_polygon (Polygon* result, const Polygon& polygon, coord width)
 	{
+		if (width == 0)
+			return false;
+
 		ClipperOffset co;
-		add_polygon_to_offsetter(&co, polygon);
+		if (!add_polygon_to_offsetter(&co, polygon))
+			return false;
 
 		PolyTree tree;
 		co.Execute(tree, to_clipper(width));
 		assert(tree.Contour.empty());
 
-		Polygon result;
-		get_polygon(&result, tree);
+		get_polygon(result, tree);
+		return true;
+	}
 
-		return result;
+	bool
+	Polyline_expand (Polygon* result, const Polyline& polyline, coord width)
+	{
+		if (width == 0)
+			return false;
+
+		ClipperOffset co;
+		if (!add_polyline_to_offsetter(&co, polyline, false, false))
+			return false;
+
+		PolyTree tree;
+		co.Execute(tree, to_clipper(width));
+		assert(tree.Contour.empty());
+
+		get_polygon(result, tree);
+		return true;
 	}
 
 
@@ -431,7 +469,7 @@ namespace Rays
 					Point(x + width, y + height),
 					Point(x + width, y),
 				};
-				append(Polyline(points, 4));
+				append(Polyline(points, 4, true));
 			}
 
 			void setup_round_rect (
@@ -474,7 +512,7 @@ namespace Rays
 						point, x, y, corners[i], sign_x, sign_y, (M_PI / 2) * i, nsegment);
 				}
 
-				append(Polyline(points.get(), npoints));
+				append(Polyline(points.get(), npoints, true));
 			}
 
 			void fix_rounds (
@@ -550,8 +588,6 @@ namespace Rays
 
 		GLenum mode = 0;
 
-		std::vector<uint> indices;
-
 		EllipseData (
 			coord x, coord y, coord width, coord height,
 			const Point& hole_size,
@@ -584,9 +620,7 @@ namespace Rays
 				invalid_state_error(__FILE__, __LINE__);
 
 			const auto& outline = lines[0];
-			Painter_draw_polygon(
-				painter, mode, color,
-				&outline[0], outline.size(), &indices[0], indices.size());
+			Painter_draw_polygon(painter, mode, color, &outline[0], outline.size());
 		}
 
 		private:
@@ -627,7 +661,7 @@ namespace Rays
 					points.emplace_back(make_ellipse_point(
 						x, y, width, height, radian_from, radian_to, nsegment, seg));
 				}
-				append(Polyline(&points[0], points.size()));
+				append(Polyline(&points[0], points.size(), true));
 
 				if (has_hole)
 				{
@@ -641,7 +675,7 @@ namespace Rays
 							hole_x, hole_y, hole_size.x, hole_size.y,
 							radian_from, radian_to, nsegment, seg));
 					}
-					append(Polyline(&points[0], points.size()), true);
+					append(Polyline(&points[0], points.size(), true), true);
 				}
 			}
 
@@ -686,7 +720,7 @@ namespace Rays
 					}
 				}
 
-				append(Polyline(&points[0], points.size()));
+				append(Polyline(&points[0], points.size(), true));
 			}
 
 			Point make_ellipse_point (
@@ -883,10 +917,24 @@ namespace Rays
 	{
 	}
 
-	Polygon
-	Polygon::expand (coord width) const
+	bool
+	Polygon::expand (Polygon* result, coord width) const
 	{
-		return offset_polygon(*this, width);
+		return expand_polygon(result, *this, width);
+	}
+
+	Bounds
+	Polygon::bounds () const
+	{
+		if (empty()) return Bounds(-1, -1, -1);
+
+		Bounds b(self->lines[0][0], 0);
+		for (const auto& line : *this)
+		{
+			for (const auto& point : line)
+				b |= point;
+		}
+		return b;
 	}
 
 	size_t
@@ -921,7 +969,15 @@ namespace Rays
 
 	Polygon::operator bool () const
 	{
-		return true;
+		if (self->lines.empty())
+			return true;
+
+		for (const auto& line : self->lines)
+		{
+			if (line) return true;
+		}
+
+		return false;
 	}
 
 	bool
@@ -930,90 +986,48 @@ namespace Rays
 		return !operator bool();
 	}
 
-	Polygon&
-	Polygon::operator += (const Polygon& rhs)
-	{
-		return operator|=(rhs);
-	}
-
-	Polygon&
-	Polygon::operator -= (const Polygon& rhs)
-	{
-		if (&rhs == this) return *this;
-
-		*this = clip_polygon(*this, rhs, ctDifference);
-		return *this;
-	}
-
-	Polygon&
-	Polygon::operator &= (const Polygon& rhs)
-	{
-		if (&rhs == this) return *this;
-
-		*this = clip_polygon(*this, rhs, ctIntersection);
-		return *this;
-	}
-
-	Polygon&
-	Polygon::operator |= (const Polygon& rhs)
-	{
-		if (&rhs == this) return *this;
-
-		*this = clip_polygon(*this, rhs, ctUnion);
-		return *this;
-	}
-
-	Polygon&
-	Polygon::operator ^= (const Polygon& rhs)
-	{
-		if (&rhs == this) return *this;
-
-		*this = clip_polygon(*this, rhs, ctXor);
-		return *this;
-	}
-
 	bool
 	Polygon::triangulate (TrianglePointList* triangles) const
 	{
 		return self->triangulate(triangles);
 	}
 
-	static Polygon
-	duplicate (const Polygon& obj)
-	{
-		Polygon p;
-		p.self->lines = obj.self->lines;
-		return p;
-	}
-
 	Polygon
 	operator + (const Polygon& lhs, const Polygon& rhs)
 	{
-		return duplicate(lhs) += rhs;
+		return lhs | rhs;
 	}
 
 	Polygon
 	operator - (const Polygon& lhs, const Polygon& rhs)
 	{
-		return duplicate(lhs) -= rhs;
+		if (lhs.self == rhs.self) return Polygon();
+
+		return clip_polygons(lhs, rhs, ctDifference);
 	}
 
 	Polygon
 	operator & (const Polygon& lhs, const Polygon& rhs)
 	{
-		return duplicate(lhs) &= rhs;
+		if (lhs.self == rhs.self) return lhs;
+
+		return clip_polygons(lhs, rhs, ctIntersection);
 	}
 
 	Polygon
 	operator | (const Polygon& lhs, const Polygon& rhs)
 	{
-		return duplicate(lhs) |= rhs;
+		if (lhs.self == rhs.self) return lhs;
+
+		return clip_polygons(lhs, rhs, ctUnion);
 	}
 
 	Polygon
 	operator ^ (const Polygon& lhs, const Polygon& rhs)
 	{
-		return duplicate(lhs) ^= rhs;
+		if (lhs.self == rhs.self) return Polygon();
+
+		return clip_polygons(lhs, rhs, ctXor);
 	}
 
 

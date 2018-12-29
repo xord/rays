@@ -33,7 +33,7 @@ namespace Rays
 
 			~Image ();
 
-			Image copy () const;
+			Image dup () const;
 
 			coord width () const;
 

@@ -143,6 +143,8 @@ namespace Rays
 
 		Bounds& operator |= (const Bounds& rhs);
 
+		Bounds& operator |= (const Point& rhs);
+
 		friend bool operator == (const Bounds& lhs, const Bounds& rhs);
 
 		friend bool operator != (const Bounds& lhs, const Bounds& rhs);
@@ -151,7 +153,14 @@ namespace Rays
 
 		friend Bounds operator | (const Bounds& lhs, const Bounds& rhs);
 
+		friend Bounds operator | (const Bounds& lhs, const Point&  rhs);
+
+		friend Bounds operator | (const Point&  lhs, const Bounds& rhs);
+
 	};// Bounds
+
+
+	Bounds invalid_bounds ();
 
 
 }// Rays

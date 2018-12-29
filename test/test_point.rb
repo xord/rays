@@ -18,6 +18,18 @@ class TestPoint < Test::Unit::TestCase
     assert_raise(ArgumentError) {point(1, 2, 3, 4)}
   end
 
+  def test_dup ()
+    o   = point
+    assert_equal point(0, 0, 0), o
+    o.x = 1
+    assert_equal point(1, 0, 0), o
+    x   = o.dup
+    assert_equal point(1, 0, 0), x
+    x.x = 2
+    assert_equal point(2, 0, 0), x
+    assert_equal point(1, 0, 0), o
+  end
+
   def test_get_xyz ()
     o = point 1, 2, 3
     assert_equal 1, o.x
@@ -142,6 +154,10 @@ class TestPoint < Test::Unit::TestCase
     assert o > point(0, 2, 3)
     assert o > point(1, 1, 3)
     assert o > point(1, 2, 2)
+  end
+
+  def test_negate ()
+    assert_equal point(-1, 2, -3), -point(1, -2, 3)
   end
 
   def test_arithmetic_operations ()

@@ -52,7 +52,9 @@ namespace Rays
 
 			~Polygon ();
 
-			Polygon expand (coord width) const;
+			bool expand (Polygon* result, coord width) const;
+
+			Bounds bounds () const;
 
 			size_t size () const;
 
@@ -67,16 +69,6 @@ namespace Rays
 			operator bool () const;
 
 			bool operator ! () const;
-
-			Polygon& operator += (const Polygon& rhs);
-
-			Polygon& operator -= (const Polygon& rhs);
-
-			Polygon& operator &= (const Polygon& rhs);
-
-			Polygon& operator |= (const Polygon& rhs);
-
-			Polygon& operator ^= (const Polygon& rhs);
 
 			friend Polygon operator + (const Polygon& lhs, const Polygon& rhs);
 

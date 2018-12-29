@@ -23,8 +23,6 @@ namespace Rays
 
 			~Font ();
 
-			Font copy () const;
-
 			String name () const;
 
 			coord size () const;

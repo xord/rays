@@ -58,7 +58,7 @@ RUCY_DEF1(initialize_copy, obj)
 {
 	RUCY_CHECK_OBJ(Rays::Image, self);
 
-	*THIS = to<Rays::Image&>(obj).copy();
+	*THIS = to<Rays::Image&>(obj).dup();
 	return self;
 }
 RUCY_END

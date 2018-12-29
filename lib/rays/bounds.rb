@@ -13,17 +13,17 @@ module Rays
     include Comparable
     include Enumerable
 
-    alias w  width
     alias w= width=
+    alias w  width
 
-    alias h  height
     alias h= height=
+    alias h  height
 
-    alias d  depth
     alias d= depth=
+    alias d  depth
 
-    alias pos  position
     alias pos= position=
+    alias pos  position
 
     alias left_top        position
     def  right_top    ()  position        .move_by w - 1,     0 end

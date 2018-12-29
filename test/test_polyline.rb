@@ -24,6 +24,10 @@ class TestPolyline < Test::Unit::TestCase
     Rays::Point.new *args
   end
 
+  def bounds (*args)
+    Rays::Bounds.new *args
+  end
+
   def test_initialize ()
     assert_equal [[1, 2], [3, 4]], polyline(   1, 2,     3, 4 ).dump
     assert_equal [[5, 6], [7, 8]], polyline(  [5, 6],   [7, 8]).dump
@@ -43,6 +47,29 @@ class TestPolyline < Test::Unit::TestCase
     assert_raise(ArgumentError) {polyline(1, 2, 3, 4, 5,    loop: false)}
     assert_nothing_raised       {polyline(1, 2, 3, 4, 5, 6, loop: true)}
     assert_nothing_raised       {polyline(1, 2, 3, 4, 5, 6, loop: false)}
+  end
+
+  def test_expand ()
+    polyline([10,10], [20,20],                   loop: false).expand(1).tap {|o|
+      assert_equal 1, o   .size
+      assert_equal 4, o[0].size
+    }
+    polyline([10,10], [20,10], [30,20],          loop: false).expand(1).tap {|o|
+      assert_equal 1, o   .size
+      assert_equal 6, o[0].size
+    }
+    polyline([10,10], [20,10], [20,20], [10,20], loop: true) .expand(1).tap {|o|
+      assert_equal 2, o   .size
+      assert_equal 4, o[0].size
+      assert_equal 4, o[1].size
+    }
+  end
+
+  def test_bounds ()
+    assert_equal bounds(10, 20, 0, 20, 10, 0), polyline(10, 20, 30, 20, 20, 30).bounds
+
+    assert     polyline(10, 20, 30, 20, 20, 30).bounds.valid?
+    assert_not polyline()                      .bounds.valid?
   end
 
   def test_loop ()

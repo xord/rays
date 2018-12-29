@@ -3,6 +3,8 @@
 
 #include <vector>
 #include "rays/ruby/point.h"
+#include "rays/ruby/bounds.h"
+#include "rays/ruby/polygon.h"
 #include "defs.h"
 
 
@@ -30,6 +32,25 @@ RUCY_DEF2(set_points, args, loop)
 	get_line_args(&points, &line_loop, args, loop);
 
 	*THIS = Rays::Polyline(&points[0], points.size(), line_loop);
+}
+RUCY_END
+
+static
+RUCY_DEF1(expand, width)
+{
+	CHECK;
+
+	Rays::Polygon polygon;
+	THIS->expand(&polygon, to<coord>(width));
+	return value(polygon);
+}
+RUCY_END
+
+static
+RUCY_DEF0(bounds)
+{
+	CHECK;
+	return value(THIS->bounds());
 }
 RUCY_END
 
@@ -96,6 +117,8 @@ Init_polyline ()
 	cPolyline = mRays.define_class("Polyline");
 	cPolyline.define_alloc_func(alloc);
 	cPolyline.define_private_method("set_points", set_points);
+	cPolyline.define_method("expand", expand);
+	cPolyline.define_method("bounds", bounds);
 	cPolyline.define_method("loop?", loop);
 	cPolyline.define_method("size", size);
 	cPolyline.define_method("empty?", empty);
