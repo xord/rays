@@ -198,21 +198,6 @@ namespace Rays
 	};// DefaultIndices
 
 
-	#define  ATTRIB_POSITION        "a_Position"
-	#define VARYING_POSITION        "v_Position"
-	#define UNIFORM_POSITION_MATRIX "u_PositionMatrix"
-	#define  ATTRIB_TEXCOORD        "a_TexCoord"
-	#define VARYING_TEXCOORD        "v_TexCoord"
-	#define UNIFORM_TEXCOORD_MIN    "u_TexCoordMin"
-	#define UNIFORM_TEXCOORD_MAX    "u_TexCoordMax"
-	#define UNIFORM_TEXCOORD_MATRIX "u_TexCoordMatrix"
-	#define  ATTRIB_COLOR           "a_Color"
-	#define VARYING_COLOR           "v_Color"
-	//#define UNIFORM_COLOR_MATRIX    "u_ColorMatrix"
-	#define UNIFORM_TEXTURE         "u_Texture"
-	#define UNIFORM_TEXTURE_SIZE    "u_TextureSize"
-
-
 	template <typename COORD>
 	static GLenum get_gl_type ();
 
@@ -222,57 +207,6 @@ namespace Rays
 	{
 		return GL_FLOAT;
 	}
-
-	const ShaderSource&
-	Painter_get_vertex_shader_source ()
-	{
-		static const ShaderSource SOURCE(
-			GL_VERTEX_SHADER,
-			"attribute vec3 "  ATTRIB_POSITION ";"
-			"varying   vec4 " VARYING_POSITION ";"
-			"uniform   mat4 " UNIFORM_POSITION_MATRIX ";"
-			"attribute vec3 "  ATTRIB_TEXCOORD ";"
-			"varying   vec4 " VARYING_TEXCOORD ";"
-			"uniform   mat4 " UNIFORM_TEXCOORD_MATRIX ";"
-			"attribute vec4 "  ATTRIB_COLOR ";"
-			"varying   vec4 " VARYING_COLOR ";"
-			"void main ()"
-			"{"
-			"  vec4 pos           = vec4(" ATTRIB_POSITION ", 1.0);"
-			"  vec4 texcoord      = vec4(" ATTRIB_TEXCOORD ", 1.0);"
-			   VARYING_POSITION " = pos;"
-			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * texcoord;"
-			   VARYING_COLOR    " = " ATTRIB_COLOR ";"
-			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * pos;"
-			"}");
-		return SOURCE;
-	}
-
-	const ShaderSource&
-	Painter_get_fragment_shader_shared_source ()
-	{
-		static const ShaderSource SHARED_SOURCE(
-			GL_FRAGMENT_SHADER,
-			"#ifdef GL_ES\n"
-			"precision mediump float;\n"
-			"#endif\n"
-			"uniform sampler2D " UNIFORM_TEXTURE ";"
-			"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
-			"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
-			"uniform vec2 "      UNIFORM_TEXCOORD_MAX ";"
-			"vec2 normalizeTexCoord(vec2 texcoord)"
-			"{"
-			"  vec2 min = " UNIFORM_TEXCOORD_MIN ";"
-			"  vec2 len = " UNIFORM_TEXCOORD_MAX " - min;"
-			"  return (mod(texcoord - min, len) + min) / " UNIFORM_TEXTURE_SIZE ";"
-			"}"
-			"vec4 sampleTexture(vec2 texcoord)"
-			"{"
-			"  return texture2D(" UNIFORM_TEXTURE ", normalizeTexCoord(texcoord));"
-			"}");
-		return SHARED_SOURCE;
-	}
-
 
 	static const Shader&
 	get_default_shader_for_shape ()

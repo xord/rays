@@ -12,13 +12,6 @@ namespace Rays
 {
 
 
-	class ShaderSource;
-
-
-	const ShaderSource& Painter_get_vertex_shader_source ();
-
-	const ShaderSource& Painter_get_fragment_shader_shared_source ();
-
 	void Painter_draw_polygon (
 		Painter* painter, GLenum mode, const Color& color,
 		const Coord3* points,         size_t npoints,

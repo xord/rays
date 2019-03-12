@@ -229,8 +229,6 @@ namespace Rays
 	};// Uniform
 
 
-	typedef std::vector<ShaderSource> SourceList;
-
 	typedef std::vector<Uniform> UniformList;
 
 
@@ -239,7 +237,7 @@ namespace Rays
 
 		GLuint id = 0;
 
-		SourceList sources;
+		ShaderSource vertex, fragment;
 
 		UniformList uniform_values, uniform_textures;
 
@@ -254,19 +252,10 @@ namespace Rays
 
 		~Data ()
 		{
-			clear();
-		}
-
-		void clear ()
-		{
 			if (id > 0) glDeleteProgram(id);
 
-			sources.clear();
 			uniform_values.clear();
 			uniform_textures.clear();
-
-			id = 0;
-			linked = applied = false;
 		}
 
 		void set_uniform_value (const char* name, const UniformValue* value)
@@ -302,31 +291,22 @@ namespace Rays
 
 		bool is_valid () const
 		{
-			return id > 0 && !sources.empty();
+			return id > 0 && vertex && fragment;
 		}
 
-		void link_sources () const
+		void link () const
 		{
 			if (linked) return;
 			linked = true;
 
-			const ShaderSource* shared_sources[] = {
-				&Painter_get_vertex_shader_source(),
-				&Painter_get_fragment_shader_shared_source()
-			};
-
-			for (const auto* source : shared_sources)
-				attach_shader(*source);
-			for (const auto& source : sources)
-				attach_shader(source);
+			attach_shader(vertex);
+			attach_shader(fragment);
 
 			glLinkProgram(id);
 			OpenGL_check_error(__FILE__, __LINE__);
 
-			for (const auto* source : shared_sources)
-				detach_shader(*source);
-			for (const auto& source : sources)
-				detach_shader(source);
+			detach_shader(vertex);
+			detach_shader(fragment);
 
 			GLint status = GL_FALSE;
 			glGetProgramiv(id, GL_LINK_STATUS, &status);
@@ -386,7 +366,7 @@ namespace Rays
 
 		if (!self->is_valid()) return;
 
-		self->link_sources();
+		self->link();
 
 		glUseProgram(program.id());
 		OpenGL_check_error(__FILE__, __LINE__);
@@ -402,29 +382,15 @@ namespace Rays
 	}
 
 
-	ShaderProgram::ShaderProgram ()
+	ShaderProgram::ShaderProgram (
+		const ShaderSource& vertex, const ShaderSource& fragment)
 	{
+		self->vertex   = vertex;
+		self->fragment = fragment;
 	}
 
 	ShaderProgram::~ShaderProgram ()
 	{
-	}
-
-	void
-	ShaderProgram::add_source (const ShaderSource& source)
-	{
-		self->sources.push_back(source);
-		self->linked = false;
-	}
-
-	void
-	ShaderProgram::remove_source (const ShaderSource& source)
-	{
-		auto it = std::find(self->sources.begin(), self->sources.end(), source);
-		if (it == self->sources.end()) return;
-
-		self->sources.erase(it);
-		self->linked = false;
 	}
 
 	void

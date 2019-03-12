@@ -25,13 +25,9 @@ namespace Rays
 
 		public:
 
-			ShaderProgram ();
+			ShaderProgram (const ShaderSource& vertex, const ShaderSource& fragment);
 
 			~ShaderProgram ();
-
-			void add_source (const ShaderSource& source);
-
-			void remove_source (const ShaderSource& source);
 
 			void set_uniform (const char* name, int arg1);
 

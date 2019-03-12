@@ -15,16 +15,11 @@ namespace Rays
 	struct FrameBuffer::Data
 	{
 
-		int id;
+		int id = -1;
 
 		Texture texture;
 
 		RenderBuffer render_buffer;
-
-		Data ()
-		:	id(-1)
-		{
-		}
 
 		~Data ()
 		{
