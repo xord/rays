@@ -598,7 +598,7 @@ namespace Rays
 		Color color;
 		for (int type = COLOR_TYPE_BEGIN; type < COLOR_TYPE_END; ++type)
 		{
-			if (nofill && type == FILL || nostroke && type == STROKE)
+			if ((nofill && type == FILL) || (nostroke && type == STROKE))
 				continue;
 
 			if (!painter->self->get_color(&color, (ColorType) type))
