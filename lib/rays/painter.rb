@@ -14,8 +14,8 @@ module Rays
     def push (*types, **attributes, &block)
       each_type types do |type|
         case type
-        when :state   then push_state
-        when :matrix  then push_matrix
+        when :state  then push_state
+        when :matrix then push_matrix
         else raise ArgumentError, "invalid push/pop type '#{type}'."
         end
       end
@@ -42,8 +42,8 @@ module Rays
     def pop (*types)
       each_type types, reverse: true do |type|
         case type
-        when :state   then pop_state
-        when :matrix  then pop_matrix
+        when :state  then pop_state
+        when :matrix then pop_matrix
         else raise ArgumentError, "invalid push/pop type '#{type}'."
         end
       end
