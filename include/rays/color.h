@@ -64,9 +64,15 @@ namespace Rays
 	};// Color
 
 
-	Color color8 (int gray = 0,                 int alpha = 255);
+	Color gray  (float gray, float alpha = 1);
 
-	Color color8 (int red, int green, int blue, int alpha = 255);
+	Color gray8 (int   gray, int   alpha = 255);
+
+	Color rgb  (float red, float green, float blue, float alpha = 1);
+
+	Color rgb8 (int   red, int   green, int   blue, int   alpha = 255);
+
+	Color hsv (float hue, float saturation, float value, float alpha = 1);
 
 
 }// Rays

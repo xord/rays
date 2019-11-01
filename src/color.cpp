@@ -2,13 +2,54 @@
 
 
 #include <limits.h>
+#include <glm/gtx/color_space.hpp>
 #include <xot/util.h>
 #include "rays/exception.h"
 #include "rays/color_space.h"
+#include "coord.h"
 
 
 namespace Rays
 {
+
+
+	Color
+	gray (float gray, float alpha)
+	{
+		return Color(gray, alpha);
+	}
+
+	Color
+	gray8 (int gray, int alpha)
+	{
+		Color c;
+		c.reset8(gray, alpha);
+		return c;
+	}
+
+	Color
+	rgb (float red, float green, float blue, float alpha)
+	{
+		return Color(red, green, blue, alpha);
+	}
+
+	Color
+	rgb8 (int red, int green, int blue, int alpha)
+	{
+		Color c;
+		c.reset8(red, green, blue, alpha);
+		return c;
+	}
+
+	Color
+	hsv (float hue, float saturation, float value, float alpha)
+	{
+		hue = fmod(hue, 1.f);
+		if (hue < 0) hue += 1.f;
+
+		auto c = glm::rgbColor(Vec3(hue * 360.f, saturation, value));
+		return Color(c[0], c[1], c[2], alpha);
+	}
 
 
 	Color::Color (float gray, float alpha)
@@ -24,22 +65,6 @@ namespace Rays
 	Color::Color (void* pixel, const ColorSpace& cs)
 	{
 		reset(pixel, cs);
-	}
-
-	Color
-	color8 (int gray, int alpha)
-	{
-		Color c;
-		c.reset8(gray, alpha);
-		return c;
-	}
-
-	Color
-	color8 (int red, int green, int blue, int alpha)
-	{
-		Color c;
-		c.reset8(red, green, blue, alpha);
-		return c;
 	}
 
 	Color

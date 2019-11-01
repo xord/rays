@@ -10,8 +10,12 @@ class TestColor < Test::Unit::TestCase
     Rays::Color.new *args
   end
 
-  def color8 (r, g, b, a, div = 255)
+  def color8 (r, g, b, a = 255, div = 255)
     color *[r, g, b, a].map {|n| n / div.to_f}
+  end
+
+  def hsv (*args)
+    Rays::Color.hsv *args
   end
 
   def test_initialize ()
@@ -118,6 +122,34 @@ class TestColor < Test::Unit::TestCase
     assert o > color(1, 1, 3, 4)
     assert o > color(1, 2, 2, 4)
     assert o > color(1, 2, 3, 3)
+  end
+
+  def test_hsv_hue ()
+    assert_equal color(0.5, 0, 1), hsv(-0.25, 1, 1)
+    assert_equal color(1,   0, 0), hsv( 0,    1, 1)
+    assert_equal color(0.5, 1, 0), hsv( 0.25, 1, 1)
+    assert_equal color(0,   1, 1), hsv( 0.5,  1, 1)
+    assert_equal color(0.5, 0, 1), hsv( 0.75, 1, 1)
+    assert_equal color(1,   0, 0), hsv( 1,    1, 1)
+    assert_equal color(0.5, 1, 0), hsv( 1.25, 1, 1)
+  end
+
+  def test_hsv_saturation ()
+    assert_equal color(1, 1,   1),   hsv(1, 0,   1)
+    assert_equal color(1, 0.5, 0.5), hsv(1, 0.5, 1)
+    assert_equal color(1, 0,   0),   hsv(1, 1,   1)
+  end
+
+  def test_hsv_value ()
+    assert_equal color(0,   0,   0), hsv(1, 1, 0)
+    assert_equal color(0.5, 0,   0), hsv(1, 1, 0.5)
+    assert_equal color(1,   0,   0), hsv(1, 1, 1)
+  end
+
+  def test_hsv_alpha ()
+    assert_equal color(1, 0, 0, 0),   hsv(1, 1, 1, 0)
+    assert_equal color(1, 0, 0, 0.5), hsv(1, 1, 1, 0.5)
+    assert_equal color(1, 0, 0, 1),   hsv(1, 1, 1, 1)
   end
 
 end# TestColor

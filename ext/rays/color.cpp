@@ -125,25 +125,25 @@ get_color_map ()
 		map["no"]          =
 		map["none"]        =
 		map["transp"]      =
-		map["transparent"] = Rays::Color(0, 0);
+		map["transparent"] = Rays::gray(0, 0);
 
-		map["black"]      = Rays::color8(  0,   0,   0);
-		map["white"]      = Rays::color8(255, 241, 232);
+		map["black"]      = Rays::rgb8(  0,   0,   0);
+		map["white"]      = Rays::rgb8(255, 241, 232);
 		map["gray"]       =
-		map["lightgray"]  = Rays::color8(194, 195, 199);
-		map["darkgray"]   = Rays::color8( 95,  87,  79);
-		map["brown"]      = Rays::color8(171,  82,  54);
-		map["red"]        = Rays::color8(255,   0,  77);
-		map["orange"]     = Rays::color8(255, 163,   0);
-		map["yellow"]     = Rays::color8(255, 236,  39);
-		map["green"]      = Rays::color8(  0, 228,  54);
-		map["darkgreen"]  = Rays::color8(  0, 135,  81);
-		map["blue"]       = Rays::color8( 41, 173, 255);
-		map["darkblue"]   = Rays::color8( 29,  43,  83);
-		map["indigo"]     = Rays::color8(131, 118, 156);
-		map["pink"]       = Rays::color8(255, 119, 168);
-		map["peach"]      = Rays::color8(255, 204, 170);
-		map["darkpurple"] = Rays::color8(126,  37,  83);
+		map["lightgray"]  = Rays::rgb8(194, 195, 199);
+		map["darkgray"]   = Rays::rgb8( 95,  87,  79);
+		map["brown"]      = Rays::rgb8(171,  82,  54);
+		map["red"]        = Rays::rgb8(255,   0,  77);
+		map["orange"]     = Rays::rgb8(255, 163,   0);
+		map["yellow"]     = Rays::rgb8(255, 236,  39);
+		map["green"]      = Rays::rgb8(  0, 228,  54);
+		map["darkgreen"]  = Rays::rgb8(  0, 135,  81);
+		map["blue"]       = Rays::rgb8( 41, 173, 255);
+		map["darkblue"]   = Rays::rgb8( 29,  43,  83);
+		map["indigo"]     = Rays::rgb8(131, 118, 156);
+		map["pink"]       = Rays::rgb8(255, 119, 168);
+		map["peach"]      = Rays::rgb8(255, 204, 170);
+		map["darkpurple"] = Rays::rgb8(126,  37,  83);
 	}
 	return map;
 }
@@ -166,6 +166,21 @@ find_color (const char* name)
 
 	return it->second;
 }
+
+static
+RUCY_DEFN(hsv)
+{
+	check_arg_count(__FILE__, __LINE__, "Color.hsv", argc, 3, 4);
+
+	float h = to<float>(argv[0]);
+	float s = to<float>(argv[1]);
+	float v = to<float>(argv[2]);
+	if (argc >= 4)
+		return value(Rays::hsv(h, s, v, to<float>(argv[3])));
+	else
+		return value(Rays::hsv(h, s, v));
+}
+RUCY_END
 
 static
 RUCY_DEFN(set_palette_color)
@@ -197,6 +212,7 @@ Init_color ()
 	cColor.define_method("alpha=", set_alpha);
 	cColor.define_method("alpha",  get_alpha);
 
+	cColor.define_function("hsv", hsv);
 	cColor.define_function("set_palette_color", set_palette_color);
 }
 
