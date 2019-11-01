@@ -28,7 +28,7 @@ namespace Rays
 
 	GLenum OpenGL_get_error ();
 
-	void OpenGL_check_error(const char* file, int line);
+	void OpenGL_check_error (const char* file, int line);
 
 
 }// Rays

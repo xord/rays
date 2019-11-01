@@ -5,7 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "xot/util.h"
 #include "rays/exception.h"
-#include "point.h"
+#include "rays/point.h"
+#include "coord.h"
 
 
 namespace Rays
@@ -162,7 +163,7 @@ namespace Rays
 	Matrix::operator * (const Point& rhs) const
 	{
 		Vec4 v = to_glm(*this) * Vec4(rhs.x, rhs.y, rhs.z, 1);
-		return to_rays(Vec3(v));
+		return to_rays<Point>(Vec3(v));
 	}
 
 	Matrix

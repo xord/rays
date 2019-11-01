@@ -74,9 +74,9 @@ namespace Rays
 	};// ShaderProgram
 
 
-	void ShaderProgram_activate(const ShaderProgram& program);
+	void ShaderProgram_activate (const ShaderProgram& program);
 
-	void ShaderProgram_deactivate();
+	void ShaderProgram_deactivate ();
 
 
 }// Rays

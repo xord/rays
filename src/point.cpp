@@ -1,4 +1,4 @@
-#include "point.h"
+#include "rays/point.h"
 
 
 #include <math.h>
@@ -6,6 +6,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <xot/util.h>
 #include "rays/exception.h"
+#include "coord.h"
 
 
 namespace Rays
@@ -88,7 +89,7 @@ namespace Rays
 		if (dot(*this, *this) == 0)
 			invalid_state_error(__FILE__, __LINE__);
 
-		return to_rays(glm::normalize(to_glm(*this)));
+		return to_rays<Point>(glm::normalize(to_glm(*this)));
 	}
 
 	void
@@ -100,7 +101,7 @@ namespace Rays
 	Point
 	Point::operator - () const
 	{
-		return to_rays(-to_glm(*this));
+		return to_rays<Point>(-to_glm(*this));
 	}
 
 	Point&
@@ -180,55 +181,55 @@ namespace Rays
 	Point
 	operator + (coord lhs, const Point& rhs)
 	{
-		return to_rays(lhs + to_glm(rhs));
+		return to_rays<Point>(lhs + to_glm(rhs));
 	}
 
 	Point
 	operator + (const Point& lhs, coord rhs)
 	{
-		return to_rays(to_glm(lhs) + rhs);
+		return to_rays<Point>(to_glm(lhs) + rhs);
 	}
 
 	Point
 	operator + (const Point& lhs, const Point& rhs)
 	{
-		return to_rays(to_glm(lhs) + to_glm(rhs));
+		return to_rays<Point>(to_glm(lhs) + to_glm(rhs));
 	}
 
 	Point
 	operator - (coord lhs, const Point& rhs)
 	{
-		return to_rays(lhs - to_glm(rhs));
+		return to_rays<Point>(lhs - to_glm(rhs));
 	}
 
 	Point
 	operator - (const Point& lhs, coord rhs)
 	{
-		return to_rays(to_glm(lhs) - rhs);
+		return to_rays<Point>(to_glm(lhs) - rhs);
 	}
 
 	Point
 	operator - (const Point& lhs, const Point& rhs)
 	{
-		return to_rays(to_glm(lhs) - to_glm(rhs));
+		return to_rays<Point>(to_glm(lhs) - to_glm(rhs));
 	}
 
 	Point
 	operator * (coord lhs, const Point& rhs)
 	{
-		return to_rays(lhs * to_glm(rhs));
+		return to_rays<Point>(lhs * to_glm(rhs));
 	}
 
 	Point
 	operator * (const Point& lhs, coord rhs)
 	{
-		return to_rays(to_glm(lhs) * rhs);
+		return to_rays<Point>(to_glm(lhs) * rhs);
 	}
 
 	Point
 	operator * (const Point& lhs, const Point& rhs)
 	{
-		return to_rays(to_glm(lhs) * to_glm(rhs));
+		return to_rays<Point>(to_glm(lhs) * to_glm(rhs));
 	}
 
 	Point
@@ -237,7 +238,7 @@ namespace Rays
 		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
 			argument_error(__FILE__, __LINE__);
 
-		return to_rays(lhs / to_glm(rhs));
+		return to_rays<Point>(lhs / to_glm(rhs));
 	}
 
 	Point
@@ -246,7 +247,7 @@ namespace Rays
 		if (rhs == 0)
 			argument_error(__FILE__, __LINE__);
 
-		return to_rays(to_glm(lhs) / rhs);
+		return to_rays<Point>(to_glm(lhs) / rhs);
 	}
 
 	Point
@@ -255,7 +256,7 @@ namespace Rays
 		if (rhs.x == 0 || rhs.y == 0 || rhs.z == 0)
 			argument_error(__FILE__, __LINE__);
 
-		return to_rays(to_glm(lhs) / to_glm(rhs));
+		return to_rays<Point>(to_glm(lhs) / to_glm(rhs));
 	}
 
 
@@ -268,7 +269,7 @@ namespace Rays
 	Point
 	cross (const Point& p1, const Point& p2)
 	{
-		return to_rays(glm::cross(to_glm(p1), to_glm(p2)));
+		return to_rays<Point>(glm::cross(to_glm(p1), to_glm(p2)));
 	}
 
 
