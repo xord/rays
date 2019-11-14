@@ -52,8 +52,9 @@ module Rays
     def paint (*args, &block)
       begin_paint
       Xot::BlockUtil.instance_eval_or_block_call self, *args, &block
-      end_paint
       self
+    ensure
+      end_paint
     end
 
     def line (*args, loop: false)
