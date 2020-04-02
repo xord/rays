@@ -24,7 +24,7 @@ module Rays
     end
 
     def bounds ()
-      Bounds.new 0, 0, *size
+      Bounds.new 0, 0, width, height
     end
 
   end# Image
