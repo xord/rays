@@ -29,6 +29,9 @@ use_external_library 'https://github.com/greenm01/poly2tri',
   incdir: 'poly2tri',
   srcdir: 'poly2tri'
 
+use_external_library 'https://github.com/andrewwillmott/splines-lib.git',
+  excludes: 'Test\.cpp'
+
 build_native_library
 build_ruby_extension
 test_ruby_extension

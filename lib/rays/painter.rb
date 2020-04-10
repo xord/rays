@@ -73,6 +73,14 @@ module Rays
       draw_ellipse args, center, radius, hole, from, to
     end
 
+    def curve (*args, loop: false)
+      draw_curve args, loop
+    end
+
+    def bezier (*args, loop: false)
+      draw_bezier args, loop
+    end
+
     def color= (fill, stroke = nil)
       self.fill   fill
       self.stroke stroke

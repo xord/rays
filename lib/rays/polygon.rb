@@ -44,6 +44,14 @@ module Rays
       create_ellipse args, center, radius, hole, from, to, nsegment
     end
 
+    def self.curve (*args, loop: false)
+      create_curve args, loop
+    end
+
+    def self.bezier (*args, loop: false)
+      create_bezier args, loop
+    end
+
   end# Polygon
 
 

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <utility>
 #include <poly2tri.h>
+#include <Splines.h>
 #include "xot/util.h"
 #include "rays/color.h"
 #include "rays/exception.h"
@@ -863,6 +864,128 @@ namespace Rays
 			center.x - radius.x, center.y - radius.y,
 			radius.x * 2,        radius.y * 2,
 			hole_radius * 2, angle_from, angle_to, nsegment);
+	}
+
+	static inline const SplineLib::Vec3f&
+	to_splinelib (const Point& val)
+	{
+		return *(const SplineLib::Vec3f*) &val;
+	}
+
+	static inline const Point&
+	to_rays (const SplineLib::Vec3f& val)
+	{
+		return *(const Point*) &val;
+	}
+
+	enum SplineType {BEZIER, HERMITE, CATMULLROM};
+
+	typedef SplineLib::cSpline3 (*SplineFun) (
+		const SplineLib::Vec3f&, const SplineLib::Vec3f&,
+		const SplineLib::Vec3f&, const SplineLib::Vec3f&);
+
+	static SplineFun
+	get_spline_fun (SplineType type)
+	{
+		switch (type)
+		{
+			case BEZIER:     return SplineLib::BezierSpline;
+			case HERMITE:    return SplineLib::HermiteSpline;
+			case CATMULLROM: return SplineLib::CatmullRomSpline;
+			default:
+				argument_error(__FILE__, __LINE__, "unknown spline type %d.", type);
+		}
+	}
+
+	static Polygon
+	create_spline (
+		SplineType type,
+		const Point* points, size_t size, bool loop,
+		uint nsegment = 16)
+	{
+		if (size % 4 != 0)
+			argument_error(__FILE__, __LINE__);
+
+		size_t count = size / 4;
+		auto spline_fun = get_spline_fun(type);
+
+		std::vector<Point> result;
+		result.reserve(nsegment * count);
+		for (size_t i = 0; i < count; ++i)
+		{
+			SplineLib::cSpline3 spline = spline_fun(
+				to_splinelib(points[i * 4 + 0]),
+				to_splinelib(points[i * 4 + 1]),
+				to_splinelib(points[i * 4 + 2]),
+				to_splinelib(points[i * 4 + 3]));
+			for (uint j = 0; j <= nsegment; ++j)
+			{
+				float t = (float) j / nsegment;
+				result.emplace_back(to_rays(SplineLib::Position(spline, t)));
+			}
+		}
+
+		return create_line(&result[0], result.size(), loop);
+	}
+
+	Polygon
+	create_curve (
+		coord x1, coord y1, coord x2, coord y2,
+		coord x3, coord y3, coord x4, coord y4,
+		bool loop)
+	{
+		const Point points[] = {
+			Point(x1, y1),
+			Point(x2, y2),
+			Point(x3, y3),
+			Point(x4, y4)
+		};
+		return create_spline(CATMULLROM, points, 4, loop);
+	}
+
+	Polygon
+	create_curve (
+		const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+		bool loop)
+	{
+		const Point points[] = {p1, p2, p3, p4};
+		return create_spline(CATMULLROM, points, 4, loop);
+	}
+
+	Polygon
+	create_curve (const Point* points, size_t size, bool loop)
+	{
+		return create_spline(CATMULLROM, points, size, loop);
+	}
+
+	Polygon
+	create_bezier (
+		coord x1, coord y1, coord x2, coord y2,
+		coord x3, coord y3, coord x4, coord y4,
+		bool loop)
+	{
+		const Point points[] = {
+			Point(x1, y1),
+			Point(x2, y2),
+			Point(x3, y3),
+			Point(x4, y4)
+		};
+		return create_spline(BEZIER, points, 4, loop);
+	}
+
+	Polygon
+	create_bezier (
+		const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+		bool loop)
+	{
+		const Point points[] = {p1, p2, p3, p4};
+		return create_spline(BEZIER, points, 4, loop);
+	}
+
+	Polygon
+	create_bezier (const Point* points, size_t size, bool loop)
+	{
+		return create_spline(BEZIER, points, size, loop);
 	}
 
 	void

@@ -847,6 +847,52 @@ namespace Rays
 			center, radius, hole_radius, angle_from, angle_to, nsegment()));
 	}
 
+	void
+	Painter::curve (
+		coord x1, coord y1, coord x2, coord y2,
+		coord x3, coord y3, coord x4, coord y4,
+		bool loop)
+	{
+		polygon(create_curve(x1, y1, x2, y2, x3, y3, x4, y4, loop));
+	}
+
+	void
+	Painter::curve (
+		const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+		bool loop)
+	{
+		polygon(create_curve(p1, p2, p3, p4, loop));
+	}
+
+	void
+	Painter::curve (const Point* points, size_t size, bool loop)
+	{
+		polygon(create_curve(points, size, loop));
+	}
+
+	void
+	Painter::bezier (
+		coord x1, coord y1, coord x2, coord y2,
+		coord x3, coord y3, coord x4, coord y4,
+		bool loop)
+	{
+		polygon(create_bezier(x1, y1, x2, y2, x3, y3, x4, y4, loop));
+	}
+
+	void
+	Painter::bezier (
+		const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+		bool loop)
+	{
+		polygon(create_bezier(p1, p2, p3, p4, loop));
+	}
+
+	void
+	Painter::bezier (const Point* points, size_t size, bool loop)
+	{
+		polygon(create_bezier(points, size, loop));
+	}
+
 	static void
 	draw_image (
 		Painter* painter, const Image& image,

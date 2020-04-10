@@ -27,7 +27,7 @@ RUCY_DEF2(setup, args, loop)
 {
 	CHECK;
 
-	if (loop)
+	if (args[0].is_kind_of(Rays::polyline_class()))
 		*THIS = to<Rays::Polygon>(args.size(), args.as_array());
 	else
 	{
@@ -219,6 +219,26 @@ RUCY_DEF7(create_ellipse,
 }
 RUCY_END
 
+static
+RUCY_DEF2(create_curve, args, loop)
+{
+	std::vector<Rays::Point> points;
+	get_line_args(&points, args.size(), args.as_array());
+
+	return value(Rays::create_curve(&points[0], points.size(), loop));
+}
+RUCY_END
+
+static
+RUCY_DEF2(create_bezier, args, loop)
+{
+	std::vector<Rays::Point> points;
+	get_line_args(&points, args.size(), args.as_array());
+
+	return value(Rays::create_bezier(&points[0], points.size(), loop));
+}
+RUCY_END
+
 
 static Class cPolygon;
 
@@ -243,6 +263,8 @@ Init_polygon ()
 	cPolygon.define_method("^", op_xor);
 	cPolygon.define_singleton_method("create_rect",    create_rect);
 	cPolygon.define_singleton_method("create_ellipse", create_ellipse);
+	cPolygon.define_singleton_method("create_curve",   create_curve);
+	cPolygon.define_singleton_method("create_bezier",  create_bezier);
 }
 
 

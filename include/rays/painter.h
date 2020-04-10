@@ -106,6 +106,32 @@ namespace Rays
 				const Point& hole_radius = 0,
 				float angle_from = 0, float angle_to = 360);
 
+			void curve (
+				coord x1, coord y1, coord x2, coord y2,
+				coord x3, coord y3, coord x4, coord y4,
+				bool loop = false);
+
+			void curve (
+				const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+				bool loop = false);
+
+			void curve (
+				const Point* points, size_t size,
+				bool loop = false);
+
+			void bezier (
+				coord x1, coord y1, coord x2, coord y2,
+				coord x3, coord y3, coord x4, coord y4,
+				bool loop = false);
+
+			void bezier (
+				const Point& p1, const Point& p2, const Point& p3, const Point& p4,
+				bool loop = false);
+
+			void bezier (
+				const Point* points, size_t size,
+				bool loop = false);
+
 			void image (
 				const Image& image, coord x = 0, coord y = 0);
 

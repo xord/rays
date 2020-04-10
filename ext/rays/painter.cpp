@@ -154,6 +154,38 @@ RUCY_DEF6(ellipse, args, center, radius, hole, angle_from, angle_to)
 RUCY_END
 
 static
+RUCY_DEF2(curve, args, loop)
+{
+	CHECK;
+
+	if (args.empty())
+		argument_error(__FILE__, __LINE__);
+
+	std::vector<Rays::Point> points;
+	get_line_args(&points, args.size(), args.as_array());
+
+	THIS->curve(&points[0], points.size(), loop);
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF2(bezier, args, loop)
+{
+	CHECK;
+
+	if (args.empty())
+		argument_error(__FILE__, __LINE__);
+
+	std::vector<Rays::Point> points;
+	get_line_args(&points, args.size(), args.as_array());
+
+	THIS->bezier(&points[0], points.size(), loop);
+	return self;
+}
+RUCY_END
+
+static
 RUCY_DEFN(image)
 {
 	CHECK;
@@ -534,6 +566,8 @@ Init_painter ()
 	cPainter.define_private_method("draw_polyline", polyline);
 	cPainter.define_private_method("draw_rect",     rect);
 	cPainter.define_private_method("draw_ellipse",  ellipse);
+	cPainter.define_private_method("draw_curve",    curve);
+	cPainter.define_private_method("draw_bezier",   bezier);
 	cPainter.define_method("image", image);
 	cPainter.define_method("text",  text);
 
