@@ -40,6 +40,8 @@ namespace Rays
 
 		BGRA  = BGRA_8888, BGRX = BGRX_8888, ABGR = ABGR_8888, XBGR = XBGR_8888,
 
+		DEFAULT_COLOR_SPACE = RGBA
+
 	};// ColorSpaceType
 
 

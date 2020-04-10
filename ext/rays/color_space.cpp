@@ -194,6 +194,9 @@ Init_color_space ()
 {
 	Module mRays = define_module("Rays");
 
+	for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
+		mRays.define_const(COLOR_SPACES[i].name, COLOR_SPACES[i].type);
+
 	cColorSpace = mRays.define_class("ColorSpace");
 	cColorSpace.define_alloc_func(alloc);
 	cColorSpace.define_private_method("initialize",      initialize);
@@ -208,9 +211,6 @@ Init_color_space ()
 	cColorSpace.define_method("has_skip?",  has_skip);
 	cColorSpace.define_method("premult?", is_premult);
 	cColorSpace.define_method("to_s", to_s);
-
-	for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
-		cColorSpace.define_const(COLOR_SPACES[i].name, COLOR_SPACES[i].type);
 }
 
 

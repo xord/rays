@@ -11,7 +11,7 @@ class TestPainterShape < Test::Unit::TestCase
   end
 
   def image (fill = 1, stroke = 0, pixel_density = 1, &block)
-    Rays::Image.new(100, 100, Rays::ColorSpace::RGBA, pixel_density).paint {|p|
+    Rays::Image.new(100, 100, Rays::RGBA, pixel_density).paint {|p|
       p.fill   fill   > 0 ? color(fill)   : nil
       p.stroke stroke > 0 ? color(stroke) : nil
       p.instance_eval &block if block
