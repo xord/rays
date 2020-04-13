@@ -48,6 +48,12 @@ namespace Rays
 
 		coord stroke_width;
 
+		CapType stroke_cap;
+
+		JoinType stroke_join;
+
+		coord miter_limit;
+
 		uint nsegment;
 
 		Bounds clip;
@@ -62,6 +68,9 @@ namespace Rays
 			colors[FILL]   .reset(1, 1);
 			colors[STROKE] .reset(1, 0);
 			stroke_width   = 0;
+			stroke_cap     = CAP_DEFAULT;
+			stroke_join    = JOIN_DEFAULT;
+			miter_limit    = JOIN_DEFAULT_MITER_LIMIT;
 			nsegment       = 0;
 			clip           .reset(-1);
 			font           = default_font();
@@ -1246,6 +1255,42 @@ namespace Rays
 	Painter::stroke_width () const
 	{
 		return self->state.stroke_width;
+	}
+
+	void
+	Painter::set_stroke_cap (CapType cap)
+	{
+		self->state.stroke_cap = cap;
+	}
+
+	CapType
+	Painter::stroke_cap () const
+	{
+		return self->state.stroke_cap;
+	}
+
+	void
+	Painter::set_stroke_join (JoinType join)
+	{
+		self->state.stroke_join = join;
+	}
+
+	JoinType
+	Painter::stroke_join () const
+	{
+		return self->state.stroke_join;
+	}
+
+	void
+	Painter::set_miter_limit (coord limit)
+	{
+		self->state.miter_limit = limit;
+	}
+
+	coord
+	Painter::miter_limit () const
+	{
+		return self->state.miter_limit;
 	}
 
 	void

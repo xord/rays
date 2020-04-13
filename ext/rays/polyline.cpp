@@ -34,12 +34,18 @@ RUCY_DEF2(setup, points, loop)
 RUCY_END
 
 static
-RUCY_DEF1(expand, width)
+RUCY_DEFN(expand)
 {
 	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Polyline#expand", argc, 1, 2, 3, 4);
+
+	coord width         =             to<coord>         (argv[0]);
+	Rays::CapType cap   = argc >= 2 ? to<Rays::CapType> (argv[1]) : Rays::CAP_DEFAULT;
+	Rays::JoinType join = argc >= 3 ? to<Rays::JoinType>(argv[2]) : Rays::JOIN_DEFAULT;
+	coord ml            = argc >= 4 ? to<coord>         (argv[3]) : Rays::JOIN_DEFAULT_MITER_LIMIT;
 
 	Rays::Polygon polygon;
-	THIS->expand(&polygon, to<coord>(width));
+	THIS->expand(&polygon, width, cap, join, ml);
 	return value(polygon);
 }
 RUCY_END

@@ -350,6 +350,67 @@ RUCY_DEF0(get_stroke_width)
 RUCY_END
 
 static
+RUCY_DEF1(set_stroke_cap, cap)
+{
+	CHECK;
+
+	int type = to<int>(cap);
+	if (type < 0 || Rays::CAP_MAX <= type)
+		argument_error(__FILE__, __LINE__, "invalid stroke cap -- %d", type);
+
+	THIS->set_stroke_cap((Rays::CapType) type);
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_stroke_cap)
+{
+	CHECK;
+	return value(THIS->stroke_cap());
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_stroke_join, join)
+{
+	CHECK;
+
+	int type = to<int>(join);
+	if (type < 0 || Rays::JOIN_MAX <= type)
+		argument_error(__FILE__, __LINE__, "invalid stroke join -- %d", type);
+
+	THIS->set_stroke_join((Rays::JoinType) type);
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_stroke_join)
+{
+	CHECK;
+	return value(THIS->stroke_join());
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_miter_limit, limit)
+{
+	CHECK;
+	THIS->set_miter_limit(to<coord>(limit));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_miter_limit)
+{
+	CHECK;
+	return value(THIS->miter_limit());
+}
+RUCY_END
+
+static
 RUCY_DEF1(set_nsegment, nsegment)
 {
 	CHECK;
@@ -577,11 +638,17 @@ Init_painter ()
 	cPainter.define_method(   "fill=", set_fill);
 	cPainter.define_method(   "fill",  get_fill);
 	cPainter.define_method("no_fill",   no_fill);
-	cPainter.define_method(   "stroke=", set_stroke);
-	cPainter.define_method(   "stroke",  get_stroke);
-	cPainter.define_method("no_stroke",   no_stroke);
+	cPainter.define_method(   "stroke=",       set_stroke);
+	cPainter.define_method(   "stroke",        get_stroke);
+	cPainter.define_method("no_stroke",         no_stroke);
 	cPainter.define_method(   "stroke_width=", set_stroke_width);
 	cPainter.define_method(   "stroke_width",  get_stroke_width);
+	cPainter.define_method(   "stroke_cap=",   set_stroke_cap);
+	cPainter.define_method(   "stroke_cap",    get_stroke_cap);
+	cPainter.define_method(   "stroke_join=",  set_stroke_join);
+	cPainter.define_method(   "stroke_join",   get_stroke_join);
+	cPainter.define_method("miter_limit=", set_miter_limit);
+	cPainter.define_method("miter_limit",  get_miter_limit);
 	cPainter.define_method("nsegment=", set_nsegment);
 	cPainter.define_method("nsegment",  get_nsegment);
 	cPainter.define_method(   "clip=", set_clip);

@@ -58,7 +58,9 @@ namespace Rays
 		ClipperLib::Path* path, const Polyline& polyline,
 		bool reverse = false);
 
-	bool Polyline_expand (Polygon* result, const Polyline& polyline, coord width);
+	bool Polyline_expand (
+		Polygon* result, const Polyline& polyline,
+		coord width, CapType cap, JoinType join, coord miter_limit);
 
 
 }// Rays

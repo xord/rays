@@ -23,6 +23,39 @@ namespace Rays
 	typedef float coord;
 
 
+	enum CapType
+	{
+
+		CAP_BUTT = 0,
+
+		CAP_ROUND,
+
+		CAP_SQUARE,
+
+		CAP_MAX,
+
+		CAP_DEFAULT = CAP_BUTT
+
+	};// CapType
+
+
+	enum JoinType
+	{
+
+		JOIN_MITER = 0,
+
+		JOIN_ROUND,
+
+		JOIN_SQUARE,
+
+		JOIN_MAX,
+
+		JOIN_DEFAULT             = JOIN_MITER,
+		JOIN_DEFAULT_MITER_LIMIT = 2
+
+	};// JoinType
+
+
 }// Rays
 
 

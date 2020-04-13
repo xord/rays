@@ -202,6 +202,18 @@ namespace Rays
 
 			coord    stroke_width () const;
 
+			void set_stroke_cap (CapType cap);
+
+			CapType  stroke_cap () const;
+
+			void set_stroke_join (JoinType join);
+
+			JoinType stroke_join () const;
+
+			void set_miter_limit (coord limit);
+
+			coord    miter_limit () const;
+
 			void set_nsegment (int nsegment);
 
 			uint     nsegment () const;

@@ -89,9 +89,11 @@ namespace Rays
 	}
 
 	bool
-	Polyline::expand (Polygon* result, coord width) const
+	Polyline::expand (
+		Polygon* result,
+		coord width, CapType cap, JoinType join, coord miter_limit) const
 	{
-		return Polyline_expand(result, *this, width);
+		return Polyline_expand(result, *this, width, cap, join, miter_limit);
 	}
 
 	Bounds

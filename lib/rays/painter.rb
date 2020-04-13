@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+require 'xot/const_symbol_accessor'
 require 'xot/universal_accessor'
 require 'xot/block_util'
 require 'rays/ext'
@@ -95,8 +96,21 @@ module Rays
       set_shader shader
     end
 
+    const_symbol_accessor :stroke_cap, {
+      butt:   CAP_BUTT,
+      round:  CAP_ROUND,
+      square: CAP_SQUARE
+    }
+
+    const_symbol_accessor :stroke_join, {
+      miter:  JOIN_MITER,
+      round:  JOIN_ROUND,
+      square: JOIN_SQUARE
+    }
+
     universal_accessor :background, :fill, :stroke, :color,
-      :stroke_width, :nsegment, :shader, :clip, :font
+      :stroke_width, :stroke_cap, :stroke_join, :miter_limit,
+      :nsegment, :shader, :clip, :font
 
     private
 

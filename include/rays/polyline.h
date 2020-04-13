@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <xot/pimpl.h>
+#include <rays/defs.h>
 #include <rays/point.h>
 #include <rays/bounds.h>
 
@@ -32,7 +33,12 @@ namespace Rays
 
 			~Polyline ();
 
-			bool expand (Polygon* result, coord width) const;
+			bool expand (
+				Polygon* result,
+				coord width,
+				CapType cap       = CAP_DEFAULT,
+				JoinType join     = JOIN_DEFAULT,
+				coord miter_limit = JOIN_DEFAULT_MITER_LIMIT) const;
 
 			Bounds bounds () const;
 
