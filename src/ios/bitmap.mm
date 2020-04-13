@@ -27,14 +27,14 @@ namespace Rays
 		if (cs.is_alpha_first())
 		{
 			info |= cs.is_premult()
-				? kCGImageAlphaPremultipliedFirst
-				: kCGImageAlphaFirst;
+				?	kCGImageAlphaPremultipliedFirst
+				:	kCGImageAlphaFirst;
 		}
 		else if (cs.is_alpha_last())
 		{
 			info |= cs.is_premult()
-				? kCGImageAlphaPremultipliedLast
-				: kCGImageAlphaLast;
+				?	kCGImageAlphaPremultipliedLast
+				:	kCGImageAlphaLast;
 		}
 		else if (cs.is_skip_first())
 			info |= kCGImageAlphaNoneSkipFirst;

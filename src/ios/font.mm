@@ -72,8 +72,8 @@ namespace Rays
 	RawFont::RawFont (const char* name, coord size)
 	{
 		self->font = name
-			? CTFontCreateWithName(cfstring(name).get(), size, NULL)
-			: CTFontCreateUIFontForLanguage(kCTFontSystemFontType, size, NULL);
+			?	CTFontCreateWithName(cfstring(name).get(), size, NULL)
+			:	CTFontCreateUIFontForLanguage(kCTFontSystemFontType, size, NULL);
 	}
 
 	RawFont::~RawFont ()
