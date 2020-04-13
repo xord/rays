@@ -231,16 +231,7 @@ namespace Rucy
 
 		if (convert)
 		{
-			if (argv->is_s() || argv->is_sym())
-			{
-				const char* str = argv[0].c_str();
-				for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
-				{
-					if (strcasecmp(str, COLOR_SPACES[i].name) == 0)
-						return Rays::ColorSpace(COLOR_SPACES[i].type);
-				}
-			}
-			else if (argv->is_i())
+			if (argv->is_i() || argv->is_s() || argv->is_sym())
 			{
 				return Rays::ColorSpace(
 					to<Rays::ColorSpaceType>(argv[0]),
@@ -258,7 +249,24 @@ namespace Rucy
 	template <> Rays::ColorSpaceType
 	value_to<Rays::ColorSpaceType> (Value value, bool convert)
 	{
-		return (Rays::ColorSpaceType) value_to<uint>(value, convert);
+		if (convert)
+		{
+			if (value.is_s() || value.is_sym())
+			{
+				const char* str = value.c_str();
+				for (size_t i = 0; i < COLOR_SPACES_SIZE; ++i)
+				{
+					if (strcasecmp(str, COLOR_SPACES[i].name) == 0)
+						return COLOR_SPACES[i].type;
+				}
+			}
+		}
+
+		uint type = value_to<uint>(value, convert);
+		if (type >= Rays::COLORSPACE_MAX)
+			argument_error(__FILE__, __LINE__, "invalid color space type -- %d", type);
+
+		return (Rays::ColorSpaceType) type;
 	}
 
 

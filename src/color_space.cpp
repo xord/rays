@@ -55,7 +55,7 @@ namespace Rays
 			32, 32, 32,        // RGB(A) float
 			32, 32, 32,        // BGR(A) float
 		};
-		if (type_ < 0 || COLORSPACE_LAST <= type_) return BPPS[COLORSPACE_UNKNOWN];
+		if (type_ < 0 || COLORSPACE_MAX <= type_) return BPPS[COLORSPACE_UNKNOWN];
 		return BPPS[type_];
 	}
 
@@ -78,7 +78,7 @@ namespace Rays
 			96, 128, 128,          // RGB(A) float
 			96, 128, 128,          // BGR(A) float
 		};
-		if (type_ < 0 || COLORSPACE_LAST <= type_) return BPPS[COLORSPACE_UNKNOWN];
+		if (type_ < 0 || COLORSPACE_MAX <= type_) return BPPS[COLORSPACE_UNKNOWN];
 		return BPPS[type_];
 	}
 

@@ -14,7 +14,7 @@ namespace Rays
 	enum ColorSpaceType
 	{
 
-		COLORSPACE_UNKNOWN = Xot::UNKNOWN,
+		COLORSPACE_UNKNOWN = 0,
 
 		 GRAY_8,  GRAY_16,  GRAY_24,  GRAY_32,  GRAY_float,
 
@@ -28,7 +28,7 @@ namespace Rays
 
 		BGR_float, BGRA_float, ABGR_float,
 
-		COLORSPACE_LAST,
+		COLORSPACE_MAX,
 
 		GRAY  =  GRAY_8,
 
