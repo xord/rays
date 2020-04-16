@@ -1369,7 +1369,7 @@ namespace Rays
 	void
 	Painter::push_state ()
 	{
-		self->state_stack.push_back(self->state);
+		self->state_stack.emplace_back(self->state);
 	}
 
 	void
@@ -1460,7 +1460,7 @@ namespace Rays
 	void
 	Painter::push_matrix ()
 	{
-		self->position_matrix_stack.push_back(self->position_matrix);
+		self->position_matrix_stack.emplace_back(self->position_matrix);
 	}
 
 	void
