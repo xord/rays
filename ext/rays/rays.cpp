@@ -11,13 +11,14 @@ RUCY_DEFINE_VALUE_OR_ARRAY_TO(Rays::JoinType)
 static struct CapTypeEnum
 {
 	const char* name;
+	const char* short_name;
 	Rays::CapType type;
 }
 CAP_TYPES[] =
 {
-	{"CAP_BUTT",   Rays::CAP_BUTT},
-	{"CAP_ROUND",  Rays::CAP_ROUND},
-	{"CAP_SQUARE", Rays::CAP_SQUARE},
+	{"CAP_BUTT",   "BUTT",   Rays::CAP_BUTT},
+	{"CAP_ROUND",  "ROUND",  Rays::CAP_ROUND},
+	{"CAP_SQUARE", "SQUARE", Rays::CAP_SQUARE},
 };
 
 static const size_t CAP_TYPES_SIZE =
@@ -27,13 +28,14 @@ static const size_t CAP_TYPES_SIZE =
 static struct JoinTypeEnum
 {
 	const char* name;
+	const char* short_name;
 	Rays::JoinType type;
 }
 JOIN_TYPES[] =
 {
-	{"JOIN_MITER",  Rays::JOIN_MITER},
-	{"JOIN_ROUND",  Rays::JOIN_ROUND},
-	{"JOIN_SQUARE", Rays::JOIN_SQUARE},
+	{"JOIN_MITER",  "MITER",  Rays::JOIN_MITER},
+	{"JOIN_ROUND",  "ROUND",  Rays::JOIN_ROUND},
+	{"JOIN_SQUARE", "SQUARE", Rays::JOIN_SQUARE},
 };
 
 static const size_t JOIN_TYPES_SIZE =
@@ -91,14 +93,18 @@ namespace Rucy
 				const char* str = argv->c_str();
 				for (size_t i = 0; i < CAP_TYPES_SIZE; ++i)
 				{
-					if (strcasecmp(str, CAP_TYPES[i].name) == 0)
+					if (
+						strcasecmp(str, CAP_TYPES[i].name)       == 0 ||
+						strcasecmp(str, CAP_TYPES[i].short_name) == 0)
+					{
 						return CAP_TYPES[i].type;
+					}
 				}
 			}
 		}
 
-		uint type = value_to<uint>(*argv, convert);
-		if (type >= Rays::CAP_MAX)
+		int type = value_to<int>(*argv, convert);
+		if (type < 0 || Rays::CAP_MAX <= type)
 			argument_error(__FILE__, __LINE__, "invalid cap type -- %d", type);
 
 		return (Rays::CapType) type;
@@ -117,14 +123,18 @@ namespace Rucy
 				const char* str = argv->c_str();
 				for (size_t i = 0; i < JOIN_TYPES_SIZE; ++i)
 				{
-					if (strcasecmp(str, JOIN_TYPES[i].name) == 0)
+					if (
+						strcasecmp(str, JOIN_TYPES[i].name)       == 0 ||
+						strcasecmp(str, JOIN_TYPES[i].short_name) == 0)
+					{
 						return JOIN_TYPES[i].type;
+					}
 				}
 			}
 		}
 
-		uint type = value_to<uint>(*argv, convert);
-		if (type >= Rays::JOIN_MAX)
+		int type = value_to<int>(*argv, convert);
+		if (type < 0 || Rays::JOIN_MAX <= type)
 			argument_error(__FILE__, __LINE__, "invalid join type -- %d", type);
 
 		return (Rays::JoinType) type;

@@ -353,12 +353,7 @@ static
 RUCY_DEF1(set_stroke_cap, cap)
 {
 	CHECK;
-
-	int type = to<int>(cap);
-	if (type < 0 || Rays::CAP_MAX <= type)
-		argument_error(__FILE__, __LINE__, "invalid stroke cap -- %d", type);
-
-	THIS->set_stroke_cap((Rays::CapType) type);
+	THIS->set_stroke_cap(to<Rays::CapType>(cap));
 	return self;
 }
 RUCY_END
@@ -375,12 +370,7 @@ static
 RUCY_DEF1(set_stroke_join, join)
 {
 	CHECK;
-
-	int type = to<int>(join);
-	if (type < 0 || Rays::JOIN_MAX <= type)
-		argument_error(__FILE__, __LINE__, "invalid stroke join -- %d", type);
-
-	THIS->set_stroke_join((Rays::JoinType) type);
+	THIS->set_stroke_join(to<Rays::JoinType>(join));
 	return self;
 }
 RUCY_END
