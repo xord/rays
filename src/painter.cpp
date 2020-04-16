@@ -650,6 +650,11 @@ namespace Rays
 
 		self->opengl_state.push();
 
+		//glEnable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		OpenGL_check_error(__FILE__, __LINE__);
+
 		FrameBuffer& fb = self->frame_buffer;
 		if (fb) FrameBuffer_bind(fb.id());
 
@@ -658,6 +663,7 @@ namespace Rays
 		glViewport(
 			(int) (vp.x      * density), (int) (vp.y      * density),
 			(int) (vp.width  * density), (int) (vp.height * density));
+		OpenGL_check_error(__FILE__, __LINE__);
 
 		coord x1 = vp.x, x2 = vp.x + vp.width;
 		coord y1 = vp.y, y2 = vp.y + vp.height;
@@ -665,20 +671,13 @@ namespace Rays
 		if (z1 == 0 && z2 == 0) {z1 = -100; z2 = 200;}
 		if (!fb) std::swap(y1, y2);
 
-		self->state.init();
-
 		self->position_matrix.reset(1);
 		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
 		//self->position_matrix.translate(0.375f, 0.375f);
 
-		//glEnable(GL_CULL_FACE);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		OpenGL_check_error(__FILE__, __LINE__);
+		self->update_clip();
 
 		self->painting = true;
-
-		no_clip();
 	}
 
 	void
