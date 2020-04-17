@@ -21,9 +21,9 @@ namespace Rays
 }// Rays
 
 
-RUCY_DECLARE_VALUE_OR_ARRAY_TO(Rays::CapType)
+RUCY_DECLARE_CONVERT_TO(Rays::CapType)
 
-RUCY_DECLARE_VALUE_OR_ARRAY_TO(Rays::JoinType)
+RUCY_DECLARE_CONVERT_TO(Rays::JoinType)
 
 
 #endif//EOH
