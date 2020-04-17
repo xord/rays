@@ -88,6 +88,7 @@ namespace Rucy
 						return it->type;
 					}
 				}
+				argument_error(__FILE__, __LINE__, "invalid cap type -- %s", str);
 			}
 		}
 
@@ -118,6 +119,7 @@ namespace Rucy
 						return it->type;
 					}
 				}
+				argument_error(__FILE__, __LINE__, "invalid join type -- %s", str);
 			}
 		}
 

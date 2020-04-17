@@ -68,6 +68,32 @@ class TestPolyline < Test::Unit::TestCase
     }
   end
 
+  def test_expand_with_cap ()
+    def pl; polyline [10,10], [20,20]; end
+    assert_nothing_raised       {pl.expand 1, Rays::CAP_ROUND}
+    assert_nothing_raised       {pl.expand 1, 'ROUND'}
+    assert_nothing_raised       {pl.expand 1, :ROUND}
+    assert_nothing_raised       {pl.expand 1, :round}
+    assert_nothing_raised       {pl.expand 1, 1}
+    assert_raise(ArgumentError) {pl.expand 1, -1}
+    assert_raise(ArgumentError) {pl.expand 1, 99}
+    assert_raise(ArgumentError) {pl.expand 1, 'hoge'}
+    assert_raise(ArgumentError) {pl.expand 1, :hoge}
+  end
+
+  def test_expand_with_join ()
+    def pl; polyline [10,10], [20,20]; end
+    assert_nothing_raised       {pl.expand 1, Rays::JOIN_ROUND}
+    assert_nothing_raised       {pl.expand 1, 'ROUND'}
+    assert_nothing_raised       {pl.expand 1, :ROUND}
+    assert_nothing_raised       {pl.expand 1, :round}
+    assert_nothing_raised       {pl.expand 1, 1}
+    assert_raise(ArgumentError) {pl.expand 1, 'hoge'}
+    assert_raise(ArgumentError) {pl.expand 1, :hoge}
+    assert_raise(ArgumentError) {pl.expand 1, -1}
+    assert_raise(ArgumentError) {pl.expand 1, 99}
+  end
+
   def test_transform_with_materix ()
     m = Rays::Matrix.translate 100, 200
     polyline([10,10], [20,20]).transform(m).tap {|o|
