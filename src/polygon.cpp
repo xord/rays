@@ -280,9 +280,11 @@ namespace Rays
 			case JOIN_MITER:  return clip::jtMiter;
 			case JOIN_ROUND:  return clip::jtRound;
 			case JOIN_SQUARE: return clip::jtSquare;
+			default:
+				argument_error(__FILE__, __LINE__, "invalid join type -- %d", join);
 		}
 
-		argument_error(__FILE__, __LINE__);
+		return clip::jtMiter;// to avoid compiler warning
 	}
 
 	static clip::EndType
@@ -295,9 +297,11 @@ namespace Rays
 			case CAP_BUTT:   return clip::etOpenButt;
 			case CAP_ROUND:  return clip::etOpenRound;
 			case CAP_SQUARE: return clip::etOpenSquare;
+			default:
+				argument_error(__FILE__, __LINE__, "invalid cap type -- %d", cap);
 		}
 
-		argument_error(__FILE__, __LINE__);
+		return clip::etOpenButt;// to avoid compiler warning
 	}
 
 	static bool
