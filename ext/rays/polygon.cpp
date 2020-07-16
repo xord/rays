@@ -100,7 +100,7 @@ RUCY_DEF0(each)
 {
 	CHECK;
 
-	Value ret;
+	Value ret = Qnil;
 	for (const auto& line : *THIS)
 		ret = rb_yield(value(line));
 	return ret;

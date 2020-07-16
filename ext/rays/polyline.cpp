@@ -103,7 +103,7 @@ RUCY_DEF0(each)
 {
 	CHECK;
 
-	Value ret;
+	Value ret = Qnil;
 	for (const auto& point : *THIS)
 		ret = rb_yield(value(point));
 	return ret;
