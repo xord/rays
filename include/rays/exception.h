@@ -31,9 +31,13 @@ namespace Rays
 
 		using namespace Xot::ErrorFunctions;
 
-		void rays_error   (const char* file, int line, const char* format = NULL, ...);
+		[[noreturn]]
+		void rays_error (
+			const char* file, int line, const char* format = NULL, ...);
 
-		void opengl_error (const char* file, int line, const char* format = NULL, ...);
+		[[noreturn]]
+		void opengl_error (
+			const char* file, int line, const char* format = NULL, ...);
 
 	}// ErrorFunctions
 
