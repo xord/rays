@@ -83,7 +83,7 @@ RUCY_DEF0(empty)
 RUCY_END
 
 static
-RUCY_DEF1(at, index)
+RUCY_DEF1(get_at, index)
 {
 	CHECK;
 
@@ -126,7 +126,7 @@ Init_polyline ()
 	cPolyline.define_method("loop?", loop);
 	cPolyline.define_method("size", size);
 	cPolyline.define_method("empty?", empty);
-	cPolyline.define_method("[]", at);
+	cPolyline.define_method("[]", get_at);
 	cPolyline.define_method("each", each);
 }
 

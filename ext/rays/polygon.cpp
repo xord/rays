@@ -80,7 +80,7 @@ RUCY_DEF0(empty)
 RUCY_END
 
 static
-RUCY_DEF1(at, index)
+RUCY_DEF1(get_at, index)
 {
 	CHECK;
 
@@ -260,7 +260,7 @@ Init_polygon ()
 	cPolygon.define_method("bounds", bounds);
 	cPolygon.define_method("size", size);
 	cPolygon.define_method("empty?", empty);
-	cPolygon.define_method("[]", at);
+	cPolygon.define_method("[]", get_at);
 	cPolygon.define_method("each", each);
 	cPolygon.define_method("+", op_or);
 	cPolygon.define_method("-", op_sub);
