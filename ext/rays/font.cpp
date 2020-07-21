@@ -61,6 +61,36 @@ RUCY_DEF0(height)
 }
 RUCY_END
 
+static
+RUCY_DEF0(ascent)
+{
+	CHECK;
+	coord ascent = 0;
+	THIS->get_height(&ascent);
+	return value(ascent);
+}
+RUCY_END
+
+static
+RUCY_DEF0(descent)
+{
+	CHECK;
+	coord descent = 0;
+	THIS->get_height(NULL, &descent);
+	return value(descent);
+}
+RUCY_END
+
+static
+RUCY_DEF0(leading)
+{
+	CHECK;
+	coord leading = 0;
+	THIS->get_height(NULL, NULL, &leading);
+	return value(leading);
+}
+RUCY_END
+
 
 static Class cFont;
 
@@ -74,8 +104,11 @@ Init_font ()
 	cFont.define_private_method("initialize", initialize);
 	cFont.define_method("name", name);
 	cFont.define_method("size", size);
-	cFont.define_method("width", width);
-	cFont.define_method("height", height);
+	cFont.define_method("width",   width);
+	cFont.define_method("height",  height);
+	cFont.define_method("ascent",  ascent);
+	cFont.define_method("descent", descent);
+	cFont.define_method("leading", leading);
 }
 
 
