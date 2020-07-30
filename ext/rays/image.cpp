@@ -149,7 +149,7 @@ Init_image ()
 	cImage.define_method("painter", painter);
 	cImage.define_method("bitmap", bitmap);
 	cImage.define_method("save", save);
-	cImage.define_function("load", load);
+	cImage.define_module_function("load", load);
 }
 
 

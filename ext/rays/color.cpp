@@ -211,9 +211,8 @@ Init_color ()
 	cColor.define_method("blue",   get_blue);
 	cColor.define_method("alpha=", set_alpha);
 	cColor.define_method("alpha",  get_alpha);
-
-	cColor.define_function("hsv", hsv);
-	cColor.define_function("set_palette_color", set_palette_color);
+	cColor.define_module_function("hsv", hsv);
+	cColor.define_module_function("set_palette_color", set_palette_color);
 }
 
 
