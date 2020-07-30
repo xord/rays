@@ -262,6 +262,20 @@ RUCY_DEF0(inspect)
 }
 RUCY_END
 
+static
+RUCY_DEF2(dot, p1, p2)
+{
+	return value(Rays::dot(to<Rays::Point>(p1), to<Rays::Point>(p2)));
+}
+RUCY_END
+
+static
+RUCY_DEF2(cross, p1, p2)
+{
+	return value(Rays::cross(to<Rays::Point>(p1), to<Rays::Point>(p2)));
+}
+RUCY_END
+
 
 static Class cPoint;
 
@@ -295,6 +309,8 @@ Init_point ()
 	cPoint.define_method("[]=", set_at);
 	cPoint.define_method("[]",  get_at);
 	cPoint.define_method("inspect", inspect);
+	cPoint.define_module_function("dot",   dot);
+	cPoint.define_module_function("cross", cross);
 }
 
 
