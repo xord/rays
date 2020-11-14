@@ -1,4 +1,4 @@
-#include "rays/image.h"
+#include "image.h"
 
 
 #include <math.h>
