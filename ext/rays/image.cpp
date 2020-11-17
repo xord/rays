@@ -142,7 +142,7 @@ Init_image ()
 	cImage.define_alloc_func(alloc);
 	cImage.define_private_method("initialize",      initialize);
 	cImage.define_private_method("initialize_copy", initialize_copy);
-	cImage.define_method("width", width);
+	cImage.define_method("width",  width);
 	cImage.define_method("height", height);
 	cImage.define_method("color_space", color_space);
 	cImage.define_method("pixel_density", pixel_density);
