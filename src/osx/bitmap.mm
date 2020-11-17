@@ -1,5 +1,5 @@
 // -*- objc -*-
-#import "../bitmap.h"
+#import "bitmap.h"
 
 
 #import <Cocoa/Cocoa.h>
@@ -202,6 +202,21 @@ namespace Rays
 	}
 
 	void
+	Bitmap_copy_pixels (Bitmap* bitmap, CGImageRef image)
+	{
+		if (!bitmap || !image)
+			argument_error(__FILE__, __LINE__);
+
+		CGContextRef context = bitmap->self->get_context();
+		if (!context)
+			rays_error(__FILE__, __LINE__, "getting CGContext failed.");
+
+		size_t width  = CGImageGetWidth(image);
+		size_t height = CGImageGetHeight(image);
+		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+	}
+
+	void
 	Bitmap_save (const Bitmap& bmp, const char* path_)
 	{
 		std::shared_ptr<CGImage> img(bmp.self->get_image(), CGImageRelease);
@@ -247,11 +262,7 @@ namespace Rays
 		if (!bmp)
 			rays_error(__FILE__, __LINE__, "invalid bitmap.");
 
-		CGContextRef context = bmp.self->get_context();
-		if (!context)
-			rays_error(__FILE__, __LINE__, "creating CGContext failed.");
-
-		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+		Bitmap_copy_pixels(&bmp, image);
 		return bmp;
 	}
 

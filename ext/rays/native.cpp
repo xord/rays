@@ -21,6 +21,8 @@ void Init_painter ();
 
 void Init_noise ();
 
+void Init_camera ();
+
 
 extern "C" void
 #ifdef COCOAPODS
@@ -52,6 +54,8 @@ extern "C" void
 	Init_painter();
 
 	Init_noise();
+
+	Init_camera();
 
 	RUCY_CATCH
 }
