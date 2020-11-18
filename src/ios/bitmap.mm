@@ -1,5 +1,5 @@
 // -*- objc -*-
-#import "../bitmap.h"
+#import "bitmap.h"
 
 
 #import <ImageIO/CGImageDestination.h>
@@ -176,6 +176,23 @@ namespace Rays
 	}
 
 	void
+	Bitmap_copy_pixels (Bitmap* bitmap, CGImageRef image)
+	{
+		if (!bitmap || !image)
+			argument_error(__FILE__, __LINE__);
+
+		CGContextRef context = bitmap->self->get_context();
+		if (!context)
+			rays_error(__FILE__, __LINE__, "getting CGContext failed.");
+
+		size_t width  = CGImageGetWidth(image);
+		size_t height = CGImageGetHeight(image);
+		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+
+		Bitmap_set_modified(bitmap);
+	}
+
+	void
 	Bitmap_draw_string (
 		Bitmap* bitmap, const RawFont& font, const char* str, coord x, coord y)
 	{
@@ -185,6 +202,7 @@ namespace Rays
 		if (*str == '\0') return;
 
 		font.draw_string(bitmap->self->get_context(), bitmap->height(), str, x, y);
+
 		Bitmap_set_modified(bitmap);
 	}
 
@@ -247,11 +265,7 @@ namespace Rays
 		if (!bmp)
 			rays_error(__FILE__, __LINE__, "invalid bitmap.");
 
-		CGContextRef context = bmp.self->get_context();
-		if (!context)
-			rays_error(__FILE__, __LINE__, "creating CGContext failed.");
-
-		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+		Bitmap_copy_pixels(&bmp, image);
 		return bmp;
 	}
 
@@ -329,7 +343,10 @@ namespace Rays
 	Bitmap::operator bool () const
 	{
 		return
-			self->width > 0 && self->height > 0 && self->color_space && self->pixels;
+			self->width  > 0  &&
+			self->height > 0  &&
+			self->color_space &&
+			self->pixels;
 	}
 
 	bool
