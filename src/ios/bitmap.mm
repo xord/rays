@@ -176,6 +176,23 @@ namespace Rays
 	}
 
 	void
+	Bitmap_copy_pixels (Bitmap* bitmap, CGImageRef image)
+	{
+		if (!bitmap || !image)
+			argument_error(__FILE__, __LINE__);
+
+		CGContextRef context = bitmap->self->get_context();
+		if (!context)
+			rays_error(__FILE__, __LINE__, "getting CGContext failed.");
+
+		size_t width  = CGImageGetWidth(image);
+		size_t height = CGImageGetHeight(image);
+		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+
+		Bitmap_set_modified(bitmap);
+	}
+
+	void
 	Bitmap_draw_string (
 		Bitmap* bitmap, const RawFont& font, const char* str, coord x, coord y)
 	{
@@ -185,6 +202,7 @@ namespace Rays
 		if (*str == '\0') return;
 
 		font.draw_string(bitmap->self->get_context(), bitmap->height(), str, x, y);
+
 		Bitmap_set_modified(bitmap);
 	}
 
@@ -200,21 +218,6 @@ namespace Rays
 	Bitmap_get_modified (const Bitmap& bitmap)
 	{
 		return bitmap.self->modified;
-	}
-
-	void
-	Bitmap_copy_pixels (Bitmap* bitmap, CGImageRef image)
-	{
-		if (!bitmap || !image)
-			argument_error(__FILE__, __LINE__);
-
-		CGContextRef context = bitmap->self->get_context();
-		if (!context)
-			rays_error(__FILE__, __LINE__, "getting CGContext failed.");
-
-		size_t width  = CGImageGetWidth(image);
-		size_t height = CGImageGetHeight(image);
-		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
 	}
 
 	void
