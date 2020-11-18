@@ -167,11 +167,15 @@ namespace Rays
 			CGImageRef cgImage = [video_input getImage];
 			if (!cgImage) return;
 
-			Bitmap bmp(
-				(int) CGImageGetWidth(cgImage),
-				(int) CGImageGetHeight(cgImage));
-			Bitmap_copy_pixels(&bmp, cgImage);
-			image = Image(bmp);
+			if (!image)
+			{
+				Bitmap bmp(
+					(int) CGImageGetWidth(cgImage),
+					(int) CGImageGetHeight(cgImage));
+				image = Image(bmp);
+			}
+
+			Bitmap_copy_pixels(&image.bitmap(), cgImage);
 
 			[video_input clearImage];
 		}
