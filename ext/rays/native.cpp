@@ -9,6 +9,7 @@ void Init_color ();
 void Init_color_space ();
 void Init_matrix ();
 
+void Init_painter ();
 void Init_polyline ();
 void Init_polygon_line ();
 void Init_polygon ();
@@ -16,12 +17,9 @@ void Init_bitmap ();
 void Init_image ();
 void Init_font ();
 void Init_shader ();
-
-void Init_painter ();
+void Init_camera ();
 
 void Init_noise ();
-
-void Init_camera ();
 
 
 extern "C" void
@@ -43,6 +41,7 @@ extern "C" void
 	Init_color_space();
 	Init_matrix();
 
+	Init_painter();
 	Init_polyline();
 	Init_polygon_line();
 	Init_polygon();
@@ -50,12 +49,9 @@ extern "C" void
 	Init_image();
 	Init_font();
 	Init_shader();
-
-	Init_painter();
+	Init_camera();
 
 	Init_noise();
-
-	Init_camera();
 
 	RUCY_CATCH
 }
