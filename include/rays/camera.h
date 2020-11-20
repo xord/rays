@@ -4,6 +4,7 @@
 #define __RAYS_CAMERA_H__
 
 
+#include <vector>
 #include <xot/pimpl.h>
 #include <rays/defs.h>
 #include <rays/image.h>
@@ -20,7 +21,12 @@ namespace Rays
 
 		public:
 
-			Camera ();
+			Camera (
+				const char* device_name = NULL,
+				int min_width  = -1,
+				int min_height = -1,
+				bool resize    = true,
+				bool crop      = true);
 
 			~Camera ();
 
@@ -29,6 +35,18 @@ namespace Rays
 			void stop ();
 
 			bool is_active () const;
+
+			int min_width () const;
+
+			int min_height () const;
+
+			void set_resize (bool resize = true);
+
+			bool  is_resize () const;
+
+			void set_crop (bool crop = true);
+
+			bool  is_crop () const;
 
 			const Image* image () const;
 
@@ -41,6 +59,9 @@ namespace Rays
 			Xot::PSharedImpl<Data> self;
 
 	};// Camera
+
+
+	std::vector<String> get_camera_device_names ();
 
 
 }// Rays

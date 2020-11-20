@@ -175,8 +175,12 @@ namespace Rays
 	}
 
 	void
-	Bitmap_copy_pixels (Bitmap* bitmap, CGImageRef image)
+	Bitmap_draw_image (
+		Bitmap* bitmap, CGImageRef image,
+		coord x, coord y, coord width, coord height)
 	{
+		if (width == 0 || height == 0) return;
+
 		if (!bitmap || !image)
 			argument_error(__FILE__, __LINE__);
 
@@ -184,9 +188,9 @@ namespace Rays
 		if (!context)
 			rays_error(__FILE__, __LINE__, "getting CGContext failed.");
 
-		size_t width  = CGImageGetWidth(image);
-		size_t height = CGImageGetHeight(image);
-		CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
+		if (width  < 0) width  = (coord) CGImageGetWidth(image);
+		if (height < 0) height = (coord) CGImageGetHeight(image);
+		CGContextDrawImage(context, CGRectMake(x, y, width, height), image);
 
 		Bitmap_set_modified(bitmap);
 	}
@@ -265,7 +269,7 @@ namespace Rays
 		if (!bmp)
 			rays_error(__FILE__, __LINE__, "invalid bitmap.");
 
-		Bitmap_copy_pixels(&bmp, image);
+		Bitmap_draw_image(&bmp, image);
 		return bmp;
 	}
 

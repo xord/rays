@@ -20,11 +20,14 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEFN(initialize)
+RUCY_DEF5(setup, device_name, min_width, min_height, resize, crop)
 {
 	RUCY_CHECK_OBJ(Rays::Camera, self);
 
-	*THIS = Rays::Camera();
+	*THIS = Rays::Camera(
+		device_name ? to<const char*>(device_name) : NULL,
+		to<int>(min_width), to<int>(min_height),
+		to<bool>(resize), to<bool>(crop));
 	return self;
 }
 RUCY_END
@@ -62,6 +65,18 @@ RUCY_DEF0(image)
 }
 RUCY_END
 
+static
+RUCY_DEF0(device_names)
+{
+	auto names = Rays::get_camera_device_names();
+
+	std::vector<Value> v;
+	for (auto it = names.begin(), end = names.end(); it != end; ++it)
+		v.emplace_back(value(it->c_str()));
+	return value(v.size(), &v[0]);
+}
+RUCY_END
+
 
 static Class cCamera;
 
@@ -72,11 +87,12 @@ Init_camera ()
 
 	cCamera = mRays.define_class("Camera");
 	cCamera.define_alloc_func(alloc);
-	cCamera.define_private_method("initialize", initialize);
+	cCamera.define_private_method("setup", setup);
 	cCamera.define_method("start",   start);
 	cCamera.define_method("stop",    stop);
 	cCamera.define_method("active?", is_active);
 	cCamera.define_method("image",   image);
+	cCamera.define_module_function("device_names", device_names);
 }
 
 
