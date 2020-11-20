@@ -36,9 +36,13 @@ namespace Rays
 
 			bool is_active () const;
 
-			int min_width () const;
+			void set_min_width (int width);
 
-			int min_height () const;
+			int      min_width () const;
+
+			void set_min_height (int height);
+
+			int      min_height () const;
 
 			void set_resize (bool resize = true);
 

@@ -57,6 +57,74 @@ RUCY_DEF0(is_active)
 RUCY_END
 
 static
+RUCY_DEF1(set_min_width, width)
+{
+	CHECK;
+	THIS->set_min_width(to<int>(width));
+	return value(THIS->min_width());
+}
+RUCY_END
+
+static
+RUCY_DEF0(min_width)
+{
+	CHECK;
+	return value(THIS->min_width());
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_min_height, height)
+{
+	CHECK;
+	THIS->set_min_height(to<int>(height));
+	return value(THIS->min_height());
+}
+RUCY_END
+
+static
+RUCY_DEF0(min_height)
+{
+	CHECK;
+	return value(THIS->min_height());
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_resize, resize)
+{
+	CHECK;
+	THIS->set_resize(to<bool>(resize));
+	return value(THIS->is_resize());
+}
+RUCY_END
+
+static
+RUCY_DEF0(is_resize)
+{
+	CHECK;
+	return value(THIS->is_resize());
+}
+RUCY_END
+
+static
+RUCY_DEF1(set_crop, crop)
+{
+	CHECK;
+	THIS->set_crop(to<bool>(crop));
+	return value(THIS->is_crop());
+}
+RUCY_END
+
+static
+RUCY_DEF0(is_crop)
+{
+	CHECK;
+	return value(THIS->is_crop());
+}
+RUCY_END
+
+static
 RUCY_DEF0(image)
 {
 	CHECK;
@@ -88,10 +156,18 @@ Init_camera ()
 	cCamera = mRays.define_class("Camera");
 	cCamera.define_alloc_func(alloc);
 	cCamera.define_private_method("setup", setup);
-	cCamera.define_method("start",   start);
-	cCamera.define_method("stop",    stop);
+	cCamera.define_method("start", start);
+	cCamera.define_method("stop",  stop);
 	cCamera.define_method("active?", is_active);
-	cCamera.define_method("image",   image);
+	cCamera.define_method("min_width=",  set_min_width);
+	cCamera.define_method("min_width",       min_width);
+	cCamera.define_method("min_height=", set_min_height);
+	cCamera.define_method("min_height",      min_height);
+	cCamera.define_method("resize=", set_resize);
+	cCamera.define_method("resize?",  is_resize);
+	cCamera.define_method("crop=",   set_crop);
+	cCamera.define_method("crop?",    is_crop);
+	cCamera.define_method("image", image);
 	cCamera.define_module_function("device_names", device_names);
 }
 

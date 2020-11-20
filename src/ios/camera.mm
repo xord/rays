@@ -384,10 +384,22 @@ namespace Rays
 		return self->video_input && [self->video_input isActive];
 	}
 
+	void
+	Camera::set_min_width (int width)
+	{
+		self->min_width = width;
+	}
+
 	int
 	Camera::min_width () const
 	{
 		return self->min_width;
+	}
+
+	void
+	Camera::set_min_height (int height)
+	{
+		self->min_height = height;
 	}
 
 	int

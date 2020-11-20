@@ -110,7 +110,7 @@ Init_bitmap ()
 	cBitmap.define_alloc_func(alloc);
 	cBitmap.define_private_method("initialize",      initialize);
 	cBitmap.define_private_method("initialize_copy", initialize_copy);
-	cBitmap.define_method("width", width);
+	cBitmap.define_method("width",  width);
 	cBitmap.define_method("height", height);
 	cBitmap.define_method("color_space", color_space);
 	cBitmap.define_method("[]=", set_at);
