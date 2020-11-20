@@ -175,8 +175,8 @@ namespace Rays
 				#define SUPPORT(x) \
 					[device supportsAVCaptureSessionPreset: AVCaptureSessionPreset##x]
 
-				if (w <= 320 && h <= 240 && SUPPORT(320x240))
-					return AVCaptureSessionPreset320x240;
+				//if (w <= 320 && h <= 240 && SUPPORT(320x240))
+				//	return AVCaptureSessionPreset320x240;
 
 				if (w <= 352 && h <= 288 && SUPPORT(352x288))
 					return AVCaptureSessionPreset352x288;
@@ -184,17 +184,17 @@ namespace Rays
 				if (w <= 640 && h <= 480 && SUPPORT(640x480))
 					return AVCaptureSessionPreset640x480;
 
-				if (w <= 960 && h <= 540 && SUPPORT(960x540))
-					return AVCaptureSessionPreset960x540;
+				//if (w <= 960 && h <= 540 && SUPPORT(960x540))
+				//	return AVCaptureSessionPreset960x540;
 
 				if (w <= 1280 && h <= 720 && SUPPORT(1280x720))
 					return AVCaptureSessionPreset1280x720;
 
-				if (w <= 1920 && h <= 1080 && SUPPORT(1920x1080))
+				if (/*w <= 1920 && h <= 1080 &&*/ SUPPORT(1920x1080))
 					return AVCaptureSessionPreset1920x1080;
 
-				if (SUPPORT(3840x2160))
-					return AVCaptureSessionPreset3840x2160;
+				//if (SUPPORT(3840x2160))
+				//	return AVCaptureSessionPreset3840x2160;
 
 				#undef SUPPORT
 			}
