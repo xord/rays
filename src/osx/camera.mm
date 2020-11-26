@@ -17,9 +17,9 @@ static int video_input_queue_index = 0;
 @implementation VideoInput
 
 	{
-		AVCaptureSession* captureSession;
-		dispatch_queue_t captureQueue;
-		CGImageRef captureImage;
+		AVCaptureSession* session;
+		dispatch_queue_t queue;
+		CGImageRef image;
 	}
 
 	- (id) init
@@ -27,9 +27,9 @@ static int video_input_queue_index = 0;
 		self = [super init];
 		if (self)
 		{
-			captureSession = nil;
-			captureQueue   = nil;
-			captureImage   = nil;
+			session = nil;
+			queue   = nil;
+			image   = nil;
 		}
 		return self;
 	}
@@ -39,25 +39,25 @@ static int video_input_queue_index = 0;
 		[self stop];
 		[self clearImage];
 
-		if (captureQueue)
+		if (queue)
 		{
-			dispatch_release(captureQueue);
-			captureQueue = nil;
+			dispatch_release(queue);
+			queue = nil;
 		}
 
 		[super dealloc];
 	}
 
-	- (dispatch_queue_t) queue
+	- (dispatch_queue_t) getQueue
 	{
-		if (!captureQueue)
+		if (!queue)
 		{
 			auto name = Xot::stringf(
 				"org.xord.RaysVideoInputQueue_%d",
 				video_input_queue_index++);
-			captureQueue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL);
+			queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL);
 		}
-		return captureQueue;
+		return queue;
 	}
 
 	- (BOOL) start: (AVCaptureDevice*) device
@@ -67,9 +67,9 @@ static int video_input_queue_index = 0;
 
 		[self stop];
 
-		AVCaptureSession* session = [[[AVCaptureSession alloc] init] autorelease];
+		AVCaptureSession* sess = [[[AVCaptureSession alloc] init] autorelease];
 		if (preset != nil)
-			session.sessionPreset = preset;
+			sess.sessionPreset = preset;
 
 		//device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
 
@@ -77,7 +77,7 @@ static int video_input_queue_index = 0;
 		AVCaptureDeviceInput* input = [[[AVCaptureDeviceInput alloc]
 			initWithDevice: device error: &error]
 			autorelease];
-		if (!input || error || ![session canAddInput: input])
+		if (!input || error || ![sess canAddInput: input])
 			return NO;
 
 		AVCaptureVideoDataOutput* output =
@@ -86,15 +86,15 @@ static int video_input_queue_index = 0;
 			(NSString*) kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)
 		};
 		output.alwaysDiscardsLateVideoFrames = YES;
-		[output setSampleBufferDelegate: self queue: self.queue];
-		if (![session canAddOutput: output])
+		[output setSampleBufferDelegate: self queue: [self getQueue]];
+		if (![sess canAddOutput: output])
 			return NO;
 
-		[session addInput: input];
-		[session addOutput: output];
-		[session startRunning];
+		[sess addInput: input];
+		[sess addOutput: output];
+		[sess startRunning];
 
-		captureSession = [session retain];
+		session = [sess retain];
 		return YES;
 	}
 
@@ -116,35 +116,35 @@ static int video_input_queue_index = 0;
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[self clearImage];
-			captureImage = cgImage;
+			image = cgImage;
 		});
 	}
 
 	- (void) stop
 	{
-		if (!captureSession) return;
+		if (!session) return;
 
-		[captureSession stopRunning];
-		[captureSession release];
-		captureSession = nil;
+		[session stopRunning];
+		[session release];
+		session = nil;
 	}
 
 	- (BOOL) isActive
 	{
-		return captureSession != nil;
+		return session != nil;
 	}
 
 	- (void) clearImage
 	{
-		if (!captureImage) return;
+		if (!image) return;
 
-		CGImageRelease(captureImage);
-		captureImage = nil;
+		CGImageRelease(image);
+		image = nil;
 	}
 
 	- (CGImageRef) getImage
 	{
-		return captureImage;
+		return image;
 	}
 
 @end// VideoInput

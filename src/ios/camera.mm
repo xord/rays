@@ -17,10 +17,10 @@ static int video_input_queue_index = 0;
 @implementation VideoInput
 
 	{
-		AVCaptureSession* captureSession;
-		dispatch_queue_t captureQueue;
-		CGImageRef captureImage;
-		AVCaptureVideoOrientation captureOrientation;
+		AVCaptureSession* session;
+		dispatch_queue_t queue;
+		CGImageRef image;
+		AVCaptureVideoOrientation orientation;
 	}
 
 	- (id) init
@@ -28,10 +28,10 @@ static int video_input_queue_index = 0;
 		self = [super init];
 		if (self)
 		{
-			captureSession     = nil;
-			captureQueue       = nil;
-			captureImage       = nil;
-			captureOrientation = AVCaptureVideoOrientationPortrait;
+			session     = nil;
+			queue       = nil;
+			image       = nil;
+			orientation = AVCaptureVideoOrientationPortrait;
 		}
 		return self;
 	}
@@ -41,25 +41,25 @@ static int video_input_queue_index = 0;
 		[self stop];
 		[self clearImage];
 
-		if (captureQueue)
+		if (queue)
 		{
-			dispatch_release(captureQueue);
-			captureQueue = nil;
+			dispatch_release(queue);
+			queue = nil;
 		}
 
 		[super dealloc];
 	}
 
-	- (dispatch_queue_t) queue
+	- (dispatch_queue_t) getQueue
 	{
-		if (!captureQueue)
+		if (!queue)
 		{
 			auto name = Xot::stringf(
 				"org.xord.RaysVideoInputQueue_%d",
 				video_input_queue_index++);
-			captureQueue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL);
+			queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL);
 		}
-		return captureQueue;
+		return queue;
 	}
 
 	- (BOOL) start: (AVCaptureDevice*) device
@@ -68,11 +68,11 @@ static int video_input_queue_index = 0;
 		if (!device) return NO;
 
 		[self stop];
-		[self updateCaptureOrientation];
+		[self updateOrientation];
 
-		AVCaptureSession* session = [[[AVCaptureSession alloc] init] autorelease];
+		AVCaptureSession* sess = [[[AVCaptureSession alloc] init] autorelease];
 		if (preset != nil)
-			session.sessionPreset = preset;
+			sess.sessionPreset = preset;
 
 		//device.activeVideoMinFrameDuration = CMTimeMake(1, 30);
 
@@ -80,7 +80,7 @@ static int video_input_queue_index = 0;
 		AVCaptureDeviceInput* input = [[[AVCaptureDeviceInput alloc]
 			initWithDevice: device error: &error]
 			autorelease];
-		if (!input || error || ![session canAddInput: input])
+		if (!input || error || ![sess canAddInput: input])
 			return NO;
 
 		AVCaptureVideoDataOutput* output =
@@ -89,19 +89,19 @@ static int video_input_queue_index = 0;
 			(NSString*) kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)
 		};
 		output.alwaysDiscardsLateVideoFrames = YES;
-		[output setSampleBufferDelegate: self queue: self.queue];
-		if (![session canAddOutput: output])
+		[output setSampleBufferDelegate: self queue: [self getQueue]];
+		if (![sess canAddOutput: output])
 			return NO;
 
-		[session addInput: input];
-		[session addOutput: output];
+		[sess addInput: input];
+		[sess addOutput: output];
 
 		AVCaptureConnection* connection =
 			[output connectionWithMediaType: AVMediaTypeVideo];
 		if (connection)
 		{
 			if (connection.isVideoOrientationSupported)
-				[connection setVideoOrientation: captureOrientation];
+				[connection setVideoOrientation: orientation];
 
 			if (connection.isVideoMirroringSupported)
 			{
@@ -110,9 +110,9 @@ static int video_input_queue_index = 0;
 			}
 		}
 
-		[session startRunning];
+		[sess startRunning];
 
-		captureSession = [session retain];
+		session = [sess retain];
 		return YES;
 	}
 
@@ -123,19 +123,19 @@ static int video_input_queue_index = 0;
 		switch (UIApplication.sharedApplication.statusBarOrientation)
 		{
 			case UIInterfaceOrientationPortraitUpsideDown:
-				captureOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+				orientation = AVCaptureVideoOrientationPortraitUpsideDown;
 				break;
 
 			case UIInterfaceOrientationPortraitLandscapeLeft:
-				captureOrientation = AVCaptureVideoOrientationLandscapeLeft;
+				orientation = AVCaptureVideoOrientationLandscapeLeft;
 				break;
 
 			case UIInterfaceOrientationPortraitLandscapeRight:
-				captureOrientation = AVCaptureVideoOrientationLandscapeRight;
+				orientation = AVCaptureVideoOrientationLandscapeRight;
 				break;
 
 			default:
-				captureOrientation = AVCaptureVideoOrientationPortrait;
+				orientation = AVCaptureVideoOrientationPortrait;
 				break;
 		}
 	}
@@ -144,7 +144,7 @@ static int video_input_queue_index = 0;
 		didOutputSampleBuffer: (CMSampleBufferRef) sampleBuffer
 		fromConnection: (AVCaptureConnection*) connection
 	{
-		[connection setVideoOrientation: captureOrientation];
+		[connection setVideoOrientation: orientation];
 
 		CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
 		if (!pixelBuffer) return;
@@ -160,37 +160,37 @@ static int video_input_queue_index = 0;
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[self clearImage];
-			captureImage = cgImage;
+			image = cgImage;
 
-			[self updateCaptureOrientation];
+			[self updateOrientation];
 		});
 	}
 
 	- (void) stop
 	{
-		if (!captureSession) return;
+		if (!session) return;
 
-		[captureSession stopRunning];
-		[captureSession release];
-		captureSession = nil;
+		[session stopRunning];
+		[session release];
+		session = nil;
 	}
 
 	- (BOOL) isActive
 	{
-		return captureSession != nil;
+		return session != nil;
 	}
 
 	- (void) clearImage
 	{
-		if (!captureImage) return;
+		if (!image) return;
 
-		CGImageRelease(captureImage);
-		captureImage = nil;
+		CGImageRelease(image);
+		image = nil;
 	}
 
 	- (CGImageRef) getImage
 	{
-		return captureImage;
+		return image;
 	}
 
 @end// VideoInput
