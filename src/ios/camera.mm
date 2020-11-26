@@ -282,14 +282,13 @@ namespace Rays
 			int* bitmap_width, int* bitmap_height,
 			CGImageRef image) const
 		{
-			int image_width  = (int) CGImageGetWidth(image);
-			int image_height = (int) CGImageGetHeight(image);
+			int image_width   = (int) CGImageGetWidth(image);
+			int image_height  = (int) CGImageGetHeight(image);
+			float image_ratio = (float) image_width / (float) image_height;
 
 			if (resize && min_width > 0 && min_height > 0)
 			{
-				float    image_ratio = (float) image_width / (float) image_height;
-				float min_size_ratio = (float)   min_width / (float)   min_height;
-
+				float min_size_ratio = (float) min_width / (float) min_height;
 				if (image_ratio > min_size_ratio)
 				{
 					*draw_width  = min_height * image_ratio;
@@ -301,25 +300,36 @@ namespace Rays
 					*draw_height = min_width / image_ratio;
 				}
 			}
+			else if (resize && min_width > 0)
+			{
+				*draw_width  = min_width;
+				*draw_height = min_width / image_ratio;
+			}
+			else if (resize && min_height > 0)
+			{
+				*draw_width  = min_height * image_ratio;
+				*draw_height = min_height;
+			}
 			else
 			{
 				*draw_width  = image_width;
 				*draw_height = image_height;
 			}
 
-			if (crop && min_width > 0 && min_height > 0)
+			*draw_x        = 0;
+			*draw_y        = 0;
+			*bitmap_width  = *draw_width;
+			*bitmap_height = *draw_height;
+
+			if (crop && min_width > 0)
 			{
-				*draw_x        = min_width  / 2 - *draw_width  / 2;
-				*draw_y        = min_height / 2 - *draw_height / 2;
-				*bitmap_width  = min_width;
-				*bitmap_height = min_height;
+				*draw_x       = min_width / 2 - *draw_width / 2;
+				*bitmap_width = min_width;
 			}
-			else
+			else if (crop && min_height > 0)
 			{
-				*draw_x        = 0;
-				*draw_y        = 0;
-				*bitmap_width  = *draw_width;
-				*bitmap_height = *draw_height;
+				*draw_y        = min_height / 2 - *draw_height / 2;
+				*bitmap_height = min_height;
 			}
 		}
 
