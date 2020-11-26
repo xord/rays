@@ -20,6 +20,7 @@ static int video_input_queue_index = 0;
 		AVCaptureSession* captureSession;
 		dispatch_queue_t captureQueue;
 		CGImageRef captureImage;
+		AVCaptureVideoOrientation captureOrientation;
 	}
 
 	- (id) init
@@ -27,9 +28,10 @@ static int video_input_queue_index = 0;
 		self = [super init];
 		if (self)
 		{
-			captureSession = nil;
-			captureQueue   = nil;
-			captureImage   = nil;
+			captureSession     = nil;
+			captureQueue       = nil;
+			captureImage       = nil;
+			captureOrientation = AVCaptureVideoOrientationPortrait;
 		}
 		return self;
 	}
@@ -66,6 +68,7 @@ static int video_input_queue_index = 0;
 		if (!device) return NO;
 
 		[self stop];
+		[self updateCaptureOrientation];
 
 		AVCaptureSession* session = [[[AVCaptureSession alloc] init] autorelease];
 		if (preset != nil)
@@ -92,16 +95,57 @@ static int video_input_queue_index = 0;
 
 		[session addInput: input];
 		[session addOutput: output];
+
+		AVCaptureConnection* connection =
+			[output connectionWithMediaType: AVMediaTypeVideo];
+		if (connection)
+		{
+			if (connection.isVideoOrientationSupported)
+				[connection setVideoOrientation: captureOrientation];
+
+			if (connection.isVideoMirroringSupported)
+			{
+				[connection setVideoMirrored:
+					device.position == AVCaptureDevicePositionFront];
+			}
+		}
+
 		[session startRunning];
 
 		captureSession = [session retain];
 		return YES;
 	}
 
+	- (void) updateCaptureOrientation
+	{
+		assert(Thread.isMainThread);
+
+		switch (UIApplication.sharedApplication.statusBarOrientation)
+		{
+			case UIInterfaceOrientationPortraitUpsideDown:
+				captureOrientation = AVCaptureVideoOrientationPortraitUpsideDown;
+				break;
+
+			case UIInterfaceOrientationPortraitLandscapeLeft:
+				captureOrientation = AVCaptureVideoOrientationLandscapeLeft;
+				break;
+
+			case UIInterfaceOrientationPortraitLandscapeRight:
+				captureOrientation = AVCaptureVideoOrientationLandscapeRight;
+				break;
+
+			default:
+				captureOrientation = AVCaptureVideoOrientationPortrait;
+				break;
+		}
+	}
+
 	- (void) captureOutput: (AVCaptureOutput*) output
 		didOutputSampleBuffer: (CMSampleBufferRef) sampleBuffer
 		fromConnection: (AVCaptureConnection*) connection
 	{
+		[connection setVideoOrientation: captureOrientation];
+
 		CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
 		if (!pixelBuffer) return;
 
@@ -117,6 +161,8 @@ static int video_input_queue_index = 0;
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[self clearImage];
 			captureImage = cgImage;
+
+			[self updateCaptureOrientation];
 		});
 	}
 
