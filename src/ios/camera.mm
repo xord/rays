@@ -414,7 +414,6 @@ namespace Rays
 	Camera::~Camera ()
 	{
 		stop();
-		if (self->video_input) [self->video_input release];
 	}
 
 	bool
@@ -432,6 +431,8 @@ namespace Rays
 		if (!self->video_input) return;
 
 		[self->video_input stop];
+		[self->video_input release];
+		self->video_input = nil;
 	}
 
 	bool
