@@ -116,9 +116,9 @@ static int video_input_queue_index = 0;
 		return YES;
 	}
 
-	- (void) updateCaptureOrientation
+	- (void) updateOrientation
 	{
-		assert(Thread.isMainThread);
+		assert(NSThread.isMainThread);
 
 		switch (UIApplication.sharedApplication.statusBarOrientation)
 		{
@@ -126,11 +126,11 @@ static int video_input_queue_index = 0;
 				orientation = AVCaptureVideoOrientationPortraitUpsideDown;
 				break;
 
-			case UIInterfaceOrientationPortraitLandscapeLeft:
+			case UIInterfaceOrientationLandscapeLeft:
 				orientation = AVCaptureVideoOrientationLandscapeLeft;
 				break;
 
-			case UIInterfaceOrientationPortraitLandscapeRight:
+			case UIInterfaceOrientationLandscapeRight:
 				orientation = AVCaptureVideoOrientationLandscapeRight;
 				break;
 
