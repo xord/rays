@@ -343,7 +343,13 @@ namespace Rays
 		AVCaptureDeviceDiscoverySession* discoverySession =
 			[AVCaptureDeviceDiscoverySession
 				discoverySessionWithDeviceTypes: @[
-					AVCaptureDeviceTypeBuiltInWideAngleCamera]
+					AVCaptureDeviceTypeBuiltInTripleCamera,
+					AVCaptureDeviceTypeBuiltInDualWideCamera,
+					AVCaptureDeviceTypeBuiltInDualCamera,
+					AVCaptureDeviceTypeBuiltInUltraWideCamera,
+					AVCaptureDeviceTypeBuiltInTelephotoCamera,
+					AVCaptureDeviceTypeBuiltInWideAngleCamera
+				]
 				mediaType: AVMediaTypeVideo
 				position: AVCaptureDevicePositionUnspecified];
 		NSArray<AVCaptureDevice*>* devices = discoverySession.devices;
