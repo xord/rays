@@ -280,7 +280,7 @@ namespace Rays
 				*draw_x       = min_width / 2 - *draw_width / 2;
 				*bitmap_width = min_width;
 			}
-			else if (crop && min_height > 0)
+			if (crop && min_height > 0)
 			{
 				*draw_y        = min_height / 2 - *draw_height / 2;
 				*bitmap_height = min_height;
