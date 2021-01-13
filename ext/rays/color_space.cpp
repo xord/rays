@@ -90,7 +90,7 @@ RUCY_DEF1(initialize_copy, obj)
 RUCY_END
 
 static
-RUCY_DEF0(type)
+RUCY_DEF0(get_type)
 {
 	CHECK;
 
@@ -201,7 +201,7 @@ Init_color_space ()
 	cColorSpace.define_alloc_func(alloc);
 	cColorSpace.define_private_method("initialize",      initialize);
 	cColorSpace.define_private_method("initialize_copy", initialize_copy);
-	cColorSpace.define_method("type", type);
+	cColorSpace.define_method("type", get_type);
 	cColorSpace.define_method("gray?",    is_gray);
 	cColorSpace.define_method("alpha?",   is_alpha);
 	cColorSpace.define_method("rgb?",     is_rgb);
