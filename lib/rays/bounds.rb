@@ -25,15 +25,15 @@ module Rays
     alias pos= position=
     alias pos  position
 
-    alias left_top        position
-    def  right_top    ()  position        .move_by w - 1,     0 end
-    def   left_bottom ()  position        .move_by     0, h - 1 end
-    def  right_bottom () (position + size).move_by!   -1,    -1 end
+    alias left_top       position
+    def  right_top()     position        .move_by(w - 1,     0) end
+    def   left_bottom()  position        .move_by(    0, h - 1) end
+    def  right_bottom() (position + size).move_by!(  -1,    -1) end
 
-    def  left_top=    (*args) p = Point.new *args; self.left,  self.top    = p.x, p.y;  left_top end
-    def right_top=    (*args) p = Point.new *args; self.right, self.top    = p.x, p.y; right_top end
-    def  left_bottom= (*args) p = Point.new *args; self.left,  self.bottom = p.x, p.y;  left_bottom end
-    def right_bottom= (*args) p = Point.new *args; self.right, self.bottom = p.x, p.y; right_bottom end
+    def  left_top=(*args)    p = Point.new(*args); self.left,  self.top    = p.x, p.y;  left_top end
+    def right_top=(*args)    p = Point.new(*args); self.right, self.top    = p.x, p.y; right_top end
+    def  left_bottom=(*args) p = Point.new(*args); self.left,  self.bottom = p.x, p.y;  left_bottom end
+    def right_bottom=(*args) p = Point.new(*args); self.right, self.bottom = p.x, p.y; right_bottom end
 
     alias lt   left_top
     alias lt=  left_top=
@@ -44,31 +44,31 @@ module Rays
     alias rb  right_bottom
     alias rb= right_bottom=
 
-    def move_to (*args)
-      dup.move_to! *args
+    def move_to(*args)
+      dup.move_to!(*args)
     end
 
-    def move_by (*args)
-      dup.move_by! *args
+    def move_by(*args)
+      dup.move_by!(*args)
     end
 
-    def resize_to (*args)
-      dup.resize_to! *args
+    def resize_to(*args)
+      dup.resize_to!(*args)
     end
 
-    def resize_by (*args)
-      dup.resize_by! *args
+    def resize_by(*args)
+      dup.resize_by!(*args)
     end
 
-    def inset_by (*args)
-      dup.inset_by! *args
+    def inset_by(*args)
+      dup.inset_by!(*args)
     end
 
-    def each (dimension = 2, &block)
-      to_a(dimension).each &block
+    def each(dimension = 2, &block)
+      to_a(dimension).each(&block)
     end
 
-    def to_a (dimension = 2)
+    def to_a(dimension = 2)
       # TODO: return [lt, rb]
       case dimension
       when 1 then [x, w]
@@ -78,7 +78,7 @@ module Rays
       end
     end
 
-    def <=> (o)
+    def <=>(o)
       ret = x <=> o.x; return ret if ret != 0
       ret = y <=> o.y; return ret if ret != 0
       ret = z <=> o.z; return ret if ret != 0

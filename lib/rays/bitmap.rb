@@ -11,7 +11,7 @@ module Rays
 
     include Enumerable
 
-    def each ()
+    def each()
       height.times do |y|
         width.times do |x|
           yield self[x, y], x, y
@@ -19,11 +19,11 @@ module Rays
       end
     end
 
-    def bounds ()
+    def bounds()
       Bounds.new 0, 0, width, height
     end
 
-    def to_a ()
+    def to_a()
       map {|o| o}
     end
 

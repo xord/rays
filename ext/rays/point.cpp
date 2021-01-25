@@ -255,14 +255,6 @@ RUCY_DEF1(get_at, index)
 RUCY_END
 
 static
-RUCY_DEF0(inspect)
-{
-	CHECK;
-	return value(Xot::stringf("#<Rays::Point %s>", THIS->inspect().c_str()));
-}
-RUCY_END
-
-static
 RUCY_DEF2(dot, p1, p2)
 {
 	return value(Rays::dot(to<Rays::Point>(p1), to<Rays::Point>(p2)));
@@ -308,7 +300,6 @@ Init_point ()
 	cPoint.define_method("/", div);
 	cPoint.define_method("[]=", set_at);
 	cPoint.define_method("[]",  get_at);
-	cPoint.define_method("inspect", inspect);
 	cPoint.define_module_function("dot",   dot);
 	cPoint.define_module_function("cross", cross);
 }

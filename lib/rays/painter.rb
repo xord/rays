@@ -12,7 +12,7 @@ module Rays
 
   class Painter
 
-    def push (*types, **attributes, &block)
+    def push(*types, **attributes, &block)
       each_type types do |type|
         case type
         when :state  then push_state
@@ -36,11 +36,11 @@ module Rays
           __send__ key, *value
         end
 
-        pop *types
+        pop(*types)
       end
     end
 
-    def pop (*types)
+    def pop(*types)
       each_type types, reverse: true do |type|
         case type
         when :state  then pop_state
@@ -50,7 +50,7 @@ module Rays
       end
     end
 
-    def paint (*args, &block)
+    def paint(*args, &block)
       begin_paint
       Xot::BlockUtil.instance_eval_or_block_call self, *args, &block
       self
@@ -58,7 +58,7 @@ module Rays
       end_paint
     end
 
-    def line (*args, loop: false)
+    def line(*args, loop: false)
       if args.first.kind_of?(Polyline)
         draw_polyline args.first
       else
@@ -66,43 +66,43 @@ module Rays
       end
     end
 
-    def rect (*args, round: nil, lt: nil, rt: nil, lb: nil, rb: nil)
+    def rect(*args, round: nil, lt: nil, rt: nil, lb: nil, rb: nil)
       draw_rect args, round, lt, rt, lb, rb
     end
 
-    def ellipse (*args, center: nil, radius: nil, hole: nil, from: nil, to: nil)
+    def ellipse(*args, center: nil, radius: nil, hole: nil, from: nil, to: nil)
       draw_ellipse args, center, radius, hole, from, to
     end
 
-    def curve (*args, loop: false)
+    def curve(*args, loop: false)
       draw_curve args, loop
     end
 
-    def bezier (*args, loop: false)
+    def bezier(*args, loop: false)
       draw_bezier args, loop
     end
 
-    def color= (fill, stroke = nil)
+    def color=(fill, stroke = nil)
       self.fill   fill
       self.stroke stroke
     end
 
-    def color ()
+    def color()
       return fill, stroke
     end
 
-    def shader= (shader, **uniforms)
-      shader.uniform **uniforms if shader && !uniforms.empty?
+    def shader=(shader, **uniforms)
+      shader.uniform(**uniforms) if shader && !uniforms.empty?
       set_shader shader
     end
 
-    const_symbol_accessor :stroke_cap, {
+    const_symbol_accessor :stroke_cap, **{
       butt:   CAP_BUTT,
       round:  CAP_ROUND,
       square: CAP_SQUARE
     }
 
-    const_symbol_accessor :stroke_join, {
+    const_symbol_accessor :stroke_join, **{
       miter:  JOIN_MITER,
       round:  JOIN_ROUND,
       square: JOIN_SQUARE
@@ -114,10 +114,10 @@ module Rays
 
     private
 
-      def each_type (types, reverse: false, &block)
+      def each_type(types, reverse: false, &block)
         types = [:state, :matrix] if types.empty? || types.include?(:all)
         types = types.reverse if reverse
-        types.each &block
+        types.each(&block)
       end
 
   end# Painter

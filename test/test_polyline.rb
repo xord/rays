@@ -7,24 +7,24 @@ require_relative 'helper'
 class TestPolyline < Test::Unit::TestCase
 
   class Rays::Polyline
-    def dump ()
+    def dump()
       map &:to_a
     end
   end
 
-  def polyline (*args)
-    Rays::Polyline.new *args
+  def polyline(*args, **kwargs)
+    Rays::Polyline.new(*args, **kwargs)
   end
 
-  def point (*args)
-    Rays::Point.new *args
+  def point(*args)
+    Rays::Point.new(*args)
   end
 
-  def bounds (*args)
-    Rays::Bounds.new *args
+  def bounds(*args)
+    Rays::Bounds.new(*args)
   end
 
-  def test_initialize ()
+  def test_initialize()
     assert_equal [[1, 2], [3, 4]], polyline(   1, 2,     3, 4 ).dump
     assert_equal [[1, 2], [3, 4]], polyline(  [1, 2],   [3, 4]).dump
     assert_equal [[1, 1], [2, 2]], polyline(     [1],      [2]).dump
@@ -52,7 +52,7 @@ class TestPolyline < Test::Unit::TestCase
     assert_nothing_raised       {polyline(1, 2, 3, 4, 5, 6, loop: false)}
   end
 
-  def test_expand ()
+  def test_expand()
     polyline([10,10], [20,20],                   loop: false).expand(1).tap {|o|
       assert_equal 1, o   .size
       assert_equal 4, o[0].size
@@ -68,33 +68,33 @@ class TestPolyline < Test::Unit::TestCase
     }
   end
 
-  def test_expand_with_cap ()
-    def pl; polyline [10,10], [20,20]; end
-    assert_nothing_raised       {pl.expand 1, Rays::CAP_ROUND}
-    assert_nothing_raised       {pl.expand 1, 'ROUND'}
-    assert_nothing_raised       {pl.expand 1, :ROUND}
-    assert_nothing_raised       {pl.expand 1, :round}
-    assert_nothing_raised       {pl.expand 1, 1}
-    assert_raise(ArgumentError) {pl.expand 1, -1}
-    assert_raise(ArgumentError) {pl.expand 1, 99}
-    assert_raise(ArgumentError) {pl.expand 1, 'hoge'}
-    assert_raise(ArgumentError) {pl.expand 1, :hoge}
+  def test_expand_with_cap()
+    pl = -> {polyline [10,10], [20,20]}
+    assert_nothing_raised       {pl[].expand 1, Rays::CAP_ROUND}
+    assert_nothing_raised       {pl[].expand 1, 'ROUND'}
+    assert_nothing_raised       {pl[].expand 1, :ROUND}
+    assert_nothing_raised       {pl[].expand 1, :round}
+    assert_nothing_raised       {pl[].expand 1, 1}
+    assert_raise(ArgumentError) {pl[].expand 1, -1}
+    assert_raise(ArgumentError) {pl[].expand 1, 99}
+    assert_raise(ArgumentError) {pl[].expand 1, 'hoge'}
+    assert_raise(ArgumentError) {pl[].expand 1, :hoge}
   end
 
-  def test_expand_with_join ()
-    def pl; polyline [10,10], [20,20]; end
-    assert_nothing_raised       {pl.expand 1, Rays::JOIN_ROUND}
-    assert_nothing_raised       {pl.expand 1, 'ROUND'}
-    assert_nothing_raised       {pl.expand 1, :ROUND}
-    assert_nothing_raised       {pl.expand 1, :round}
-    assert_nothing_raised       {pl.expand 1, 1}
-    assert_raise(ArgumentError) {pl.expand 1, 'hoge'}
-    assert_raise(ArgumentError) {pl.expand 1, :hoge}
-    assert_raise(ArgumentError) {pl.expand 1, -1}
-    assert_raise(ArgumentError) {pl.expand 1, 99}
+  def test_expand_with_join()
+    pl = -> {polyline [10,10], [20,20]}
+    assert_nothing_raised       {pl[].expand 1, Rays::JOIN_ROUND}
+    assert_nothing_raised       {pl[].expand 1, 'ROUND'}
+    assert_nothing_raised       {pl[].expand 1, :ROUND}
+    assert_nothing_raised       {pl[].expand 1, :round}
+    assert_nothing_raised       {pl[].expand 1, 1}
+    assert_raise(ArgumentError) {pl[].expand 1, 'hoge'}
+    assert_raise(ArgumentError) {pl[].expand 1, :hoge}
+    assert_raise(ArgumentError) {pl[].expand 1, -1}
+    assert_raise(ArgumentError) {pl[].expand 1, 99}
   end
 
-  def test_transform_with_materix ()
+  def test_transform_with_materix()
     m = Rays::Matrix.translate 100, 200
     polyline([10,10], [20,20]).transform(m).tap {|o|
       assert_equal [[110,210], [120,220]], o.dump
@@ -111,7 +111,7 @@ class TestPolyline < Test::Unit::TestCase
     }
   end
 
-  def test_transform_with_block ()
+  def test_transform_with_block()
     polyline([10,10], [20,20]                      ).transform {|points|
       points.map {|p| p + [10, 20]}
     }.tap {|o|
@@ -136,24 +136,24 @@ class TestPolyline < Test::Unit::TestCase
     }
   end
 
-  def test_bounds ()
+  def test_bounds()
     assert_equal bounds(10, 20, 0, 20, 10, 0), polyline(10, 20, 30, 20, 20, 30).bounds
 
     assert     polyline(10, 20, 30, 20, 20, 30).bounds.valid?
     assert_not polyline()                      .bounds.valid?
   end
 
-  def test_size ()
+  def test_size()
     assert_equal 2, polyline(1, 2, 3, 4,     ).size
     assert_equal 3, polyline(1, 2, 3, 4, 5, 6).size
   end
 
-  def test_empty? ()
+  def test_empty?()
     assert_equal true,  polyline(          ).empty?
     assert_equal false, polyline(1, 2, 3, 4).empty?
   end
 
-  def test_index ()
+  def test_index()
     o = polyline 1, 2, 3, 4, 5, 6
     assert_equal [1, 2], o[ 0].to_a
     assert_equal [3, 4], o[ 1].to_a
@@ -162,7 +162,7 @@ class TestPolyline < Test::Unit::TestCase
     assert_raise(IndexError) {o[-4]}
   end
 
-  def test_inspect ()
+  def test_inspect()
     assert_equal(
       "#<Rays::Polyline [1.0, 2.0], [3.0, 4.0], loop: false>",
       polyline(1, 2, 3, 4).inspect)

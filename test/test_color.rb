@@ -6,19 +6,19 @@ require_relative 'helper'
 
 class TestColor < Test::Unit::TestCase
 
-  def color (*args)
-    Rays::Color.new *args
+  def color(*args)
+    Rays::Color.new(*args)
   end
 
-  def color8 (r, g, b, a = 255, div = 255)
-    color *[r, g, b, a].map {|n| n / div.to_f}
+  def color8(r, g, b, a = 255, div = 255)
+    color(*[r, g, b, a].map {|n| n / div.to_f})
   end
 
-  def hsv (*args)
-    Rays::Color.hsv *args
+  def hsv(*args)
+    Rays::Color.hsv(*args)
   end
 
-  def test_initialize ()
+  def test_initialize()
     assert_equal color(0, 0, 0, 1), color()
     assert_equal color(1, 1, 1, 1), color(1)
     assert_equal color(1, 1, 1, 2), color(1, 2)
@@ -28,7 +28,7 @@ class TestColor < Test::Unit::TestCase
     assert_raise(ArgumentError) {color(1, 2, 3, 4, 5)}
   end
 
-  def test_initialize_with_string ()
+  def test_initialize_with_string()
     assert_equal color(0, 0, 0, 1), color('#000')
     assert_equal color(0, 0, 0, 1), color('#000000')
     assert_equal color(0, 0, 0, 0), color('#0000')
@@ -46,7 +46,7 @@ class TestColor < Test::Unit::TestCase
     assert_raise(ArgumentError) {color '#0000000'}
   end
 
-  def test_dup ()
+  def test_dup()
     o     = color
     assert_equal color(0, 0, 0), o
     o.red = 1
@@ -58,7 +58,7 @@ class TestColor < Test::Unit::TestCase
     assert_equal color(1, 0, 0), o
   end
 
-  def test_get_rgb ()
+  def test_get_rgb()
     o = color 1, 2, 3, 4
     assert_equal 1, o.red
     assert_equal 2, o.green
@@ -66,7 +66,7 @@ class TestColor < Test::Unit::TestCase
     assert_equal 4, o.alpha
   end
 
-  def test_set_rgb ()
+  def test_set_rgb()
     o = color
     assert_equal [0, 0, 0, 1], o.to_a
     o.red = 1
@@ -79,12 +79,12 @@ class TestColor < Test::Unit::TestCase
     assert_equal [1, 2, 3, 4], o.to_a
   end
 
-  def test_to_a ()
+  def test_to_a()
     o = color 1, 2, 3, 4
     assert_equal [1, 2, 3, 4], o.to_a
   end
 
-  def test_index ()
+  def test_index()
     o = color 1, 2, 3, 4
     assert_equal 1, o[0]
     assert_equal 2, o[1]
@@ -94,7 +94,7 @@ class TestColor < Test::Unit::TestCase
     assert_raise(IndexError) {color[4]}
   end
 
-  def test_index_assign ()
+  def test_index_assign()
     o = color 1, 2, 3, 4
     o[0] = 4
     assert_equal [4, 2, 3, 4], o.to_a
@@ -108,7 +108,7 @@ class TestColor < Test::Unit::TestCase
     assert_raise(IndexError) {color[ 4] = 8}
   end
 
-  def test_compare ()
+  def test_compare()
     o = color 1, 2, 3, 4
     assert     o == color(1, 2, 3, 4)
     assert_not o != color(1, 2, 3, 4)
@@ -124,7 +124,7 @@ class TestColor < Test::Unit::TestCase
     assert o > color(1, 2, 3, 3)
   end
 
-  def test_hsv_hue ()
+  def test_hsv_hue()
     assert_equal color(0.5, 0, 1), hsv(-0.25, 1, 1)
     assert_equal color(1,   0, 0), hsv( 0,    1, 1)
     assert_equal color(0.5, 1, 0), hsv( 0.25, 1, 1)
@@ -134,19 +134,19 @@ class TestColor < Test::Unit::TestCase
     assert_equal color(0.5, 1, 0), hsv( 1.25, 1, 1)
   end
 
-  def test_hsv_saturation ()
+  def test_hsv_saturation()
     assert_equal color(1, 1,   1),   hsv(1, 0,   1)
     assert_equal color(1, 0.5, 0.5), hsv(1, 0.5, 1)
     assert_equal color(1, 0,   0),   hsv(1, 1,   1)
   end
 
-  def test_hsv_value ()
+  def test_hsv_value()
     assert_equal color(0,   0,   0), hsv(1, 1, 0)
     assert_equal color(0.5, 0,   0), hsv(1, 1, 0.5)
     assert_equal color(1,   0,   0), hsv(1, 1, 1)
   end
 
-  def test_hsv_alpha ()
+  def test_hsv_alpha()
     assert_equal color(1, 0, 0, 0),   hsv(1, 1, 1, 0)
     assert_equal color(1, 0, 0, 0.5), hsv(1, 1, 1, 0.5)
     assert_equal color(1, 0, 0, 1),   hsv(1, 1, 1, 1)

@@ -6,23 +6,23 @@ require_relative 'helper'
 
 class TestPainter < Test::Unit::TestCase
 
-  def painter ()
+  def painter()
     Rays::Painter.new
   end
 
-  def font (name = nil, size = nil)
+  def font(name = nil, size = nil)
     Rays::Font.new name, size
   end
 
-  def color (*args)
-    Rays::Color.new *args
+  def color(*args)
+    Rays::Color.new(*args)
   end
 
-  def setup ()
+  def setup()
     Rays::Color.set_palette_color :rgb001, color(0, 0, 1)
   end
 
-  def test_background_accessor ()
+  def test_background_accessor()
     pa = painter
     pa.background = 1
     assert_equal   color(1, 1, 1, 1), pa.background
@@ -36,7 +36,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal   color(1, 1, 1, 1), pa.background
   end
 
-  def test_fill_accessor ()
+  def test_fill_accessor()
     pa = painter
     pa.fill = 1
     assert_equal   color(1, 1, 1, 1), pa.fill
@@ -50,7 +50,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal   color(1, 1, 1, 1), pa.fill
   end
 
-  def test_stroke_accessor ()
+  def test_stroke_accessor()
     pa = painter
     pa.stroke = 1
     assert_equal   color(1, 1, 1, 1), pa.stroke
@@ -64,7 +64,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal   color(1, 1, 1, 1), pa.stroke
   end
 
-  def test_stroke_width_accessor ()
+  def test_stroke_width_accessor()
     pa = painter
     assert_equal          0, pa.stroke_width
     pa.stroke_width =     1
@@ -79,7 +79,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal          2, pa.stroke_width
   end
 
-  def test_stroke_cap_accessor ()
+  def test_stroke_cap_accessor()
     pa = painter
     assert_equal        :butt,   pa.stroke_cap
     pa.stroke_cap =     :round
@@ -95,7 +95,7 @@ class TestPainter < Test::Unit::TestCase
     assert_raise(ArgumentError) {pa.stroke_cap Rays::CAP_BUTT}# ToDo: accept this
   end
 
-  def test_stroke_join_accessor ()
+  def test_stroke_join_accessor()
     pa = painter
     assert_equal         :miter,  pa.stroke_join
     pa.stroke_join =     :round
@@ -111,7 +111,7 @@ class TestPainter < Test::Unit::TestCase
     assert_raise(ArgumentError) {pa.stroke_join Rays::JOIN_MITER}# ToDo: accept this
   end
 
-  def test_miter_limit_accessor ()
+  def test_miter_limit_accessor()
     pa = painter
     assert_equal         2, pa.miter_limit
     pa.miter_limit =     3
@@ -124,7 +124,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal         4, pa.miter_limit
   end
 
-  def test_clip_accessor ()
+  def test_clip_accessor()
     pa = painter
     pa.clip = [1, 2, 3, 4]
     assert_equal [1, 2, 3, 4], pa.clip.to_a
@@ -138,7 +138,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal [1, 2, 3, 4], pa.clip.to_a
   end
 
-  def test_font_accessor ()
+  def test_font_accessor()
     pa = painter
     f10, f20 = font(nil, 10), font(nil, 20)
     pa.font = f10
@@ -153,7 +153,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal f10, pa.font
   end
 
-  def test_font_name_size ()
+  def test_font_name_size()
     pa = painter
     pa.font "Menlo", 10
     assert_equal "Menlo Regular", pa.font.name
@@ -164,7 +164,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal 20, pa.font.size
   end
 
-  def test_color_by_name ()
+  def test_color_by_name()
     pa = painter
     pa.fill =         :rgb001
     assert_equal color(0, 0, 1), pa.fill
@@ -182,7 +182,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal color(0, 1, 0), pa.fill
   end
 
-  def test_push ()
+  def test_push()
     pa = painter
     pa.fill =           [1, 0, 0]
     assert_equal   color(1, 0, 0), pa.fill
@@ -223,7 +223,7 @@ class TestPainter < Test::Unit::TestCase
     assert_equal   color(0, 1, 0), pa.fill
   end
 
-  def test_shader ()
+  def test_shader()
     img = Rays::Image.new(10, 10).paint {
       shader "void main() {gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);}"
       fill   1, 0, 0

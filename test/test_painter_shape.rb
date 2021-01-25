@@ -6,19 +6,19 @@ require_relative 'helper'
 
 class TestPainterShape < Test::Unit::TestCase
 
-  def color (*args)
-    Rays::Color.new *args
+  def color(*args)
+    Rays::Color.new(*args)
   end
 
-  def image (fill = 1, stroke = 0, pixel_density = 1, &block)
+  def image(fill = 1, stroke = 0, pixel_density = 1, &block)
     Rays::Image.new(100, 100, Rays::RGBA, pixel_density).paint {|p|
       p.fill   fill   > 0 ? color(fill)   : nil
       p.stroke stroke > 0 ? color(stroke) : nil
-      p.instance_eval &block if block
+      p.instance_eval(&block) if block
     }
   end
 
-  def test_line ()
+  def test_line()
     img = image(0, 1) {line 1, 1, 98, 98}
     assert_equal 0, img[ 0,  0].a
     assert_equal 1, img[ 1,  1].a
@@ -26,7 +26,7 @@ class TestPainterShape < Test::Unit::TestCase
     assert_equal 0, img[99, 99].a
   end
 
-  def test_curve ()
+  def test_curve()
 =begin
     img = image(0, 1) {curve 1, 1, 98, 1, 98, 98, 1, 98}
     assert_equal 0, img[ 0,  0].a
@@ -49,7 +49,7 @@ class TestPainterShape < Test::Unit::TestCase
     assert_raise(ArgumentError) {image {curve 0, 1, 2, 3, 4, 5, 6, 7, 8}}
   end
 
-  def test_bezier ()
+  def test_bezier()
 =begin
     img = image(0, 1) {bezier 1, 1, 98, 1, 98, 98, 1, 98}
     assert_equal 0, img[ 0,  0].a
@@ -72,7 +72,7 @@ class TestPainterShape < Test::Unit::TestCase
     assert_raise(ArgumentError) {image {bezier 0, 1, 2, 3, 4, 5, 6, 7, 8}}
   end
 
-  def test_rect ()
+  def test_rect()
     img = image {rect 1, 1, 98, 98}
     assert_equal 0, img[ 0,  0].a
     assert_equal 1, img[ 1,  1].a
@@ -80,7 +80,7 @@ class TestPainterShape < Test::Unit::TestCase
     assert_equal 0, img[99, 99].a
   end
 
-  def test_rect_rounded ()
+  def test_rect_rounded()
     img = image {rect 1, 1, 98, 98, 10, 10, 10, 10}
     assert_equal 0, img[ 0,  0].a
     assert_equal 0, img[ 1,  1].a
@@ -90,7 +90,7 @@ class TestPainterShape < Test::Unit::TestCase
     assert_equal 0, img[99, 99].a
   end
 
-  def test_ellipse ()
+  def test_ellipse()
     img = image {ellipse 1, 1, 98, 98}
     assert_equal 0, img[ 0,  0].a
     assert_equal 1, img[50,  1].a

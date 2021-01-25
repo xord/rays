@@ -14,16 +14,16 @@ module Rays
 
     def_delegators :bitmap, :[], :[]=
 
-    def paint (&block)
+    def paint(&block)
       painter.paint self, &block
       self
     end
 
-    def size ()
+    def size()
       return width, height
     end
 
-    def bounds ()
+    def bounds()
       Bounds.new 0, 0, width, height
     end
 

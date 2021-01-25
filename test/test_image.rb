@@ -9,24 +9,24 @@ class TestImage < Test::Unit::TestCase
   W = 10
   H = 10
 
-  def image (w = W, h = H, *args)
+  def image(w = W, h = H, *args)
     Rays::Image.new w, h, *args
   end
 
-  def color (r = 0, g = 0, b = 0, a = 0)
+  def color(r = 0, g = 0, b = 0, a = 0)
     Rays::Color.new r, g, b, a
   end
 
-  def bounds (*args)
-    Rays::Bounds.new *args
+  def bounds(*args)
+    Rays::Bounds.new(*args)
   end
 
-  def test_initialize ()
+  def test_initialize()
     assert_equal W, image.width
     assert_equal H, image.height
   end
 
-  def test_dup ()
+  def test_dup()
     o          = image
     assert_equal color(0, 0, 0, 0), o[0, 0]
     o[0, 0]    = color(1, 0, 0, 0)
@@ -38,12 +38,12 @@ class TestImage < Test::Unit::TestCase
     assert_equal color(1, 0, 0, 0), o[0, 0]
   end
 
-  def test_bitmap ()
+  def test_bitmap()
     assert_equal W, image.bitmap.width
     assert_equal H, image.bitmap.height
   end
 
-  def test_painter ()
+  def test_painter()
     pa = image.painter
     assert_equal color(0, 0, 0, 0), pa.background
     assert_equal color(1, 1, 1, 1), pa.fill
@@ -52,17 +52,17 @@ class TestImage < Test::Unit::TestCase
     assert_equal Rays::Font.new, pa.font
   end
 
-  def test_paint ()
-    def paint (&block)
-      Rays::Image.new(10, 10).paint &block
+  def test_paint()
+    def paint(&block)
+      Rays::Image.new(10, 10).paint(&block)
     end
-    def fill (&block)
+    def fill(&block)
       paint {|p| p.fill 1, 0, 0; p.stroke nil; block.call p}
     end
-    def stroke (&block)
+    def stroke(&block)
       paint {|p| p.fill nil; p.stroke 1, 0, 0; block.call p}
     end
-    def drawn (&block)
+    def drawn(&block)
       fill(&block).bitmap.to_a.reject {|o| o.transparent?}.uniq.size > 0
     end
 

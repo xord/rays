@@ -13,5 +13,5 @@ include Xot::Test
 
 
 unless $RAYS_NOAUTOINIT
-  def Rays.fin! () end
+  def Rays.fin!() end
 end

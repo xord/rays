@@ -6,15 +6,15 @@ require_relative 'helper'
 
 class TestBounds < Test::Unit::TestCase
 
-  def bounds (*args)
-    Rays::Bounds.new *args
+  def bounds(*args)
+    Rays::Bounds.new(*args)
   end
 
-  def point (*args)
-    Rays::Point.new *args
+  def point(*args)
+    Rays::Point.new(*args)
   end
 
-  def test_initialize ()
+  def test_initialize()
     assert_equal bounds(0, 0, 0, 0, 0, 0), bounds()
     assert_equal bounds(0, 0, 0, 1, 1, 0), bounds(1)
     assert_equal bounds(0, 0, 0, 1, 2, 0), bounds(1, 2)
@@ -25,7 +25,7 @@ class TestBounds < Test::Unit::TestCase
     assert_raise(ArgumentError) {bounds(1, 2, 3, 4, 5, 6, 7)}
   end
 
-  def test_dup ()
+  def test_dup()
     o   = bounds
     assert_equal bounds(0, 0, 0, 0, 0, 0), o
     o.x = 1
@@ -37,17 +37,17 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds(1, 0, 0, 0, 0, 0), o
   end
 
-  def test_intersect? ()
+  def test_intersect?()
     assert     bounds(10, 20, 30, 100, 100, 100).intersect?(bounds 50, 60, 70, 100, 100, 100)
     assert_not bounds(10, 20, 30,  10,  10,  10).intersect?(bounds 50, 60, 70, 100, 100, 100)
   end
 
-  def test_include? ()
+  def test_include?()
     assert     bounds(10, 20, 30, 100, 100, 100).include?(point 50, 60)
     assert_not bounds(10, 20, 30,  10,  10,  10).include?(point 50, 60)
   end
 
-  def test_valid? ()
+  def test_valid?()
     assert     bounds(0, 0, 0,  0,  0,  0).valid?
     assert     bounds(0, 0, 0,  1,  0,  0).valid?
     assert     bounds(0, 0, 0,  0,  1,  0).valid?
@@ -57,7 +57,7 @@ class TestBounds < Test::Unit::TestCase
     assert_not bounds(0, 0, 0,  0,  0, -1).valid?
   end
 
-  def test_get_xyzwhd ()
+  def test_get_xyzwhd()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal 1, o.x
     assert_equal 2, o.y
@@ -70,7 +70,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal 6, o.depth
   end
 
-  def test_set_xyzwhd ()
+  def test_set_xyzwhd()
     o = bounds
     o.x = 1
     assert_equal [1, 0, 0, 0, 0, 0], o.to_a(3)
@@ -92,7 +92,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal [1, 2, 3, 7, 8, 9], o.to_a(3)
   end
 
-  def test_get_ltbrbf ()
+  def test_get_ltbrbf()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal 1, o.left
     assert_equal 2, o.top
@@ -106,7 +106,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal [4, 6], o.rb.to_a
   end
 
-  def test_set_ltbrbf ()
+  def test_set_ltbrbf()
     assert_equal [1, 0, 0, -1,  0,  0], bounds.tap {|o| o.left   = 1}.to_a(3)
     assert_equal [0, 2, 0,  0, -2,  0], bounds.tap {|o| o.top    = 2}.to_a(3)
     assert_equal [0, 0, 3,  0,  0, -3], bounds.tap {|o| o.back   = 3}.to_a(3)
@@ -132,7 +132,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal [10, 20, 0, 40, 50, 0], bounds(10, 20, 30, 40).tap {|o| o.rb += 10}.to_a(3)
   end
 
-  def test_position ()
+  def test_position()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal [ 1,  2,  3], o.position.to_a(3)
     o.position = point 7, 8, 9
@@ -142,14 +142,14 @@ class TestBounds < Test::Unit::TestCase
     assert_equal [10, 11, 12], o.pos.to_a(3)
   end
 
-  def test_size ()
+  def test_size()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal point(4, 5, 6), o.size
     o.size = point 7, 8, 9
     assert_equal point(7, 8, 9), o.size
   end
 
-  def test_move_to ()
+  def test_move_to()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal bounds(7, 2, 3, 4, 5, 6), o.move_to(  7)
     assert_equal bounds(7, 8, 3, 4, 5, 6), o.move_to(  7,   8)
@@ -169,7 +169,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds( 7,  8,  9, 4, 5, 6), o1
   end
 
-  def test_move_by ()
+  def test_move_by()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal bounds( 8,  2,  3, 4, 5, 6), o.move_by(  7)
     assert_equal bounds( 8, 10,  3, 4, 5, 6), o.move_by(  7,   8)
@@ -192,7 +192,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds( 8, 10, 12, 4, 5, 6), o1
   end
 
-  def test_resize_to ()
+  def test_resize_to()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal bounds(1, 2, 3, 7, 5, 6), o.resize_to(  7)
     assert_equal bounds(1, 2, 3, 7, 8, 6), o.resize_to(  7,   8)
@@ -212,7 +212,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds(1, 2, 3,  7,  8,  9), o1
   end
 
-  def test_resize_by ()
+  def test_resize_by()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal bounds(1, 2, 3, 11,  5,  6), o.resize_by(  7)
     assert_equal bounds(1, 2, 3, 11, 13,  6), o.resize_by(  7,   8)
@@ -235,7 +235,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds(1, 2, 3, 11, 13, 15), o1
   end
 
-  def test_inset_by ()
+  def test_inset_by()
     o = bounds 1, 2, 3, 20, 30, 40
     assert_equal bounds(8,  2,  3,  6, 30, 40), o.inset_by(  7)
     assert_equal bounds(8, 10,  3,  6, 14, 40), o.inset_by(  7,   8)
@@ -255,7 +255,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal bounds( 8, 10, 12, 6, 14, 22), o1
   end
 
-  def test_to_a ()
+  def test_to_a()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal [1, 2, 4, 5],       o.to_a
     assert_equal [1, 4],             o.to_a(1)
@@ -266,7 +266,7 @@ class TestBounds < Test::Unit::TestCase
     assert_raise(ArgumentError) {o.to_a(4)}
   end
 
-  def test_index ()
+  def test_index()
     o = bounds 1, 2, 3, 4, 5, 6
     assert_equal point(1, 2, 3), o[0]
     assert_equal point(4, 5, 6), o[1]
@@ -274,7 +274,7 @@ class TestBounds < Test::Unit::TestCase
     assert_raise(IndexError) {o[2]}
   end
 
-  def test_index_assign ()
+  def test_index_assign()
     o = bounds 1, 2, 3, 4, 5, 6
     o[0] = point 7, 8, 9
     assert_equal bounds(7, 8, 9, 4, 5, 6), o
@@ -284,7 +284,7 @@ class TestBounds < Test::Unit::TestCase
     assert_raise(IndexError) {o[2]}
   end
 
-  def test_compare ()
+  def test_compare()
     o = bounds 1, 2, 3, 4, 5, 6
     assert     o == bounds(1, 2, 3, 4, 5, 6)
     assert_not o != bounds(1, 2, 3, 4, 5, 6)
@@ -304,7 +304,7 @@ class TestBounds < Test::Unit::TestCase
     assert o > bounds(1, 2, 3, 4, 5, 5)
   end
 
-  def test_operators ()
+  def test_operators()
     assert_equal bounds(50, 60, 70,  60,  60,  60), bounds(10, 20, 30, 100, 100, 100) & bounds(50, 60, 70, 100, 100, 100)
     assert_equal bounds(10, 20, 30, 140, 140, 140), bounds(10, 20, 30, 100, 100, 100) | bounds(50, 60, 70, 100, 100, 100)
     assert_equal bounds(10, 20, 30,  20,  20,  20), bounds(20, 30, 40, 10, 10, 10)    | point(10, 20, 30)
@@ -313,7 +313,7 @@ class TestBounds < Test::Unit::TestCase
     assert_equal point(0), (bounds(10, 20, 30, 10, 10, 10) & bounds(50, 60, 70, 10, 10, 10)).size
   end
 
-  def test_invalid ()
+  def test_invalid()
     o = Rays::Bounds.invalid
     assert_not o.valid?
 

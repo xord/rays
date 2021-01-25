@@ -14,12 +14,12 @@ module Rays
     alias w width
     alias h height
 
-    def <=> (o)
+    def <=>(o)
       ret = name <=> o.name; return ret if ret != 0
             size <=> o.size
     end
 
-    def inspect ()
+    def inspect()
       "#<Rays::Font name=#{name}, size=#{size}>"
     end
 

@@ -11,18 +11,18 @@ module Rays
 
     include Enumerable
 
-    def initialize (*points, loop: false)
+    def initialize(*points, loop: false)
       setup points, loop
     end
 
-    def transform (matrix = nil, loop: loop?, &block)
+    def transform(matrix = nil, loop: loop?, &block)
       points = to_a
       points = points.map {|point| matrix * point} if matrix
       points = block.call points if block
-      self.class.new *points, loop: loop
+      self.class.new(*points, loop: loop)
     end
 
-    def inspect ()
+    def inspect()
       "#<Rays::Polyline #{to_a.join ', '}, loop: #{loop?}>"
     end
 

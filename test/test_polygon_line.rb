@@ -7,28 +7,28 @@ require_relative 'helper'
 class TestPolygonLine < Test::Unit::TestCase
 
   class Rays::Polygon::Line
-    def dump ()
+    def dump()
       map &:to_a
     end
 
-    def loop_hole ()
+    def loop_hole()
       [loop?, hole?]
     end
   end
 
-  def line (*args)
-    Rays::Polygon::Line.new *args
+  def line(*args, **kwargs)
+    Rays::Polygon::Line.new(*args, **kwargs)
   end
 
-  def point (*args)
-    Rays::Point.new *args
+  def point(*args)
+    Rays::Point.new(*args)
   end
 
-  def rect (*args)
-    Rays::Polygon.rect *args
+  def rect(*args)
+    Rays::Polygon.rect(*args)
   end
 
-  def test_initialize ()
+  def test_initialize()
     assert_equal [[1, 2], [3, 4], [5, 6]], line(   1, 2,     3, 4 ,    5, 6 ).dump
     assert_equal [[1, 2], [3, 4], [5, 6]], line(  [1, 2],   [3, 4],   [5, 6]).dump
     assert_equal [[1, 1], [2, 2], [3, 3]], line(     [1],      [2],      [3]).dump
@@ -74,7 +74,7 @@ class TestPolygonLine < Test::Unit::TestCase
     assert_nothing_raised       {line(1, 2, 3, 4, 5, 6, loop: false, hole: false)}
   end
 
-  def test_transform_with_materix ()
+  def test_transform_with_materix()
     m = Rays::Matrix.translate 100, 200
     line([10,10], [20,20], loop: false).transform(m).tap {|o|
       assert_equal [[110,210], [120,220]], o.dump
@@ -91,7 +91,7 @@ class TestPolygonLine < Test::Unit::TestCase
     }
   end
 
-  def test_transform_with_block ()
+  def test_transform_with_block()
     line([10,10], [20,20],          loop: false).transform {|points|
       points.map {|p| p + [10, 20]}
     }.tap {|o|
@@ -149,7 +149,7 @@ class TestPolygonLine < Test::Unit::TestCase
     }
   end
 
-  def test_hole ()
+  def test_hole()
     (rect(0, 0, 10, 10) - rect(1, 1, 2, 2)).tap {|o|
       assert_equal 1, o.select {|line| line.hole?}.size
     }
@@ -158,7 +158,7 @@ class TestPolygonLine < Test::Unit::TestCase
     }
   end
 
-  def test_inspect ()
+  def test_inspect()
     assert_equal(
       "#<Rays::Polygon::Line [1.0, 2.0], [3.0, 4.0], [5.0, 6.0], loop: true, hole: false>",
       line(1, 2, 3, 4, 5, 6).inspect)

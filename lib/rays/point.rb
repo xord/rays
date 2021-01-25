@@ -12,23 +12,23 @@ module Rays
     include Comparable
     include Enumerable
 
-    def move_to (*args)
-      dup.move_to! *args
+    def move_to(*args)
+      dup.move_to!(*args)
     end
 
-    def move_by (*args)
-      dup.move_by! *args
+    def move_by(*args)
+      dup.move_by!(*args)
     end
 
-    def zero? ()
+    def zero?()
       length == 0
     end
 
-    def each (&block)
-      to_a.each &block
+    def each(&block)
+      to_a.each(&block)
     end
 
-    def to_a (dimension = 2)
+    def to_a(dimension = 2)
       case dimension
       when 1 then [x]
       when 2 then [x, y]
@@ -37,17 +37,17 @@ module Rays
       end
     end
 
-    def to_s (dimension = 2)
+    def to_s(dimension = 2)
       to_a(dimension).to_s
     end
 
-    def <=> (o)
+    def <=>(o)
       ret = x <=> o.x; return ret if ret != 0
       ret = y <=> o.y; return ret if ret != 0
             z <=> o.z
     end
 
-    def inspect ()
+    def inspect()
       "#<Rays::Point #{to_a(3).join ', '}>"
     end
 

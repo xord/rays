@@ -11,19 +11,19 @@ module Rays
 
     include Comparable
 
-    def <=> (o)
+    def <=>(o)
       type <=> o.type
     end
 
-    def hash ()
+    def hash()
       type.hash
     end
 
-    def eql? (o)
+    def eql?(o)
       self == o
     end
 
-    def inspect ()
+    def inspect()
       "#<#{self.class.name} #{to_s}>"
     end
 

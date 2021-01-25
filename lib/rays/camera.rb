@@ -10,7 +10,7 @@ module Rays
 
   class Camera
 
-    def initialize (
+    def initialize(
       min_width = -1, min_height = -1,
       device_name: nil, resize: true, crop: true, &block)
 

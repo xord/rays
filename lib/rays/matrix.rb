@@ -12,13 +12,13 @@ module Rays
     include Comparable
     include Enumerable
 
-    def each (&block)
-      to_a.each &block
+    def each(&block)
+      to_a.each(&block)
     end
 
     alias inspect_org inspect
 
-    def inspect ()
+    def inspect()
       inspect_org.gsub(/\.?0+([^\.\d]|$)/) {$1}
     end
 
