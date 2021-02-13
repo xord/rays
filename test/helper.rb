@@ -12,6 +12,6 @@ require 'rays'
 include Xot::Test
 
 
-unless $RAYS_NOAUTOINIT
+unless defined?($RAYS_NOAUTOINIT) && $RAYS_NOAUTOINIT
   def Rays.fin!() end
 end
