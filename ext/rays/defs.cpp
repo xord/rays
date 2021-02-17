@@ -127,9 +127,10 @@ void get_ellipse_args (
 	assert(x && y && w && h && hole_size && from && to_ && nseg && argv);
 
 	if (argc <= 0)
-		argument_error(__FILE__, __LINE__);
-
-	if (argv[0].is_kind_of(Rays::bounds_class()))
+	{
+		*x = *y = *w = *h = 0;
+	}
+	else if (argv[0].is_kind_of(Rays::bounds_class()))
 	{
 		const Rays::Bounds& b = to<Rays::Bounds&>(argv[0]);
 		*x = b.x;
@@ -162,18 +163,18 @@ void get_ellipse_args (
 		*h = argc >= 4 ? to<coord>(argv[3]) : *w;
 	}
 
-	if (center)
-	{
-		Rays::Point p = to<Rays::Point>(center);
-		*x = p.x;
-		*y = p.y;
-	}
-
 	if (radius)
 	{
 		Rays::Point p = to<Rays::Point>(radius);
 		*w = p.x * 2;
 		*h = p.y * 2;
+	}
+
+	if (center)
+	{
+		Rays::Point p = to<Rays::Point>(center);
+		*x = p.x - *w / 2;
+		*y = p.y - *h / 2;
 	}
 
 	*hole_size = hole       ? to<Rays::Point>(hole) : 0;
