@@ -129,7 +129,7 @@ namespace Rays
 		GLint scissor_box[4];
 
 		GLboolean blend;
-		GLint blend_src_factor, blend_dst_factor;
+		GLint blend_src_rgb, blend_src_alpha, blend_dst_rgb, blend_dst_alpha;
 
 		GLint framebuffer_binding;
 
@@ -143,8 +143,10 @@ namespace Rays
 			glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
 
 			glGetBooleanv(GL_BLEND, &blend);
-			glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_factor);
-			glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_factor);
+			glGetIntegerv(GL_BLEND_SRC_RGB,   &blend_src_rgb);
+			glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_alpha);
+			glGetIntegerv(GL_BLEND_DST_RGB,   &blend_dst_rgb);
+			glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_alpha);
 
 			glGetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer_binding);
 		}
@@ -160,7 +162,8 @@ namespace Rays
 			glScissor(scissor_box[0], scissor_box[1], scissor_box[2], scissor_box[3]);
 
 			enable(GL_BLEND, blend);
-			glBlendFunc(blend_src_factor, blend_dst_factor);
+			glBlendFuncSeparate(
+				blend_src_rgb, blend_dst_rgb, blend_src_alpha, blend_dst_alpha);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_binding);
 		}
