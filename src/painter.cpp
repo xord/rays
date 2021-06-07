@@ -233,7 +233,7 @@ namespace Rays
 	}
 
 	static const Shader&
-	get_default_shader_for_color_texture ()
+	get_default_shader_for_texture ()
 	{
 		static const Shader SHADER(
 			"varying vec4 " VARYING_TEXCOORD ";"
@@ -243,21 +243,6 @@ namespace Rays
 			"{"
 			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
 			"  gl_FragColor = v_Color * color;"
-			"}");
-		return SHADER;
-	}
-
-	static const Shader&
-	get_default_shader_for_alpha_texture ()
-	{
-		static const Shader SHADER(
-			"varying vec4 " VARYING_TEXCOORD ";"
-			"varying vec4 " VARYING_COLOR ";"
-			"vec4 sampleTexture(vec2);"
-			"void main ()"
-			"{"
-			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
-			"  gl_FragColor = vec4(v_Color.rgb, color.a);"
 			"}");
 		return SHADER;
 	}
@@ -946,7 +931,7 @@ namespace Rays
 		TextureInfo texinfo(texture, src_x, src_y, src_x + src_w, src_y + src_h);
 
 		if (!shader)
-			shader = &get_default_shader_for_color_texture();
+			shader = &get_default_shader_for_texture();
 
 		draw_polygon(
 			painter, MODES, 0, 0, false, nostroke, points, 4, NULL, 0, texcoords,
@@ -1103,7 +1088,7 @@ namespace Rays
 		{
 			int bmp_w = std::max(texture.width(),  tex_w);
 			int bmp_h = std::max(texture.height(), tex_h);
-			self->text_image = Image(Bitmap(bmp_w, bmp_h, ALPHA), density);
+			self->text_image = Image(Bitmap(bmp_w, bmp_h), density);
 		}
 
 		if (!self->text_image)
@@ -1123,7 +1108,7 @@ namespace Rays
 			painter, self->text_image,
 			0, 0, str_w, str_h,
 			x, y, str_w, str_h,
-			true, &get_default_shader_for_alpha_texture());
+			true, &get_default_shader_for_texture());
 
 		debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
 	}
