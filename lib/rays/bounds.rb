@@ -25,15 +25,24 @@ module Rays
     alias pos= position=
     alias pos  position
 
+    alias l= left=
+    alias l  left
+    alias r= right=
+    alias r  right
+    alias t= top=
+    alias t  top
+    alias b= bottom=
+    alias b  bottom
+
     alias left_top       position
     def  right_top()     position        .move_by(w - 1,     0) end
     def   left_bottom()  position        .move_by(    0, h - 1) end
     def  right_bottom() (position + size).move_by!(  -1,    -1) end
 
-    def  left_top=(*args)    p = Point.new(*args); self.left,  self.top    = p.x, p.y;  left_top end
-    def right_top=(*args)    p = Point.new(*args); self.right, self.top    = p.x, p.y; right_top end
-    def  left_bottom=(*args) p = Point.new(*args); self.left,  self.bottom = p.x, p.y;  left_bottom end
-    def right_bottom=(*args) p = Point.new(*args); self.right, self.bottom = p.x, p.y; right_bottom end
+    def  left_top=(*args)    p = Point.new(*args); self.l, self.t = p.x, p.y; lt end
+    def right_top=(*args)    p = Point.new(*args); self.r, self.t = p.x, p.y; rt end
+    def  left_bottom=(*args) p = Point.new(*args); self.l, self.b = p.x, p.y; lb end
+    def right_bottom=(*args) p = Point.new(*args); self.r, self.b = p.x, p.y; rb end
 
     alias lt   left_top
     alias lt=  left_top=
