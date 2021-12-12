@@ -27,15 +27,51 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF4(canvas, x, y, width, height)
+RUCY_DEFN(canvas)
 {
 	CHECK;
+	check_arg_count(__FILE__, __LINE__, "Painter#canvas", argc, 4, 5, 6, 7);
 
-	coord xx = to<coord>(x);
-	coord yy = to<coord>(y);
-	coord ww = to<coord>(width);
-	coord hh = to<coord>(height);
-	THIS->canvas(xx, yy, ww, hh);
+	switch (argc)
+	{
+		case 4:
+			THIS->canvas(
+				to<coord>(argv[0]),
+				to<coord>(argv[1]),
+				to<coord>(argv[2]),
+				to<coord>(argv[3]));
+			break;
+
+		case 5:
+			THIS->canvas(
+				to<coord>(argv[0]),
+				to<coord>(argv[1]),
+				to<coord>(argv[2]),
+				to<coord>(argv[3]),
+				to<float>(argv[4]));
+			break;
+
+		case 6:
+			THIS->canvas(
+				to<coord>(argv[0]),
+				to<coord>(argv[1]),
+				to<coord>(argv[2]),
+				to<coord>(argv[3]),
+				to<coord>(argv[4]),
+				to<coord>(argv[5]));
+			break;
+
+		case 7:
+			THIS->canvas(
+				to<coord>(argv[0]),
+				to<coord>(argv[1]),
+				to<coord>(argv[2]),
+				to<coord>(argv[3]),
+				to<coord>(argv[4]),
+				to<coord>(argv[5]),
+				to<float>(argv[6]));
+			break;
+	}
 
 	return self;
 }

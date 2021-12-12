@@ -125,6 +125,9 @@ namespace Rays
 
 		GLclampf color_clear[4];
 
+		GLboolean depth_test;
+		GLint depth_func;
+
 		GLboolean scissor_test;
 		GLint scissor_box[4];
 
@@ -138,6 +141,9 @@ namespace Rays
 			glGetIntegerv(GL_VIEWPORT, viewport);
 
 			glGetFloatv(GL_COLOR_CLEAR_VALUE, color_clear);
+
+			glGetBooleanv(GL_DEPTH_TEST, &depth_test);
+			glGetIntegerv(GL_DEPTH_FUNC, &depth_func);
 
 			glGetBooleanv(GL_SCISSOR_TEST, &scissor_test);
 			glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
@@ -157,6 +163,9 @@ namespace Rays
 
 			glClearColor(
 				color_clear[0], color_clear[1], color_clear[2], color_clear[3]);
+
+			enable(GL_DEPTH_TEST, depth_test);
+			glDepthFunc(depth_func);
 
 			enable(GL_SCISSOR_TEST, scissor_test);
 			glScissor(scissor_box[0], scissor_box[1], scissor_box[2], scissor_box[3]);
@@ -639,6 +648,11 @@ namespace Rays
 		self->opengl_state.push();
 
 		//glEnable(GL_CULL_FACE);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		OpenGL_check_error(__FILE__, __LINE__);
+
 		glEnable(GL_BLEND);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 		OpenGL_check_error(__FILE__, __LINE__);
@@ -660,7 +674,7 @@ namespace Rays
 		if (!fb) std::swap(y1, y2);
 
 		self->position_matrix.reset(1);
-		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
+		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2, z1, z2));
 		//self->position_matrix.translate(0.375f, 0.375f);
 
 		self->update_clip();
