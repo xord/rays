@@ -1318,9 +1318,19 @@ namespace Rays
 		return self->state.clip;
 	}
 
+	static bool
+	has_same_font (const Font& font, const char* name, coord size)
+	{
+		return
+			font.size() == size &&
+			font.name() == (name ? name : default_font().name().c_str());
+	}
+
 	void
 	Painter::set_font (const char* name, coord size)
 	{
+		if (has_same_font(self->state.font, name, size)) return;
+
 		set_font(Font(name, size));
 	}
 
