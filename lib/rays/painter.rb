@@ -50,6 +50,10 @@ module Rays
       end
     end
 
+    def clear(color: true, depth: true)
+      clear! color, depth
+    end
+
     def paint(*args, &block)
       begin_paint
       Xot::BlockUtil.instance_eval_or_block_call self, *args, &block

@@ -113,10 +113,10 @@ RUCY_DEF0(end_paint)
 RUCY_END
 
 static
-RUCY_DEF0(clear)
+RUCY_DEF2(clear, color, depth)
 {
 	CHECK;
-	THIS->clear();
+	THIS->clear(to<bool>(color), to<bool>(depth));
 }
 RUCY_END
 
@@ -647,7 +647,7 @@ Init_painter ()
 
 	cPainter.define_private_method("begin_paint", begin_paint);
 	cPainter.define_private_method(  "end_paint",   end_paint);
-	cPainter.define_method("clear",   clear);
+	cPainter.define_private_method("clear!", clear);
 	cPainter.define_method("polygon", polygon);
 	cPainter.define_private_method("draw_line",     line);
 	cPainter.define_private_method("draw_polyline", polyline);

@@ -715,14 +715,23 @@ namespace Rays
 	}
 
 	void
-	Painter::clear ()
+	Painter::clear (bool color, bool depth)
 	{
 		if (!self->painting)
 			invalid_state_error(__FILE__, __LINE__, "painting flag should be true.");
 
-		const Color& c = self->state.background;
-		glClearColor(c.red, c.green, c.blue, c.alpha);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		GLbitfield bits =
+			(color ? GL_COLOR_BUFFER_BIT : 0) |
+			(depth ? GL_DEPTH_BUFFER_BIT : 0);
+		if (bits == 0) return;
+
+		if (color)
+		{
+			const Color& c = self->state.background;
+			glClearColor(c.red, c.green, c.blue, c.alpha);
+		}
+
+		glClear(bits);
 		OpenGL_check_error(__FILE__, __LINE__);
 	}
 
