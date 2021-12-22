@@ -670,11 +670,16 @@ namespace Rays
 		coord x1 = vp.x, x2 = vp.x + vp.width;
 		coord y1 = vp.y, y2 = vp.y + vp.height;
 		coord z1 = vp.z, z2 = vp.z + vp.depth;
-		if (z1 == 0 && z2 == 0) {z1 = -100; z2 = 200;}
+		if (z1 == 0 && z2 == 0) {z1 = -1000; z2 = 1000;}
 		if (!fb) std::swap(y1, y2);
 
 		self->position_matrix.reset(1);
-		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2, z1, z2));
+		self->position_matrix *= to_rays(glm::ortho(x1, x2, y1, y2));
+
+		// map z to 0.0-1.0
+		self->position_matrix.scale(1, 1, 1.0 / (z2 - z1));
+		self->position_matrix.translate(0, 0, -z2);
+
 		//self->position_matrix.translate(0.375f, 0.375f);
 
 		self->update_clip();
