@@ -110,7 +110,7 @@ namespace Rays
 
 		self->texture = texture;
 
-#if 0
+#if 1
 		int w = texture.reserved_width(), h = texture.reserved_height();
 		if (
 			w != self->render_buffer.width() ||
@@ -119,8 +119,7 @@ namespace Rays
 			RenderBuffer rb = RenderBuffer(w, h);
 
 			glFramebufferRenderbuffer(
-				GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-				GL_RENDERBUFFER, rb.id());
+				GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb.id());
 			OpenGL_check_error(__FILE__, __LINE__);
 
 			self->render_buffer = rb;

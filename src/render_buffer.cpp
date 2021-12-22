@@ -54,8 +54,11 @@ namespace Rays
 				#else
 					GL_DEPTH_COMPONENT24,
 				#endif
-				width,
-				height);
+				width_,
+				height_);
+			OpenGL_check_error(__FILE__, __LINE__);
+
+			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 			OpenGL_check_error(__FILE__, __LINE__);
 
 			width  = width_;
