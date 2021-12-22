@@ -575,7 +575,7 @@ namespace Rays
 	Painter::canvas (
 		coord x, coord y, coord width, coord height, float pixel_density)
 	{
-		canvas(Bounds(x, y, -100, width, height, 200), pixel_density);
+		canvas(x, y, 0, width, height, 0, pixel_density);
 	}
 
 	void

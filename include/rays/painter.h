@@ -174,7 +174,8 @@ namespace Rays
 			//
 			// states
 			//
-			void     set_background (float red, float green, float blue, float alpha = 1, bool clear = true);
+			void     set_background (
+				float red, float green, float blue, float alpha = 1, bool clear = true);
 
 			void     set_background (const Color& color, bool clear = true);
 
