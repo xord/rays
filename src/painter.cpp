@@ -107,7 +107,7 @@ namespace Rays
 			return
 				texture &&
 				texcoord_min.x < texcoord_max.x &&
-				texcoord_min.x < texcoord_max.y;
+				texcoord_min.y < texcoord_max.y;
 		}
 
 		bool operator ! () const
