@@ -56,6 +56,32 @@ namespace Rays
 	};// JoinType
 
 
+	enum BlendMode
+	{
+
+		BLEND_NORMAL = 0,
+
+		BLEND_ADD,
+
+		BLEND_SUBTRACT,
+
+		BLEND_LIGHTEST,
+
+		BLEND_DARKEST,
+
+		BLEND_EXCLUSION,
+
+		BLEND_MULTIPLY,
+
+		BLEND_SCREEN,
+
+		BLEND_REPLACE,
+
+		BLEND_MAX
+
+	};// BlendMode
+
+
 }// Rays
 
 

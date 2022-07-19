@@ -219,6 +219,10 @@ namespace Rays
 
 			uint     nsegment () const;
 
+			void  set_blend_mode (BlendMode mode);
+
+			BlendMode blend_mode () const;
+
 			void      set_clip (coord x, coord y, coord width, coord height);
 
 			void      set_clip (const Bounds& bounds);

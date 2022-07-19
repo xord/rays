@@ -99,4 +99,4 @@ class TestPainterShape < Test::Unit::TestCase
     assert_equal 0, img[99, 99].a
   end
 
-end# TestPainter
+end# TestPainterShape

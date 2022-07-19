@@ -108,9 +108,21 @@ module Rays
       square: JOIN_SQUARE
     }
 
+    const_symbol_accessor :blend_mode, **{
+      normal:    BLEND_NORMAL,
+      add:       BLEND_ADD,
+      subtract:  BLEND_SUBTRACT,
+      lightest:  BLEND_LIGHTEST,
+      darkest:   BLEND_DARKEST,
+      exclusion: BLEND_EXCLUSION,
+      multiply:  BLEND_MULTIPLY,
+      screen:    BLEND_SCREEN,
+      replace:   BLEND_REPLACE
+    }
+
     universal_accessor :background, :fill, :stroke, :color,
       :stroke_width, :stroke_cap, :stroke_join, :miter_limit,
-      :nsegment, :shader, :clip, :font
+      :nsegment, :blend_mode, :shader, :clip, :font
 
     private
 

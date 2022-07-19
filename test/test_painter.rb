@@ -18,6 +18,22 @@ class TestPainter < Test::Unit::TestCase
     Rays::Color.new(*args)
   end
 
+  def image(w = 16, h = 16, bg: 0, &block)
+    Rays::Image.new(w, h).paint {background bg}.paint(&block)
+  end
+
+  def assert_rgb(expected, actual)
+    (0..2).each do |i|
+      assert_in_epsilon expected[i], actual[i], 0.02
+    end
+  end
+
+  def assert_rgba(expected, actual)
+    (0..3).each do |i|
+      assert_in_epsilon expected[i], actual[i], 0.02
+    end
+  end
+
   def setup()
     Rays::Color.set_palette_color :rgb001, color(0, 0, 1)
   end
@@ -124,6 +140,19 @@ class TestPainter < Test::Unit::TestCase
     assert_equal         4, pa.miter_limit
   end
 
+  def test_blend_mode_accessor()
+    pa = painter
+    assert_equal        :normal,   pa.blend_mode
+    pa.blend_mode =     :add
+    assert_equal        :add,      pa.blend_mode
+    pa.blend_mode       :subtract
+    assert_equal        :subtract, pa.blend_mode
+    pa.push blend_mode: :multiply do |_|
+      assert_equal      :multiply, pa.blend_mode
+    end
+    assert_equal        :subtract, pa.blend_mode
+  end
+
   def test_clip_accessor()
     pa = painter
     pa.clip = [1, 2, 3, 4]
@@ -180,6 +209,122 @@ class TestPainter < Test::Unit::TestCase
     assert_equal color(1, 0, 0), pa.fill
     pa.fill           '#00ff00'
     assert_equal color(0, 1, 0), pa.fill
+  end
+
+  def test_blend_mode_normal()
+    i = image do
+      blend_mode :normal
+      fill 0.1, 0.2, 0.3
+      rect 0, 0, 2
+      fill 0.4, 0.5, 0.6
+      rect 1, 0, 2
+    end
+    assert_rgb [0.1, 0.2, 0.3], i[0, 0]
+    assert_rgb [0.4, 0.5, 0.6], i[1, 0]
+    assert_rgb [0.4, 0.5, 0.6], i[2, 0]
+  end
+
+  def test_blend_mode_add()
+    i = image do
+      fill 0.1, 0.2, 0.3
+      rect 0, 0, 2
+      blend_mode :add
+      fill 0.4, 0.5, 0.6
+      rect 1, 0, 2
+    end
+    assert_rgb [0.1, 0.2, 0.3], i[0, 0]
+    assert_rgb [0.5, 0.7, 0.9], i[1, 0]
+    assert_rgb [0.4, 0.5, 0.6], i[2, 0]
+  end
+
+  def test_blend_mode_subtract()
+    i = image bg: 1 do
+      fill 0.4, 0.5, 0.6
+      rect 0, 0, 2
+      blend_mode :subtract
+      fill 0.1, 0.2, 0.3
+      rect 1, 0, 2
+    end
+    assert_rgb [0.4, 0.5, 0.6], i[0, 0]
+    assert_rgb [0.3, 0.3, 0.3], i[1, 0]
+    assert_rgb [0.9, 0.8, 0.7], i[2, 0]
+  end
+
+  def test_blend_mode_lightest()
+    i = image do
+      fill 0.4, 0.5, 0.6
+      rect 0, 0, 2
+      blend_mode :lightest
+      fill 0.1, 0.2, 0.3
+      rect 1, 0, 2
+    end
+    assert_rgb [0.4, 0.5, 0.6], i[0, 0]
+    assert_rgb [0.4, 0.5, 0.6], i[1, 0]
+    assert_rgb [0.1, 0.2, 0.3], i[2, 0]
+  end
+
+  def test_blend_mode_darkest()
+    i = image bg: 1 do
+      fill 0.1, 0.2, 0.3
+      rect 0, 0, 2
+      blend_mode :darkest
+      fill 0.4, 0.5, 0.6
+      rect 1, 0, 2
+    end
+    assert_rgb [0.1, 0.2, 0.3], i[0, 0]
+    assert_rgb [0.1, 0.2, 0.3], i[1, 0]
+    assert_rgb [0.4, 0.5, 0.6], i[2, 0]
+  end
+
+  def test_blend_mode_exclusion()
+    # no tests
+  end
+
+  def test_blend_mode_multiply()
+    i = image bg: 1 do
+      fill 0.2, 0.4, 0.6
+      rect 0, 0, 2
+      blend_mode :multiply
+      fill 0.5
+      rect 1, 0, 2
+    end
+    assert_rgb [0.2, 0.4, 0.6], i[0, 0]
+    assert_rgb [0.1, 0.2, 0.3], i[1, 0]
+    assert_rgb [0.5, 0.5, 0.5], i[2, 0]
+  end
+
+  def test_blend_mode_screen()
+    i = image bg: 0.8 do
+      fill 0.2, 0.4, 0.6
+      rect 0, 0, 2
+      blend_mode :screen
+      fill 0.5
+      rect 1, 0, 2
+    end
+    assert_rgb [0.2, 0.4, 0.6], i[0, 0]
+    assert_rgb [0.6, 0.7, 0.8], i[1, 0]
+    assert_rgb [0.9, 0.9, 0.9], i[2, 0]
+  end
+
+  def test_blend_mode_replace()
+    i = image bg: 1 do
+      fill 0.1, 0.2, 0.3, 0.4
+      rect 0, 0, 2
+      blend_mode :replace
+      fill 0.5, 0.6, 0.7, 0.8
+      rect 1, 0, 2
+    end
+    assert_rgba [0.5, 0.6, 0.7, 0.8], i[1, 0]
+    assert_rgba [0.5, 0.6, 0.7, 0.8], i[2, 0]
+  end
+
+  def test_blend_mode_invalid()
+    assert_raise(ArgumentError) do
+      image {blend_mode :invalid}
+    end
+    assert_raise(ArgumentError) do
+      image {blend_mode nil}
+    end
   end
 
   def test_push()

@@ -454,6 +454,23 @@ RUCY_DEF0(get_nsegment)
 RUCY_END
 
 static
+RUCY_DEF1(set_blend_mode, mode)
+{
+	CHECK;
+	THIS->set_blend_mode(to<Rays::BlendMode>(mode));
+	return self;
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_blend_mode)
+{
+	CHECK;
+	return value(THIS->blend_mode());
+}
+RUCY_END
+
+static
 RUCY_DEFN(set_clip)
 {
 	CHECK;
@@ -677,6 +694,8 @@ Init_painter ()
 	cPainter.define_method("miter_limit",  get_miter_limit);
 	cPainter.define_method("nsegment=", set_nsegment);
 	cPainter.define_method("nsegment",  get_nsegment);
+	cPainter.define_method("blend_mode=", set_blend_mode);
+	cPainter.define_method("blend_mode",  get_blend_mode);
 	cPainter.define_method(   "clip=", set_clip);
 	cPainter.define_method(   "clip",  get_clip);
 	cPainter.define_method("no_clip",   no_clip);

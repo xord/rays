@@ -56,6 +56,8 @@ namespace Rays
 
 		uint nsegment;
 
+		BlendMode blend_mode;
+
 		Bounds clip;
 
 		Font font;
@@ -72,6 +74,7 @@ namespace Rays
 			stroke_join    = JOIN_DEFAULT;
 			miter_limit    = JOIN_DEFAULT_MITER_LIMIT;
 			nsegment       = 0;
+			blend_mode     = BLEND_NORMAL;
 			clip           .reset(-1);
 			font           = default_font();
 			shader         = Shader();
@@ -132,6 +135,7 @@ namespace Rays
 		GLint scissor_box[4];
 
 		GLboolean blend;
+		GLint blend_equation_rgb, blend_equation_alpha;
 		GLint blend_src_rgb, blend_src_alpha, blend_dst_rgb, blend_dst_alpha;
 
 		GLint framebuffer_binding;
@@ -149,6 +153,8 @@ namespace Rays
 			glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
 
 			glGetBooleanv(GL_BLEND, &blend);
+			glGetIntegerv(GL_BLEND_EQUATION_RGB,   &blend_equation_rgb);
+			glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &blend_equation_alpha);
 			glGetIntegerv(GL_BLEND_SRC_RGB,   &blend_src_rgb);
 			glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_alpha);
 			glGetIntegerv(GL_BLEND_DST_RGB,   &blend_dst_rgb);
@@ -171,6 +177,7 @@ namespace Rays
 			glScissor(scissor_box[0], scissor_box[1], scissor_box[2], scissor_box[3]);
 
 			enable(GL_BLEND, blend);
+			glBlendEquationSeparate(blend_equation_rgb, blend_equation_alpha);
 			glBlendFuncSeparate(
 				blend_src_rgb, blend_dst_rgb, blend_src_alpha, blend_dst_alpha);
 
@@ -654,8 +661,7 @@ namespace Rays
 		OpenGL_check_error(__FILE__, __LINE__);
 
 		glEnable(GL_BLEND);
-		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-		OpenGL_check_error(__FILE__, __LINE__);
+		set_blend_mode(self->state.blend_mode);
 
 		FrameBuffer& fb = self->frame_buffer;
 		if (fb) FrameBuffer_bind(fb.id());
@@ -1312,6 +1318,72 @@ namespace Rays
 	Painter::nsegment () const
 	{
 		return self->state.nsegment;
+	}
+
+	void
+	Painter::set_blend_mode (BlendMode mode)
+	{
+		self->state.blend_mode = mode;
+		switch (mode)
+		{
+			case BLEND_NORMAL:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(
+					GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_ADD:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_SUBTRACT:
+				glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_LIGHTEST:
+				glBlendEquationSeparate(GL_MAX, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_DARKEST:
+				glBlendEquationSeparate(GL_MIN, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_EXCLUSION:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(
+					GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_MULTIPLY:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_SCREEN:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ONE, GL_ONE, GL_ONE);
+				break;
+
+			case BLEND_REPLACE:
+				glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+				glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
+				break;
+
+			default:
+				argument_error(__FILE__, __LINE__, "unknown blend mode");
+				break;
+		}
+		OpenGL_check_error(__FILE__, __LINE__);
+	}
+
+	BlendMode
+	Painter::blend_mode () const
+	{
+		return self->state.blend_mode;
 	}
 
 	void
