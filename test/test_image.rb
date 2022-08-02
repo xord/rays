@@ -6,11 +6,12 @@ require_relative 'helper'
 
 class TestImage < Test::Unit::TestCase
 
-  W = 10
-  H = 10
+  def image(*args)
+    Rays::Image.new(*args)
+  end
 
-  def image(w = W, h = H, *args)
-    Rays::Image.new w, h, *args
+  def load(path)
+    Rays::Image.load path
   end
 
   def color(r = 0, g = 0, b = 0, a = 0)
@@ -22,12 +23,12 @@ class TestImage < Test::Unit::TestCase
   end
 
   def test_initialize()
-    assert_equal W, image.width
-    assert_equal H, image.height
+    assert_equal 10, image(10, 20).width
+    assert_equal 10, image(20, 10).height
   end
 
   def test_dup()
-    o          = image
+    o          = image 10, 10
     assert_equal color(0, 0, 0, 0), o[0, 0]
     o[0, 0]    = color(1, 0, 0, 0)
     assert_equal color(1, 0, 0, 0), o[0, 0]
@@ -39,12 +40,12 @@ class TestImage < Test::Unit::TestCase
   end
 
   def test_bitmap()
-    assert_equal W, image.bitmap.width
-    assert_equal H, image.bitmap.height
+    assert_equal 10, image(10, 20).bitmap.width
+    assert_equal 10, image(20, 10).bitmap.height
   end
 
   def test_painter()
-    pa = image.painter
+    pa = image(10, 10).painter
     assert_equal color(0, 0, 0, 0), pa.background
     assert_equal color(1, 1, 1, 1), pa.fill
     assert_equal color(1, 1, 1, 0), pa.stroke
