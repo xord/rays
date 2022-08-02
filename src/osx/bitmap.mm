@@ -223,9 +223,26 @@ namespace Rays
 		return bitmap.self->modified;
 	}
 
+	static CFStringRef
+	get_bitmap_type (const char* path_)
+	{
+		String path = path_;
+		path = path.downcase();
+		if (path.ends_with(".png")) return kUTTypePNG;
+		if (path.ends_with(".gif")) return kUTTypeGIF;
+		if (path.ends_with(".bmp")) return kUTTypeBMP;
+		if (path.ends_with(".jpg") || path.ends_with(".jpeg")) return kUTTypeJPEG;
+		if (path.ends_with(".tif") || path.ends_with(".tiff")) return kUTTypeTIFF;
+		return nil;
+	}
+
 	void
 	Bitmap_save (const Bitmap& bmp, const char* path_)
 	{
+		const CFStringRef type = get_bitmap_type(path_);
+		if (!type)
+			argument_error(__FILE__, __LINE__, "unknown image file type");
+
 		std::shared_ptr<CGImage> img(bmp.self->get_image(), CGImageRelease);
 		if (!img)
 			rays_error(__FILE__, __LINE__, "getting CGImage failed.");
@@ -236,7 +253,7 @@ namespace Rays
 			rays_error(__FILE__, __LINE__, "creating NSURL failed.");
 
 		std::shared_ptr<CGImageDestination> dest(
-			CGImageDestinationCreateWithURL((CFURLRef) url, kUTTypePNG, 1, NULL),
+			CGImageDestinationCreateWithURL((CFURLRef) url, type, 1, NULL),
 			safe_cfrelease);
 		if (!dest)
 			rays_error(__FILE__, __LINE__, "CGImageDestinationCreateWithURL() failed.");
