@@ -22,15 +22,19 @@ class TestPainter < Test::Unit::TestCase
     Rays::Image.new(w, h).paint {background bg}.paint(&block)
   end
 
+  def assert_gray(expected, actual)
+    assert_in_epsilon expected, actual, 0.02
+  end
+
   def assert_rgb(expected, actual)
     (0..2).each do |i|
-      assert_in_epsilon expected[i], actual[i], 0.02
+      assert_gray expected[i], actual[i]
     end
   end
 
   def assert_rgba(expected, actual)
     (0..3).each do |i|
-      assert_in_epsilon expected[i], actual[i], 0.02
+      assert_gray expected[i], actual[i]
     end
   end
 
