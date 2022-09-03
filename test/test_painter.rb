@@ -19,7 +19,9 @@ class TestPainter < Test::Unit::TestCase
   end
 
   def image(w = 16, h = 16, bg: 0, &block)
-    Rays::Image.new(w, h).paint {background bg}.paint(&block)
+    Rays::Image.new(w, h)
+      .paint {background bg}
+      .tap {|img| img.paint(&block) if block}
   end
 
   def assert_gray(expected, actual)
@@ -373,7 +375,23 @@ class TestPainter < Test::Unit::TestCase
   end
 
   def test_shader()
-    img = Rays::Image.new(10, 10).paint {
+    image.paint do |pa|
+      assert_nil pa.shader
+
+      pa.shader = Rays::Shader.new "void main() {gl_FragColor = vec4(0.0);}"
+      assert_instance_of Rays::Shader, pa.shader
+
+      pa.shader = nil
+      assert_nil pa.shader
+
+      pa.shader = "void main() {gl_FragColor = vec4(0.0);}"
+      assert_instance_of Rays::Shader, pa.shader
+
+      pa.no_shader
+      assert_nil pa.shader
+    end
+
+    img = image.paint {
       shader "void main() {gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);}"
       fill   1, 0, 0
       rect   bounds

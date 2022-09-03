@@ -521,7 +521,10 @@ RUCY_DEFN(set_shader)
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Painter#set_shader", argc, 1);
 
-	THIS->set_shader(to<Rays::Shader>(argc, argv));
+	if (argc >= 1 && !argv[0])
+		THIS->no_shader();
+	else
+		THIS->set_shader(to<Rays::Shader>(argc, argv));
 	return self;
 }
 RUCY_END
@@ -530,7 +533,9 @@ static
 RUCY_DEF0(get_shader)
 {
 	CHECK;
-	return value(THIS->shader());
+
+	const Rays::Shader& shader = THIS->shader();
+	return shader ? value(shader) : nil();
 }
 RUCY_END
 
