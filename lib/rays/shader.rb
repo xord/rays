@@ -10,11 +10,13 @@ module Rays
 
   class Shader
 
-    def initialize(source = nil, **uniforms, &block)
-      if source
-        setup source
-        uniform(**uniforms) unless uniforms.empty?
-      end
+    def initialize(
+      fragment_shader_source,
+      vertex_shader_source = nil,
+      **uniforms, &block)
+
+      setup fragment_shader_source, vertex_shader_source
+      uniform(**uniforms) unless uniforms.empty?
 
       Xot::BlockUtil.instance_eval_or_block_call self, &block if block
     end

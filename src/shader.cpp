@@ -1,6 +1,7 @@
 #include "shader.h"
 
 
+#include <regex>
 #include "rays/exception.h"
 #include "opengl.h"
 #include "image.h"
@@ -12,54 +13,141 @@ namespace Rays
 {
 
 
-	static const ShaderSource&
-	get_vertex_shader_source ()
+	class BuiltinShader
 	{
-		static const ShaderSource SOURCE(
-			GL_VERTEX_SHADER,
-			"attribute vec3 "  ATTRIB_POSITION ";"
-			"varying   vec4 " VARYING_POSITION ";"
-			"uniform   mat4 " UNIFORM_POSITION_MATRIX ";"
-			"attribute vec3 "  ATTRIB_TEXCOORD ";"
-			"varying   vec4 " VARYING_TEXCOORD ";"
-			"uniform   mat4 " UNIFORM_TEXCOORD_MATRIX ";"
-			"attribute vec4 "  ATTRIB_COLOR ";"
-			"varying   vec4 " VARYING_COLOR ";"
-			"void main ()"
-			"{"
-			"  vec4 pos           = vec4(" ATTRIB_POSITION ", 1.0);"
-			"  vec4 texcoord      = vec4(" ATTRIB_TEXCOORD ", 1.0);"
-			   VARYING_POSITION " = pos;"
-			   VARYING_TEXCOORD " = " UNIFORM_TEXCOORD_MATRIX " * texcoord;"
-			   VARYING_COLOR    " = " ATTRIB_COLOR ";"
-			"  gl_Position        = " UNIFORM_POSITION_MATRIX " * pos;"
-			"}");
-		return SOURCE;
-	}
 
-	static ShaderSource
-	make_fragment_shader_source (const char* source)
+		public:
+
+			ShaderSource make_vertex_shader_source (const char* source) const
+			{
+				if (source)
+					return ShaderSource(GL_VERTEX_SHADER, source);
+				else
+				{
+					if (!vertex_shader_source) vertex_shader_source =
+						ShaderSource(GL_VERTEX_SHADER, make_default_vertex_shader_source());
+					return vertex_shader_source;
+				}
+			}
+
+			ShaderSource make_fragment_shader_source (const char* source) const
+			{
+				static const String SHARED_HEADER =
+					"#ifdef GL_ES\n"
+					"precision mediump float;\n"
+					"#endif\n";
+				static const std::regex HAS_PRECISION(R"(^\s*precision\s+\w+p\s+float\s*;)");
+
+				if (std::regex_search(source, HAS_PRECISION))
+					return ShaderSource(GL_FRAGMENT_SHADER, source);
+				else
+					return ShaderSource(GL_FRAGMENT_SHADER, SHARED_HEADER + source);
+			}
+
+			const Shader& default_shader_for_shape () const
+			{
+				if (!shape_shader) shape_shader = make_default_shader_for_shape();
+				return shape_shader;
+			}
+
+			const Shader& default_shader_for_texture () const
+			{
+				if (!texture_shader) texture_shader = make_default_shader_for_texture();
+				return texture_shader;
+			}
+
+			void clear ()
+			{
+				vertex_shader_source = ShaderSource();
+				shape_shader         = Shader();
+				texture_shader       = Shader();
+			}
+
+		private:
+
+			mutable ShaderSource vertex_shader_source;
+
+			mutable Shader shape_shader, texture_shader;
+
+			#define A_POSITION        (bvn.attribute_position)
+			#define A_TEXCOORD        (bvn.attribute_texcoord)
+			#define A_COLOR           (bvn.attribute_color)
+			#define V_POSITION        (bvn.varying_position)
+			#define V_TEXCOORD        (bvn.varying_texcoord)
+			#define V_COLOR           (bvn.varying_color)
+			#define U_POSITION_MATRIX (bvn.uniform_position_matrix)
+			#define U_TEXCOORD_MATRIX (bvn.uniform_texcoord_matrix)
+			#define U_TEXTURE         (bvn.uniform_texture)
+
+			String make_default_vertex_shader_source () const
+			{
+				const auto& bvn = Shader_get_builtin_variable_names();
+				return
+					"attribute vec3 " + A_POSITION + ";\n"
+					"attribute vec3 " + A_TEXCOORD + ";\n"
+					"attribute vec4 " + A_COLOR + ";\n"
+					"varying   vec4 " + V_POSITION + ";\n"
+					"varying   vec4 " + V_TEXCOORD + ";\n"
+					"varying   vec4 " + V_COLOR + ";\n"
+					"uniform   mat4 " + U_POSITION_MATRIX + ";\n"
+					"uniform   mat4 " + U_TEXCOORD_MATRIX + ";\n"
+					"void main ()\n"
+					"{\n"
+					"  vec4 rays__pos      = vec4(" + A_POSITION + ", 1.0);\n"
+					"  vec4 rays__texcoord = vec4(" + A_TEXCOORD + ", 1.0);\n"
+					"  " + V_POSITION + "  = rays__pos;\n"
+					"  " + V_TEXCOORD + "  = " + U_TEXCOORD_MATRIX + " * rays__texcoord;\n"
+					"  " + V_COLOR    + "  = " + A_COLOR + ";\n"
+					"  gl_Position         = " + U_POSITION_MATRIX + " * rays__pos;\n"
+					"}\n";
+			}
+
+			Shader make_default_shader_for_shape () const
+			{
+				const auto& bvn = Shader_get_builtin_variable_names();
+				return Shader(
+					"varying vec4 " + V_COLOR + ";\n"
+					"void main ()\n"
+					"{\n"
+					"  gl_FragColor = " + V_COLOR + ";\n"
+					"}\n");
+			}
+
+			Shader make_default_shader_for_texture () const
+			{
+				const auto& bvn = Shader_get_builtin_variable_names();
+				return Shader(
+					"varying vec4 " + V_TEXCOORD + ";\n"
+					"varying vec4 " + V_COLOR + ";\n"
+					"uniform sampler2D " + U_TEXTURE + ";\n"
+					"void main ()\n"
+					"{\n"
+					"  vec4 rays__color = texture2D(" + U_TEXTURE + ", " + V_TEXCOORD + ".xy);\n"
+					"  gl_FragColor     = " + V_COLOR + " * rays__color;\n"
+					"}\n");
+			}
+
+			#undef A_POSITION
+			#undef A_TEXCOORD
+			#undef A_COLOR
+			#undef V_POSITION
+			#undef V_TEXCOORD
+			#undef V_COLOR
+			#undef U_POSITION_MATRIX
+			#undef U_TEXCOORD_MATRIX
+			#undef U_TEXTURE
+
+	};// BuiltinShader
+
+
+	namespace global
 	{
-		static String SHARED_HEADER =
-			"#ifdef GL_ES\n"
-			"precision mediump float;\n"
-			"#endif\n"
-			"uniform sampler2D " UNIFORM_TEXTURE ";"
-			"uniform vec2 "      UNIFORM_TEXTURE_SIZE ";"
-			"uniform vec2 "      UNIFORM_TEXCOORD_MIN ";"
-			"uniform vec2 "      UNIFORM_TEXCOORD_MAX ";"
-			"vec2 normalizeTexCoord(vec2 texcoord)"
-			"{"
-			"  vec2 min = " UNIFORM_TEXCOORD_MIN ";"
-			"  vec2 len = " UNIFORM_TEXCOORD_MAX " - min;"
-			"  return (mod(texcoord - min, len) + min) / " UNIFORM_TEXTURE_SIZE ";"
-			"}"
-			"vec4 sampleTexture(vec2 texcoord)"
-			"{"
-			"  return texture2D(" UNIFORM_TEXTURE ", normalizeTexCoord(texcoord));"
-			"}\n";
-		return ShaderSource(GL_FRAGMENT_SHADER, SHARED_HEADER + source);
-	}
+
+		ShaderBuiltinVariableNames names;
+
+		BuiltinShader builtin_shader;
+
+	};// global
 
 
 	struct Shader::Data
@@ -76,14 +164,42 @@ namespace Rays
 		return shader.self->program ? shader.self->program.get() : NULL;
 	}
 
-
-	Shader::Shader (const char* source)
+	void Shader_set_builtin_variable_names (
+		const ShaderBuiltinVariableNames& names)
 	{
-		if (!source) return;
+		global::names = names;
+		global::builtin_shader.clear();
+	}
 
+	const ShaderBuiltinVariableNames&
+	Shader_get_builtin_variable_names ()
+	{
+		return global::names;
+	}
+
+	const Shader&
+	Shader_get_default_shader_for_shape ()
+	{
+		return global::builtin_shader.default_shader_for_shape();
+	}
+
+	const Shader&
+	Shader_get_default_shader_for_texture ()
+	{
+		return global::builtin_shader.default_shader_for_texture();
+	}
+
+
+	Shader::Shader (
+		const char* fragment_shader_source,
+		const char*   vertex_shader_source)
+	{
+		if (!fragment_shader_source) return;
+
+		const auto& bs = global::builtin_shader;
 		self->program.reset(new ShaderProgram(
-			get_vertex_shader_source(),
-			make_fragment_shader_source(source)));
+			bs.make_vertex_shader_source(vertex_shader_source),
+			bs.make_fragment_shader_source(fragment_shader_source)));
 	}
 
 	Shader::~Shader ()
@@ -238,6 +354,42 @@ namespace Rays
 	operator != (const Shader& lhs, const Shader& rhs)
 	{
 		return !operator==(lhs, rhs);
+	}
+
+
+	ShaderBuiltinVariableNames::ShaderBuiltinVariableNames(
+		const char* a_position,
+		const char* a_texcoord,
+		const char* a_color,
+		const char* v_position,
+		const char* v_texcoord,
+		const char* v_color,
+		const char* u_position_matrix,
+		const char* u_texcoord_matrix,
+		const char* u_texture)
+	:	attribute_position(a_position),
+		attribute_texcoord(a_texcoord),
+		attribute_color(a_color),
+		varying_position(v_position),
+		varying_texcoord(v_texcoord),
+		varying_color(v_color),
+		uniform_position_matrix(u_position_matrix),
+		uniform_texcoord_matrix(u_texcoord_matrix),
+		uniform_texture(u_texture)
+	{
+		if (
+			attribute_position     .empty() ||
+			attribute_texcoord     .empty() ||
+			attribute_color        .empty() ||
+			varying_position       .empty() ||
+			varying_texcoord       .empty() ||
+			varying_color          .empty() ||
+			uniform_position_matrix.empty() ||
+			uniform_texcoord_matrix.empty() ||
+			uniform_texture        .empty())
+		{
+			argument_error(__FILE__, __LINE__);
+		}
 	}
 
 

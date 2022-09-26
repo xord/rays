@@ -23,7 +23,9 @@ namespace Rays
 
 		public:
 
-			Shader (const char* source = NULL);
+			Shader (
+				const char* fragment_shader_source = NULL,
+				const char*   vertex_shader_source = NULL);
 
 			~Shader ();
 

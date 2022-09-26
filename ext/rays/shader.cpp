@@ -19,11 +19,16 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF1(setup, source)
+RUCY_DEF2(setup, fragment_shader_source, vertex_shader_source)
 {
 	RUCY_CHECK_OBJ(Rays::Shader, self);
 
-	*THIS = to<Rays::Shader>(source);
+	if (fragment_shader_source.is_nil())
+		argument_error(__FILE__, __LINE__);
+
+	*THIS = Rays::Shader(
+		fragment_shader_source.c_str(),
+		vertex_shader_source ? vertex_shader_source.c_str() : NULL);
 }
 RUCY_END
 

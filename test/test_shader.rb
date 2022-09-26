@@ -6,8 +6,8 @@ require_relative 'helper'
 
 class TestShader < Test::Unit::TestCase
 
-  def shader(src)
-    Rays::Shader.new src
+  def shader(*args)
+    Rays::Shader.new(*args)
   end
 
   def img(w = 10, h = 10, &block)
@@ -19,10 +19,14 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_initialize()
+    vs = "void main() {gl_Position = vec4(0.0, 0.0, 0.0, 1.0);}"
+    fs = "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
     assert_raise(Rucy::NativeError) {shader "foo"}
-    assert_raise(ArgumentError) {shader}
-    #assert_raise(TypeError) {shader nil}
-    assert shader("void main() {gl_FragColor = vec4(1, 0, 0, 1);}")
+    assert_raise(Rucy::NativeError) {shader "foo", vs}
+    assert_raise(Rucy::NativeError) {shader fs, "foo"}
+    assert_raise(ArgumentError) {shader nil}
+    assert shader(fs)
+    assert shader(fs, vs)
   end
 
   def test_shader()

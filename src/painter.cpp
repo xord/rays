@@ -236,33 +236,6 @@ namespace Rays
 		return GL_FLOAT;
 	}
 
-	static const Shader&
-	get_default_shader_for_shape ()
-	{
-		static const Shader SHADER(
-			"varying vec4 " VARYING_COLOR ";"
-			"void main ()"
-			"{"
-			"  gl_FragColor = v_Color;"
-			"}");
-		return SHADER;
-	}
-
-	static const Shader&
-	get_default_shader_for_texture ()
-	{
-		static const Shader SHADER(
-			"varying vec4 " VARYING_TEXCOORD ";"
-			"varying vec4 " VARYING_COLOR ";"
-			"vec4 sampleTexture(vec2);"
-			"void main ()"
-			"{"
-			"  vec4 color   = sampleTexture(" VARYING_TEXCOORD ".xy);"
-			"  gl_FragColor = v_Color * color;"
-			"}");
-		return SHADER;
-	}
-
 
 	struct Painter::Data
 	{
@@ -338,7 +311,7 @@ namespace Rays
 			const Coord3* points,           size_t npoints,
 			const uint*   indices   = NULL, size_t nindices = 0,
 			const Coord3* texcoords = NULL,
-			const Shader& default_shader = get_default_shader_for_shape(),
+			const Shader& default_shader = Shader_get_default_shader_for_shape(),
 			const TextureInfo* texinfo = NULL)
 		{
 			if (!points || npoints <= 0)
@@ -367,9 +340,10 @@ namespace Rays
 			ShaderProgram_activate(*program);
 			apply_builtin_uniforms(*program, texinfo);
 
-			GLint a_position = glGetAttribLocation(program->id(), ATTRIB_POSITION);
-			GLint a_texcoord = glGetAttribLocation(program->id(), ATTRIB_TEXCOORD);
-			GLint a_color    = glGetAttribLocation(program->id(), ATTRIB_COLOR);
+			const auto& names = Shader_get_builtin_variable_names();
+			GLint a_position = glGetAttribLocation(program->id(), names.attribute_position);
+			GLint a_texcoord = glGetAttribLocation(program->id(), names.attribute_texcoord);
+			GLint a_color    = glGetAttribLocation(program->id(), names.attribute_color);
 			if (a_position < 0 || a_texcoord < 0 || a_color < 0)
 				opengl_error(__FILE__, __LINE__);
 
@@ -391,8 +365,11 @@ namespace Rays
 			void apply_builtin_uniforms (
 				const ShaderProgram& program, const TextureInfo* texinfo)
 			{
+				const auto& names      = Shader_get_builtin_variable_names();
+				const Texture* texture = texinfo ? &texinfo->texture : NULL;
+
 				GLint pos_matrix_loc =
-					glGetUniformLocation(program.id(), UNIFORM_POSITION_MATRIX);
+					glGetUniformLocation(program.id(), names.uniform_position_matrix);
 				if (pos_matrix_loc >= 0)
 				{
 					glUniformMatrix4fv(
@@ -401,12 +378,13 @@ namespace Rays
 				}
 
 				GLint texcoord_matrix_loc =
-					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MATRIX);
+					glGetUniformLocation(program.id(), names.uniform_texcoord_matrix);
 				if (texcoord_matrix_loc >= 0)
 				{
-					static const Matrix TEXCOORD_MATRIX(1);
-					glUniformMatrix4fv(
-						texcoord_matrix_loc, 1, GL_FALSE, TEXCOORD_MATRIX.array);
+					Matrix mat(1);
+					if (texture && *texture)
+						mat.scale(1.0 / texture->width(), 1.0 / texture->height());
+					glUniformMatrix4fv(texcoord_matrix_loc, 1, GL_FALSE, mat.array);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
@@ -418,10 +396,11 @@ namespace Rays
 			{
 				if (!texinfo || !*texinfo) return;
 
+				const auto& names      = Shader_get_builtin_variable_names();
 				const Texture& texture = texinfo->texture;
 
 				GLint texture_loc =
-					glGetUniformLocation(program.id(), UNIFORM_TEXTURE);
+					glGetUniformLocation(program.id(), names.uniform_texture);
 				if (texture_loc >= 0)
 				{
 					glActiveTexture(GL_TEXTURE0);
@@ -430,9 +409,9 @@ namespace Rays
 					glUniform1i(texture_loc, 0);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
-
+#if 0
 				GLint size_loc =
-					glGetUniformLocation(program.id(), UNIFORM_TEXTURE_SIZE);
+					glGetUniformLocation(program.id(), names.uniform_texture_size);
 				if (size_loc >= 0)
 				{
 					glUniform2f(
@@ -441,7 +420,7 @@ namespace Rays
 				}
 
 				GLint min_loc =
-					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MIN);
+					glGetUniformLocation(program.id(), names.uniform_texcoord_min);
 				if (min_loc >= 0)
 				{
 					glUniform2fv(min_loc, 1, texinfo->texcoord_min.array);
@@ -449,12 +428,13 @@ namespace Rays
 				}
 
 				GLint max_loc =
-					glGetUniformLocation(program.id(), UNIFORM_TEXCOORD_MAX);
+					glGetUniformLocation(program.id(), names.uniform_texcoord_max);
 				if (max_loc >= 0)
 				{
 					glUniform2fv(max_loc, 1, texinfo->texcoord_max.array);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
+#endif
 			}
 
 			void setup_vertices (
@@ -530,7 +510,7 @@ namespace Rays
 		const Coord3* points,           size_t npoints,
 		const uint*   indices   = NULL, size_t nindices = 0,
 		const Coord3* texcoords = NULL,
-		const Shader& default_shader = get_default_shader_for_shape(),
+		const Shader& default_shader = Shader_get_default_shader_for_shape(),
 		const TextureInfo* texinfo = NULL)
 	{
 		assert(painter);
@@ -958,7 +938,7 @@ namespace Rays
 		TextureInfo texinfo(texture, src_x, src_y, src_x + src_w, src_y + src_h);
 
 		if (!shader)
-			shader = &get_default_shader_for_texture();
+			shader = &Shader_get_default_shader_for_texture();
 
 		draw_polygon(
 			painter, MODES, 0, 0, false, nostroke, points, 4, NULL, 0, texcoords,
@@ -1135,7 +1115,7 @@ namespace Rays
 			painter, self->text_image,
 			0, 0, str_w, str_h,
 			x, y, str_w, str_h,
-			true, &get_default_shader_for_texture());
+			true, &Shader_get_default_shader_for_texture());
 
 		debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
 	}
