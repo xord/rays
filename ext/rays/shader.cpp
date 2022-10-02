@@ -19,16 +19,36 @@ RUCY_DEF_ALLOC(alloc, klass)
 RUCY_END
 
 static
-RUCY_DEF2(setup, fragment_shader_source, vertex_shader_source)
+RUCY_DEF3(setup,
+	fragment_shader_source, vertex_shader_source,
+	builtin_variable_names)
 {
 	RUCY_CHECK_OBJ(Rays::Shader, self);
 
 	if (fragment_shader_source.is_nil())
 		argument_error(__FILE__, __LINE__);
 
-	*THIS = Rays::Shader(
-		fragment_shader_source.c_str(),
-		vertex_shader_source ? vertex_shader_source.c_str() : NULL);
+	const char* fs = fragment_shader_source.c_str();
+	const char* vs = vertex_shader_source ? vertex_shader_source.c_str() : NULL;
+
+	if (builtin_variable_names)
+	{
+		const auto& names = builtin_variable_names;
+		*THIS = Rays::Shader(fs, vs, Rays::ShaderEnv(
+			names[0]  ? names[0] .c_str() : NULL,
+			names[1]  ? names[1] .c_str() : NULL,
+			names[2]  ? names[2] .c_str() : NULL,
+			names[3]  ? names[3] .c_str() : NULL,
+			names[4]  ? names[4] .c_str() : NULL,
+			names[5]  ? names[5] .c_str() : NULL,
+			names[6]  ? names[6] .c_str() : NULL,
+			names[7]  ? names[7] .c_str() : NULL,
+			names[8]  ? names[8] .c_str() : NULL,
+			names[9]  ? names[9] .c_str() : NULL,
+			names[10] ? names[10].c_str() : NULL));
+	}
+	else
+		*THIS = Rays::Shader(fs, vs);
 }
 RUCY_END
 
@@ -83,6 +103,26 @@ RUCY_DEFN(set_uniform)
 }
 RUCY_END
 
+static
+RUCY_DEF0(get_vertex_shader_source)
+{
+	CHECK;
+
+	const char* source = THIS->vertex_shader_source();
+	return source ? value(source) : nil();
+}
+RUCY_END
+
+static
+RUCY_DEF0(get_fragment_shader_source)
+{
+	CHECK;
+
+	const char* source = THIS->fragment_shader_source();
+	return source ? value(source) : nil();
+}
+RUCY_END
+
 
 static Class cShader;
 
@@ -95,6 +135,8 @@ Init_shader ()
 	cShader.define_alloc_func(alloc);
 	cShader.define_private_method("setup", setup);
 	cShader.define_private_method("set_uniform", set_uniform);
+	cShader.define_method(  "vertex_shader_source",   get_vertex_shader_source);
+	cShader.define_method("fragment_shader_source", get_fragment_shader_source);
 }
 
 

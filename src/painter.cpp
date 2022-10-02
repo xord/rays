@@ -93,7 +93,7 @@ namespace Rays
 
 		const Texture& texture;
 
-		Coord2 texcoord_min, texcoord_max;
+		Point texcoord_min, texcoord_max;
 
 		TextureInfo (
 			const Texture& texture,
@@ -330,17 +330,15 @@ namespace Rays
 			if (!texcoords)
 				texcoords = points;
 
-			const ShaderProgram* program = Shader_get_program(state.shader);
-			if (!program || !*program)
-			{
-				program = Shader_get_program(default_shader);
-				if (!program || !*program) return;
-			}
+			const Shader& shader = state.shader ? state.shader : default_shader;
+			const ShaderProgram* program = Shader_get_program(shader);
+			if (!program || !*program) return;
 
 			ShaderProgram_activate(*program);
-			apply_builtin_uniforms(*program, texinfo);
 
-			const auto& names = Shader_get_builtin_variable_names();
+			const auto& names = Shader_get_builtin_variable_names(shader);
+			apply_builtin_uniforms(*program, names, texinfo);
+
 			GLint a_position = glGetAttribLocation(program->id(), names.attribute_position);
 			GLint a_texcoord = glGetAttribLocation(program->id(), names.attribute_texcoord);
 			GLint a_color    = glGetAttribLocation(program->id(), names.attribute_color);
@@ -363,9 +361,9 @@ namespace Rays
 		private:
 
 			void apply_builtin_uniforms (
-				const ShaderProgram& program, const TextureInfo* texinfo)
+				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
+				const TextureInfo* texinfo)
 			{
-				const auto& names      = Shader_get_builtin_variable_names();
 				const Texture* texture = texinfo ? &texinfo->texture : NULL;
 
 				GLint pos_matrix_loc =
@@ -379,24 +377,25 @@ namespace Rays
 
 				GLint texcoord_matrix_loc =
 					glGetUniformLocation(program.id(), names.uniform_texcoord_matrix);
+				Matrix texcoord_mat(1);
 				if (texcoord_matrix_loc >= 0)
 				{
-					Matrix mat(1);
 					if (texture && *texture)
-						mat.scale(1.0 / texture->width(), 1.0 / texture->height());
-					glUniformMatrix4fv(texcoord_matrix_loc, 1, GL_FALSE, mat.array);
+						texcoord_mat.scale(1.0 / texture->width(), 1.0 / texture->height());
+					glUniformMatrix4fv(
+						texcoord_matrix_loc, 1, GL_FALSE, texcoord_mat.array);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
-				apply_texture_uniforms(program, texinfo);
+				apply_texture_uniforms(program, names, texinfo, texcoord_mat);
 			}
 
 			void apply_texture_uniforms (
-				const ShaderProgram& program, const TextureInfo* texinfo)
+				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
+				const TextureInfo* texinfo, const Matrix& texcoord_matrix)
 			{
 				if (!texinfo || !*texinfo) return;
 
-				const auto& names      = Shader_get_builtin_variable_names();
 				const Texture& texture = texinfo->texture;
 
 				GLint texture_loc =
@@ -418,12 +417,13 @@ namespace Rays
 						size_loc, texture.reserved_width(), texture.reserved_height());
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
-
+#endif
 				GLint min_loc =
 					glGetUniformLocation(program.id(), names.uniform_texcoord_min);
 				if (min_loc >= 0)
 				{
-					glUniform2fv(min_loc, 1, texinfo->texcoord_min.array);
+					Point min = texcoord_matrix * texinfo->texcoord_min;
+					glUniform3fv(min_loc, 1, min.array);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
 
@@ -431,10 +431,10 @@ namespace Rays
 					glGetUniformLocation(program.id(), names.uniform_texcoord_max);
 				if (max_loc >= 0)
 				{
-					glUniform2fv(max_loc, 1, texinfo->texcoord_max.array);
+					Point max = texcoord_matrix * texinfo->texcoord_max;
+					glUniform3fv(max_loc, 1, max.array);
 					OpenGL_check_error(__FILE__, __LINE__);
 				}
-#endif
 			}
 
 			void setup_vertices (

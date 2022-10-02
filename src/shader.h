@@ -11,6 +11,7 @@ namespace Rays
 {
 
 
+	class ShaderSource;
 	class ShaderProgram;
 
 
@@ -25,35 +26,44 @@ namespace Rays
 		String varying_texcoord;
 		String varying_color;
 
+		String uniform_texture;
 		String uniform_position_matrix;
 		String uniform_texcoord_matrix;
-		String uniform_texture;
+		String uniform_texcoord_min;
+		String uniform_texcoord_max;
 
 		ShaderBuiltinVariableNames (
-			const char* attribute_position      = "a_Position",
-			const char* attribute_texcoord      = "a_TexCoord",
-			const char* attribute_color         = "a_Color",
-			const char* varying_position        = "v_Position",
-			const char* varying_texcoord        = "v_TexCoord",
-			const char* varying_color           = "v_Color",
-			const char* uniform_position_matrix = "u_PositionMatrix",
-			const char* uniform_texcoord_matrix = "u_TexCoordMatrix",
-			const char* uniform_texture         = "u_Texture");
+			const char* attribute_position,
+			const char* attribute_texcoord,
+			const char* attribute_color,
+			const char* varying_position,
+			const char* varying_texcoord,
+			const char* varying_color,
+			const char* uniform_texture,
+			const char* uniform_position_matrix,
+			const char* uniform_texcoord_matrix,
+			const char* uniform_texcoord_min,
+			const char* uniform_texcoord_max);
 
 	};// ShaderBuiltinVariableNames
 
 
 	const ShaderProgram* Shader_get_program (const Shader& shader);
 
-
-	void Shader_set_builtin_variable_names (
-		const ShaderBuiltinVariableNames& names);
-
-	const ShaderBuiltinVariableNames& Shader_get_builtin_variable_names ();
+	const ShaderBuiltinVariableNames& Shader_get_builtin_variable_names (
+		const Shader& shader);
 
 	const Shader& Shader_get_default_shader_for_shape ();
 
 	const Shader& Shader_get_default_shader_for_texture ();
+
+
+	const ShaderBuiltinVariableNames& ShaderEnv_get_builtin_variable_names (
+		const ShaderEnv& env);
+
+	const ShaderSource& ShaderEnv_get_default_vertex_shader_source (
+		ShaderEnv* env);
+
 
 }// Rays
 

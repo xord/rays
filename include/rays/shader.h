@@ -14,6 +14,7 @@ namespace Rays
 
 
 	class Image;
+	class ShaderEnv;
 
 
 	class Shader
@@ -26,6 +27,11 @@ namespace Rays
 			Shader (
 				const char* fragment_shader_source = NULL,
 				const char*   vertex_shader_source = NULL);
+
+			Shader (
+				const char* fragment_shader_source,
+				const char*   vertex_shader_source,
+				ShaderEnv env);
 
 			~Shader ();
 
@@ -57,6 +63,10 @@ namespace Rays
 
 			void set_uniform (const char* name, const Image& texture);
 
+			const char*   vertex_shader_source () const;
+
+			const char* fragment_shader_source () const;
+
 			operator bool () const;
 
 			bool operator ! () const;
@@ -70,6 +80,31 @@ namespace Rays
 			Xot::PSharedImpl<Data> self;
 
 	};// Shader
+
+
+	class ShaderEnv
+	{
+
+		public:
+
+			ShaderEnv (
+				const char* attribute_position_name      = NULL,
+				const char* attribute_texcoord_name      = NULL,
+				const char* attribute_color_name         = NULL,
+				const char* varying_position_name        = NULL,
+				const char* varying_texcoord_name        = NULL,
+				const char* varying_color_name           = NULL,
+				const char* uniform_texture_name         = NULL,
+				const char* uniform_position_matrix_name = NULL,
+				const char* uniform_texcoord_matrix_name = NULL,
+				const char* uniform_texcoord_min_name    = NULL,
+				const char* uniform_texcoord_max_name    = NULL);
+
+			struct Data;
+
+			Xot::PSharedImpl<Data> self;
+
+	};// ShaderEnv
 
 
 }// Rays

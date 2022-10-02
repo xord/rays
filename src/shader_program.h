@@ -59,6 +59,10 @@ namespace Rays
 
 			GLuint id () const;
 
+			const ShaderSource& vertex_shader_source () const;
+
+			const ShaderSource& fragment_shader_source () const;
+
 			operator bool () const;
 
 			bool operator ! () const;

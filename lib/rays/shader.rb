@@ -12,10 +12,19 @@ module Rays
 
     def initialize(
       fragment_shader_source,
-      vertex_shader_source = nil,
+      vertex_shader_source   = nil,
+      builtin_variable_names = nil,
       **uniforms, &block)
 
-      setup fragment_shader_source, vertex_shader_source
+      setup(
+        fragment_shader_source, vertex_shader_source,
+        builtin_variable_names&.values_at(
+          :attribute_position, :attribute_texcoord, :attribute_color,
+            :varying_position,   :varying_texcoord,   :varying_color,
+          :uniform_texture,
+          :uniform_position_matrix, :uniform_texcoord_matrix,
+          :uniform_texcoord_min, :uniform_texcoord_max))
+
       uniform(**uniforms) unless uniforms.empty?
 
       Xot::BlockUtil.instance_eval_or_block_call self, &block if block

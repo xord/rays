@@ -500,6 +500,18 @@ namespace Rays
 		self->set_uniform_texture(name, new UniformTexture(texture));
 	}
 
+	const ShaderSource&
+	ShaderProgram::vertex_shader_source () const
+	{
+		return self->vertex;
+	}
+
+	const ShaderSource&
+	ShaderProgram::fragment_shader_source () const
+	{
+		return self->fragment;
+	}
+
 	GLuint
 	ShaderProgram::id () const
 	{

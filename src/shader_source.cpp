@@ -98,7 +98,7 @@ namespace Rays
 	const char*
 	ShaderSource::source () const
 	{
-		return self->source;
+		return self->is_valid() ? self->source.c_str() : NULL;
 	}
 
 	GLenum
