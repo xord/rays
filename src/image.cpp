@@ -58,9 +58,11 @@ namespace Rays
 	}
 
 	static Bitmap&
-	get_bitmap (Image& image)
+	get_bitmap (Image* image)
 	{
-		Image::Data* self = image.self.get();
+		assert(image);
+
+		Image::Data* self = image->self.get();
 
 		if (!image)
 		{
@@ -230,13 +232,13 @@ namespace Rays
 	Bitmap&
 	Image::bitmap ()
 	{
-		return get_bitmap(*this);
+		return get_bitmap(this);
 	}
 
 	const Bitmap&
 	Image::bitmap () const
 	{
-		return get_bitmap(const_cast<Image&>(*this));
+		return get_bitmap(const_cast<Image*>(this));
 	}
 
 	Image::operator bool () const
