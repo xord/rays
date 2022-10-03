@@ -18,6 +18,22 @@ RUCY_DEF_ALLOC(alloc, klass)
 }
 RUCY_END
 
+static Rays::ShaderEnv::NameList
+to_name_list (const auto& name_or_array)
+{
+	if (name_or_array.is_array())
+	{
+		Rays::ShaderEnv::NameList list;
+		for (size_t i = 0; i < name_or_array.size(); ++i)
+			list.emplace_back(name_or_array[i].c_str());
+		return list;
+	}
+	else if (name_or_array.is_s() || name_or_array.is_sym())
+		return {Xot::String(name_or_array.c_str())};
+	else
+		return {};
+}
+
 static
 RUCY_DEF3(setup,
 	fragment_shader_source, vertex_shader_source,
@@ -33,19 +49,19 @@ RUCY_DEF3(setup,
 
 	if (builtin_variable_names)
 	{
-		const auto& names = builtin_variable_names;
 		*THIS = Rays::Shader(fs, vs, Rays::ShaderEnv(
-			names[0]  ? names[0] .c_str() : NULL,
-			names[1]  ? names[1] .c_str() : NULL,
-			names[2]  ? names[2] .c_str() : NULL,
-			names[3]  ? names[3] .c_str() : NULL,
-			names[4]  ? names[4] .c_str() : NULL,
-			names[5]  ? names[5] .c_str() : NULL,
-			names[6]  ? names[6] .c_str() : NULL,
-			names[7]  ? names[7] .c_str() : NULL,
-			names[8]  ? names[8] .c_str() : NULL,
-			names[9]  ? names[9] .c_str() : NULL,
-			names[10] ? names[10].c_str() : NULL));
+			to_name_list(builtin_variable_names[0]),
+			to_name_list(builtin_variable_names[1]),
+			to_name_list(builtin_variable_names[2]),
+			to_name_list(builtin_variable_names[3]),
+			to_name_list(builtin_variable_names[4]),
+			to_name_list(builtin_variable_names[5]),
+			to_name_list(builtin_variable_names[6]),
+			to_name_list(builtin_variable_names[7]),
+			to_name_list(builtin_variable_names[8]),
+			to_name_list(builtin_variable_names[9]),
+			to_name_list(builtin_variable_names[10]),
+			to_name_list(builtin_variable_names[11])));
 	}
 	else
 		*THIS = Rays::Shader(fs, vs);

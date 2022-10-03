@@ -4,6 +4,7 @@
 #define __RAYS_SHADER_H__
 
 
+#include <vector>
 #include <xot/pimpl.h>
 #include <rays/defs.h>
 #include <rays/coord.h>
@@ -87,18 +88,21 @@ namespace Rays
 
 		public:
 
+			typedef std::vector<String> NameList;
+
 			ShaderEnv (
-				const char* attribute_position_name      = NULL,
-				const char* attribute_texcoord_name      = NULL,
-				const char* attribute_color_name         = NULL,
-				const char* varying_position_name        = NULL,
-				const char* varying_texcoord_name        = NULL,
-				const char* varying_color_name           = NULL,
-				const char* uniform_texture_name         = NULL,
-				const char* uniform_position_matrix_name = NULL,
-				const char* uniform_texcoord_matrix_name = NULL,
-				const char* uniform_texcoord_min_name    = NULL,
-				const char* uniform_texcoord_max_name    = NULL);
+				const NameList& attribute_position_names      = {},
+				const NameList& attribute_texcoord_names      = {},
+				const NameList& attribute_color_names         = {},
+				const NameList& varying_position_names        = {},
+				const NameList& varying_texcoord_names        = {},
+				const NameList& varying_color_names           = {},
+				const NameList& uniform_texture_names         = {},
+				const NameList& uniform_position_matrix_names = {},
+				const NameList& uniform_texcoord_matrix_names = {},
+				const NameList& uniform_texcoord_min_names    = {},
+				const NameList& uniform_texcoord_max_names    = {},
+				const NameList& uniform_texcoord_offset_names = {});
 
 			struct Data;
 

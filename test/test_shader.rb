@@ -49,7 +49,7 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_shader_source()
-    assert_equal vshader,      shader(fshader, vshader).vertex_shader_source
+    assert_equal vshader,       shader(fshader, vshader).vertex_shader_source
     assert_equal fshader(true), shader(fshader, vshader).fragment_shader_source
 
     assert_true shader(fshader).vertex_shader_source.then {|source|
@@ -59,24 +59,27 @@ class TestShader < Test::Unit::TestCase
         u_PositionMatrix u_TexCoordMatrix
       ].all? {|name| source.include? name}
     }
+  end
 
+  def test_shader_env()
     env = {
-      attribute_position:      'attribute_P',
-      attribute_texcoord:      'attribute_TC',
-      attribute_color:         'attribute_C',
-      varying_position:        'varying_P',
-      varying_texcoord:        'varying_TC',
-      varying_color:           'varying_C',
-      uniform_position_matrix: 'uniform_PM',
-      uniform_texcoord_matrix: 'uniform_TCM'
+      attribute_position:      ['a_P'],
+      attribute_texcoord:      [:a_TC],
+      attribute_color:         [:a_C, 'a_C2'],
+      varying_position:        'v_P',
+      varying_texcoord:        :v_TC,
+      varying_color:           nil,
+      uniform_position_matrix: [],
+      #uniform_texcoord_matrix: define nothing
     }
     assert_true shader(fshader, nil, env).vertex_shader_source.then {|source|
-      %w[
-        attribute_P attribute_TC attribute_C
-          varying_P   varying_TC   varying_C
-        uniform_PM uniform_TCM
-      ].all? {|name| source.include? name}
+      %w[a_P a_TC a_C v_P v_TC v_Color u_PositionMatrix u_TexCoordMatrix]
+        .all? {|name| source.include? name}
     }
+
+    assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ''})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ['']})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ['C', '']})}
   end
 
 end# TestShader

@@ -18,32 +18,34 @@ namespace Rays
 	struct ShaderBuiltinVariableNames
 	{
 
-		String attribute_position;
-		String attribute_texcoord;
-		String attribute_color;
+		ShaderEnv::NameList attribute_position_names;
+		ShaderEnv::NameList attribute_texcoord_names;
+		ShaderEnv::NameList attribute_color_names;
 
-		String varying_position;
-		String varying_texcoord;
-		String varying_color;
+		ShaderEnv::NameList varying_position_names;
+		ShaderEnv::NameList varying_texcoord_names;
+		ShaderEnv::NameList varying_color_names;
 
-		String uniform_texture;
-		String uniform_position_matrix;
-		String uniform_texcoord_matrix;
-		String uniform_texcoord_min;
-		String uniform_texcoord_max;
+		ShaderEnv::NameList uniform_texture_names;
+		ShaderEnv::NameList uniform_position_matrix_names;
+		ShaderEnv::NameList uniform_texcoord_matrix_names;
+		ShaderEnv::NameList uniform_texcoord_min_names;
+		ShaderEnv::NameList uniform_texcoord_max_names;
+		ShaderEnv::NameList uniform_texcoord_offset_names;
 
 		ShaderBuiltinVariableNames (
-			const char* attribute_position,
-			const char* attribute_texcoord,
-			const char* attribute_color,
-			const char* varying_position,
-			const char* varying_texcoord,
-			const char* varying_color,
-			const char* uniform_texture,
-			const char* uniform_position_matrix,
-			const char* uniform_texcoord_matrix,
-			const char* uniform_texcoord_min,
-			const char* uniform_texcoord_max);
+			const ShaderEnv::NameList& attribute_position_names,
+			const ShaderEnv::NameList& attribute_texcoord_names,
+			const ShaderEnv::NameList& attribute_color_names,
+			const ShaderEnv::NameList& varying_position_names,
+			const ShaderEnv::NameList& varying_texcoord_names,
+			const ShaderEnv::NameList& varying_color_names,
+			const ShaderEnv::NameList& uniform_texture_names,
+			const ShaderEnv::NameList& uniform_position_matrix_names,
+			const ShaderEnv::NameList& uniform_texcoord_matrix_names,
+			const ShaderEnv::NameList& uniform_texcoord_min_names,
+			const ShaderEnv::NameList& uniform_texcoord_max_names,
+			const ShaderEnv::NameList& uniform_texcoord_offset_names);
 
 	};// ShaderBuiltinVariableNames
 
