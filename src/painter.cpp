@@ -381,7 +381,11 @@ namespace Rays
 				if (texcoord_matrix_loc >= 0)
 				{
 					if (texture && *texture)
-						texcoord_mat.scale(1.0 / texture->width(), 1.0 / texture->height());
+					{
+						texcoord_mat.scale(
+							1.0 / texture->reserved_width(),
+							1.0 / texture->reserved_height());
+					}
 					glUniformMatrix4fv(
 						texcoord_matrix_loc, 1, GL_FALSE, texcoord_mat.array);
 					OpenGL_check_error(__FILE__, __LINE__);
