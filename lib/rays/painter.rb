@@ -29,13 +29,13 @@ module Rays
           attributes[key] = __send__ key
           __send__ key, *value
         end
-
         Xot::BlockUtil.instance_eval_or_block_call self, &block
-
+      end
+    ensure
+      if block
         attributes.each do |key, value|
           __send__ key, *value
         end
-
         pop(*types)
       end
     end
