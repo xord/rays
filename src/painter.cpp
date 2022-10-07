@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <glm/gtc/matrix_transform.hpp>
 #include "rays/exception.h"
 #include "rays/point.h"
@@ -338,27 +339,65 @@ namespace Rays
 
 			const auto& names = Shader_get_builtin_variable_names(shader);
 			apply_builtin_uniforms(*program, names, texinfo);
+			apply_attributes(*program, names, points, texcoords, color, [&]() {
+				//activate_texture(texture);
 
-			GLint a_position = get_attrib_location(*program, names.attribute_position_names);
-			GLint a_texcoord = get_attrib_location(*program, names.attribute_texcoord_names);
-			GLint a_color    = get_attrib_location(*program, names.attribute_color_names);
-			if (a_position < 0 || a_texcoord < 0 || a_color < 0)
-				opengl_error(__FILE__, __LINE__);
+				glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
+				OpenGL_check_error(__FILE__, __LINE__);
 
-			setup_vertices(
-				points, npoints, texcoords, color, a_position, a_texcoord, a_color);
-			//activate_texture(texture);
-
-			glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
-			OpenGL_check_error(__FILE__, __LINE__);
-
-			//deactivate_texture(texture);
-			cleanup_vertices(a_position, a_texcoord);
+				//deactivate_texture(texture);
+			});
 
 			ShaderProgram_deactivate();
 		}
 
 		private:
+
+			typedef std::vector<GLint> LocationList;
+
+			void apply_attributes (
+				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
+				const Coord3* points, const Coord3* texcoords, const Color& color,
+				std::function<void()> draw)
+			{
+				assert(points && texcoords);
+
+				LocationList locations;
+				for (const auto& name : names.attribute_position_names)
+				{
+					apply_attribute(&locations, program, name, [&](GLint loc) {
+						glEnableVertexAttribArray(loc);
+					OpenGL_check_error(__FILE__, __LINE__);
+						glVertexAttribPointer(
+							loc, Coord3::SIZE, get_gl_type<coord>(),
+							GL_FALSE, sizeof(Coord3), points);
+					});
+				}
+				for (const auto& name : names.attribute_texcoord_names)
+				{
+					apply_attribute(&locations, program, name, [&](GLint loc) {
+						glEnableVertexAttribArray(loc);
+					OpenGL_check_error(__FILE__, __LINE__);
+						glVertexAttribPointer(
+							loc, Coord3::SIZE, get_gl_type<coord>(),
+							GL_FALSE, sizeof(Coord3), texcoords);
+					});
+				}
+				for (const auto& name : names.attribute_color_names)
+				{
+					apply_attribute(NULL, program, name, [&](GLint loc) {
+						glVertexAttrib4fv(loc, color.array);
+					});
+				}
+
+				draw();
+
+				for (auto loc : locations)
+				{
+					glDisableVertexAttribArray(loc);
+					OpenGL_check_error(__FILE__, __LINE__);
+				}
+			}
 
 			void apply_builtin_uniforms (
 				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
@@ -366,138 +405,81 @@ namespace Rays
 			{
 				const Texture* texture = texinfo ? &texinfo->texture : NULL;
 
-				GLint pos_matrix_loc =
-					get_uniform_location(program, names.uniform_position_matrix_names);
-				if (pos_matrix_loc >= 0)
+				Matrix texcoord_matrix(1);
+				if (texture && *texture)
 				{
-					glUniformMatrix4fv(
-						pos_matrix_loc, 1, GL_FALSE, position_matrix.array);
-					OpenGL_check_error(__FILE__, __LINE__);
+					texcoord_matrix.scale(
+						1.0 / texture->reserved_width(),
+						1.0 / texture->reserved_height());
 				}
 
-				GLint texcoord_matrix_loc =
-					get_uniform_location(program, names.uniform_texcoord_matrix_names);
-				Matrix texcoord_mat(1);
-				if (texcoord_matrix_loc >= 0)
+				for (const auto& name : names.uniform_position_matrix_names)
 				{
-					if (texture && *texture)
-					{
-						texcoord_mat.scale(
-							1.0 / texture->reserved_width(),
-							1.0 / texture->reserved_height());
-					}
-					glUniformMatrix4fv(
-						texcoord_matrix_loc, 1, GL_FALSE, texcoord_mat.array);
-					OpenGL_check_error(__FILE__, __LINE__);
+					apply_uniform(program, name, [&](GLint loc) {
+						glUniformMatrix4fv(loc, 1, GL_FALSE, position_matrix.array);
+					});
+				}
+				for (const auto& name : names.uniform_texcoord_matrix_names)
+				{
+					apply_uniform(program, name, [&](GLint loc) {
+						glUniformMatrix4fv(loc, 1, GL_FALSE, texcoord_matrix.array);
+					});
 				}
 
-				apply_texture_uniforms(program, names, texinfo, texcoord_mat);
-			}
+				if (!texinfo || !texture || !*texture) return;
 
-			void apply_texture_uniforms (
-				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
-				const TextureInfo* texinfo, const Matrix& texcoord_matrix)
-			{
-				if (!texinfo || !*texinfo) return;
-
-				const Texture& texture = texinfo->texture;
-
-				GLint texture_loc =
-					get_uniform_location(program, names.uniform_texture_names);
-				if (texture_loc >= 0)
+				for (const auto& name : names.uniform_texcoord_min_names)
 				{
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, texture.id());
-
-					glUniform1i(texture_loc, 0);
-					OpenGL_check_error(__FILE__, __LINE__);
+					apply_uniform(program, name, [&](GLint loc) {
+						Point min = texcoord_matrix * texinfo->texcoord_min;
+						glUniform3fv(loc, 1, min.array);
+					});
 				}
-#if 0
-				GLint size_loc =
-					get_uniform_location(program, names.uniform_texture_size_names);
-				if (size_loc >= 0)
+				for (const auto& name : names.uniform_texcoord_max_names)
 				{
-					glUniform2f(
-						size_loc, texture.reserved_width(), texture.reserved_height());
-					OpenGL_check_error(__FILE__, __LINE__);
+					apply_uniform(program, name, [&](GLint loc) {
+						Point max = texcoord_matrix * texinfo->texcoord_max;
+						glUniform3fv(loc, 1, max.array);
+					});
 				}
-#endif
-				GLint min_loc =
-					get_uniform_location(program, names.uniform_texcoord_min_names);
-				if (min_loc >= 0)
+				for (const auto& name : names.uniform_texcoord_offset_names)
 				{
-					Point min = texcoord_matrix * texinfo->texcoord_min;
-					glUniform3fv(min_loc, 1, min.array);
-					OpenGL_check_error(__FILE__, __LINE__);
+					apply_uniform(program, name, [&](GLint loc) {
+						Point offset(1.0 / texture->width(), 1.0 / texture->height());
+						glUniform3fv(loc, 1, offset.array);
+					});
 				}
-
-				GLint max_loc =
-					get_uniform_location(program, names.uniform_texcoord_max_names);
-				if (max_loc >= 0)
+				for (const auto& name : names.uniform_texture_names)
 				{
-					Point max = texcoord_matrix * texinfo->texcoord_max;
-					glUniform3fv(max_loc, 1, max.array);
-					OpenGL_check_error(__FILE__, __LINE__);
-				}
-
-				GLint offset_loc =
-					get_uniform_location(program, names.uniform_texcoord_offset_names);
-				if (offset_loc >= 0)
-				{
-					Point offset(1.0 / texture.width(), 1.0 / texture.height());
-					glUniform3fv(max_loc, 1, offset.array);
-					OpenGL_check_error(__FILE__, __LINE__);
+					apply_uniform(program, name, [&](GLint loc) {
+						glActiveTexture(GL_TEXTURE0);
+						glBindTexture(GL_TEXTURE_2D, texture->id());
+						glUniform1i(loc, 0);
+					});
 				}
 			}
 
-			GLint get_attrib_location (
-				const ShaderProgram& program, const ShaderEnv::NameList& names)
+			void apply_attribute (
+				LocationList* locations, const ShaderProgram& program, const char* name,
+				std::function<void(GLint)> apply)
 			{
-				for (const auto& name : names)
-				{
-					GLint loc = glGetAttribLocation(program.id(), name);
-					if (loc >= 0) return loc;
-				}
-				return -1;
-			}
+				GLint loc = glGetAttribLocation(program.id(), name);
+				if (loc < 0) return;
 
-			GLint get_uniform_location (
-				const ShaderProgram& program, const ShaderEnv::NameList& names)
-			{
-				for (const auto& name : names)
-				{
-					GLint loc = glGetUniformLocation(program.id(), name);
-					if (loc >= 0) return loc;
-				}
-				return -1;
-			}
-
-			void setup_vertices (
-				const Coord3* points, size_t npoints,
-				const Coord3* texcoords, const Color& color,
-				GLuint a_position, GLuint a_texcoord, GLuint a_color)
-			{
-				assert(points && npoints >= 0 && texcoords);
-
-				glEnableVertexAttribArray(a_position);
-				glVertexAttribPointer(
-					a_position, Coord3::SIZE, get_gl_type<coord>(),
-					GL_FALSE, sizeof(Coord3), points);
+				apply(loc);
 				OpenGL_check_error(__FILE__, __LINE__);
 
-				glEnableVertexAttribArray(a_texcoord);
-				glVertexAttribPointer(
-					a_texcoord, Coord3::SIZE, get_gl_type<coord>(),
-					GL_FALSE, sizeof(Coord3), texcoords);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				glVertexAttrib4fv(a_color, color.array);
+				if (locations) locations->push_back(loc);
 			}
 
-			void cleanup_vertices (GLint a_position, GLint a_texcoord)
+			void apply_uniform (
+				const ShaderProgram& program, const char* name,
+				std::function<void(GLint)> apply)
 			{
-				glDisableVertexAttribArray(a_position);
-				glDisableVertexAttribArray(a_texcoord);
+				GLint loc = glGetUniformLocation(program.id(), name);
+				if (loc < 0) return;
+
+				apply(loc);
 				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
