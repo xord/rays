@@ -8,10 +8,10 @@ namespace Rays
 {
 
 
-	GLenum
-	OpenGL_get_error ()
+	bool
+	OpenGL_has_error ()
 	{
-		return glGetError();
+		return glGetError() != GL_NO_ERROR;
 	}
 
 	static String
@@ -37,7 +37,7 @@ namespace Rays
 	void
 	OpenGL_check_error (const char* file, int line)
 	{
-		GLenum e = OpenGL_get_error();
+		GLenum e = glGetError();
 		if (e != GL_NO_ERROR)
 			opengl_error(file, line, "OpenGL error %s", get_error_name(e).c_str());
 	}

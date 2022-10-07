@@ -35,7 +35,7 @@ namespace Rays
 
 			virtual ~UniformValue () {}
 
-			virtual void apply (GLint location) const = 0;
+			virtual bool apply (GLint location) const = 0;
 
 	};// UniformValue
 
@@ -83,10 +83,10 @@ namespace Rays
 					array[i] = args[i];
 			}
 
-			void apply (GLint location) const
+			bool apply (GLint location) const
 			{
 				apply_value(location);
-				OpenGL_check_error(__FILE__, __LINE__);
+				return !OpenGL_has_error();
 			}
 
 			void apply_value (GLint location) const;
@@ -149,9 +149,9 @@ namespace Rays
 			{
 			}
 
-			void apply (GLint location) const
+			bool apply (GLint location) const
 			{
-				if (!texture) return;
+				if (!texture) return false;
 
 				GLint unit_max = get_texture_unit_max();
 				GLint unit = unit_max;
@@ -160,7 +160,7 @@ namespace Rays
 
 				glBindTexture(GL_TEXTURE_2D, texture.id());
 				glUniform1i(location, unit);
-				OpenGL_check_error(__FILE__, __LINE__);
+				return !OpenGL_has_error();
 			}
 
 		private:
@@ -213,7 +213,12 @@ namespace Rays
 			GLint location = glGetUniformLocation(program.id(), self->name);
 			if (location < 0) return;
 
-			self->value->apply(location);
+			if (!self->value->apply(location))
+			{
+				opengl_error(
+					__FILE__, __LINE__,
+					"failed to apply uniform variable '%s'", self->name.c_str());
+			}
 		}
 
 		bool operator == (const Uniform& rhs) const
