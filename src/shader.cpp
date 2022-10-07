@@ -99,18 +99,18 @@ namespace Rays
 		const ShaderBuiltinVariableNames& names =
 			ShaderEnv_get_builtin_variable_names(DEFAULT_ENV);
 		return Shader(
-			"varying vec4 " + V_TEXCOORD + ";\n"
-			"varying vec4 " + V_COLOR + ";\n"
-			"uniform vec3 " + U_TEXCOORD_MIN + ";\n"
-			"uniform vec3 " + U_TEXCOORD_MAX + ";\n"
+			"varying vec4 "      + V_TEXCOORD + ";\n"
+			"varying vec4 "      + V_COLOR + ";\n"
+			"uniform vec3 "      + U_TEXCOORD_MIN + ";\n"
+			"uniform vec3 "      + U_TEXCOORD_MAX + ";\n"
 			"uniform sampler2D " + U_TEXTURE + ";\n"
 			"void main ()\n"
 			"{\n"
-			"  vec2 __min      = " + U_TEXCOORD_MIN + ".xy;\n"
-			"  vec2 __len      = " + U_TEXCOORD_MAX + ".xy - __min;\n"
-			"  vec2 __texcoord = mod(" + V_TEXCOORD + ".xy - __min, __len) + __min;\n"
-			"  vec4 __color    = texture2D(" + U_TEXTURE + ", __texcoord);\n"
-			"  gl_FragColor    = " + V_COLOR + " * __color;\n"
+			"  vec2 min__      = " + U_TEXCOORD_MIN + ".xy;\n"
+			"  vec2 len__      = " + U_TEXCOORD_MAX + ".xy - min__;\n"
+			"  vec2 texcoord__ = mod(" + V_TEXCOORD + ".xy - min__, len__) + min__;\n"
+			"  vec4 color__    = texture2D(" + U_TEXTURE + ", texcoord__);\n"
+			"  gl_FragColor    = " + V_COLOR + " * color__;\n"
 			"}\n");
 	}
 
@@ -346,19 +346,19 @@ namespace Rays
 				"attribute vec3 " + A_POSITION + ";\n"
 				"attribute vec3 " + A_TEXCOORD + ";\n"
 				"attribute vec4 " + A_COLOR + ";\n"
-				"varying   vec4 " + V_POSITION + ";\n"
-				"varying   vec4 " + V_TEXCOORD + ";\n"
-				"varying   vec4 " + V_COLOR + ";\n"
-				"uniform   mat4 " + U_POSITION_MATRIX + ";\n"
-				"uniform   mat4 " + U_TEXCOORD_MATRIX + ";\n"
+				"varying vec4 "   + V_POSITION + ";\n"
+				"varying vec4 "   + V_TEXCOORD + ";\n"
+				"varying vec4 "   + V_COLOR + ";\n"
+				"uniform mat4 "   + U_POSITION_MATRIX + ";\n"
+				"uniform mat4 "   + U_TEXCOORD_MATRIX + ";\n"
 				"void main ()\n"
 				"{\n"
-				"  vec4 __pos      = vec4(" + A_POSITION + ", 1.0);\n"
-				"  vec4 __texcoord = vec4(" + A_TEXCOORD + ", 1.0);\n"
-				"  " + V_POSITION + "  = __pos;\n"
-				"  " + V_TEXCOORD + "  = " + U_TEXCOORD_MATRIX + " * __texcoord;\n"
-				"  " + V_COLOR    + "  = " + A_COLOR + ";\n"
-				"  gl_Position         = " + U_POSITION_MATRIX + " * __pos;\n"
+				"  vec4 pos__      = vec4(" + A_POSITION + ", 1.0);\n"
+				"  vec4 texcoord__ = vec4(" + A_TEXCOORD + ", 1.0);\n"
+				"  " + V_POSITION +  " = pos__;\n"
+				"  " + V_TEXCOORD +  " = " + U_TEXCOORD_MATRIX + " * texcoord__;\n"
+				"  " + V_COLOR    +  " = " + A_COLOR + ";\n"
+				"  gl_Position         = " + U_POSITION_MATRIX + " * pos__;\n"
 				"}\n";
 		}
 
