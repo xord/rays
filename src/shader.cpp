@@ -65,16 +65,17 @@ namespace Rays
 
 		ShaderSource make_fragment_shader_source (const char* source)
 		{
-			static const String SHARED_HEADER =
-				"#ifdef GL_ES\n"
-				"precision mediump float;\n"
-				"#endif\n";
-			static const std::regex PRECISION(R"(^\s*precision\s+\w+p\s+float\s*;)");
+			#ifdef IOS
+				static const String SHARED_HEADER = "precision mediump float;";
+				static const std::regex PRECISION(R"(^\s*precision\s+\w+p\s+float\s*;)");
 
-			if (std::regex_search(source, PRECISION))
+				if (!std::regex_search(source, PRECISION))
+					return ShaderSource(GL_FRAGMENT_SHADER, SHARED_HEADER + source);
+				else
+					return ShaderSource(GL_FRAGMENT_SHADER, source);
+			#else
 				return ShaderSource(GL_FRAGMENT_SHADER, source);
-			else
-				return ShaderSource(GL_FRAGMENT_SHADER, SHARED_HEADER + source);
+			#endif
 		}
 
 	};// Shader::Data
