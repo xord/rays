@@ -63,23 +63,35 @@ class TestShader < Test::Unit::TestCase
 
   def test_shader_env()
     env = {
-      attribute_position:      ['a_P'],
-      attribute_texcoord:      [:a_TC],
-      attribute_color:         [:a_C, 'a_C2'],
-      varying_position:        'v_P',
-      varying_texcoord:        :v_TC,
-      varying_color:           nil,
-      uniform_position_matrix: [],
+      attribute_position:       'aP',
+      attribute_texcoord:       ['aTC', 'aTC2'],
+      attribute_color:          [],
+      varying_position:         'vP',
+      varying_texcoord:         nil,
+      #varying_color:           define nothing
+      uniform_position_matrix:  nil,
       #uniform_texcoord_matrix: define nothing
     }
     assert_true shader(fshader, nil, env).vertex_shader_source.then {|source|
-      %w[a_P a_TC a_C v_P v_TC v_Color u_PositionMatrix u_TexCoordMatrix]
-        .all? {|name| source.include? name}
+      %w[
+        aP
+        aTC
+        a_Color
+        vP
+        v_TexCoord
+        v_Color
+        u_PositionMatrix
+        u_TexCoordMatrix
+      ].all? {|name| source.include? name}
     }
 
+    assert_raise(ArgumentError) {shader(fshader, nil, {attribute_color: ''})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {attribute_color: ['']})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {attribute_color: [nil]})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {attribute_color: ['C', '']})}
+    assert_raise(ArgumentError) {shader(fshader, nil, {attribute_color: ['C', nil]})}
+
     assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ''})}
-    assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ['']})}
-    assert_raise(ArgumentError) {shader(fshader, nil, {varying_color: ['C', '']})}
   end
 
 end# TestShader

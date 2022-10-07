@@ -16,15 +16,15 @@ namespace Rays
 	#define A_POSITION        (names.attribute_position_names[0])
 	#define A_TEXCOORD        (names.attribute_texcoord_names[0])
 	#define A_COLOR           (names.attribute_color_names[0])
-	#define V_POSITION        (names.varying_position_names[0])
-	#define V_TEXCOORD        (names.varying_texcoord_names[0])
-	#define V_COLOR           (names.varying_color_names[0])
-	#define U_TEXTURE         (names.uniform_texture_names[0])
+	#define V_POSITION        (names.varying_position_name)
+	#define V_TEXCOORD        (names.varying_texcoord_name)
+	#define V_COLOR           (names.varying_color_name)
 	#define U_POSITION_MATRIX (names.uniform_position_matrix_names[0])
 	#define U_TEXCOORD_MATRIX (names.uniform_texcoord_matrix_names[0])
 	#define U_TEXCOORD_MIN    (names.uniform_texcoord_min_names[0])
 	#define U_TEXCOORD_MAX    (names.uniform_texcoord_max_names[0])
 	#define U_TEXCOORD_OFFSET (names.uniform_texcoord_offset_names[0])
+	#define U_TEXTURE         (names.uniform_texture_names[0])
 
 
 	static ShaderEnv DEFAULT_ENV;
@@ -392,23 +392,37 @@ namespace Rays
 		const NameList& a_position_names,
 		const NameList& a_texcoord_names,
 		const NameList& a_color_names,
-		const NameList& v_position_names,
-		const NameList& v_texcoord_names,
-		const NameList& v_color_names,
-		const NameList& u_texture_names,
+		const char*     v_position_name,
+		const char*     v_texcoord_name,
+		const char*     v_color_name,
 		const NameList& u_position_matrix_names,
 		const NameList& u_texcoord_matrix_names,
 		const NameList& u_texcoord_min_names,
 		const NameList& u_texcoord_max_names,
-		const NameList& u_texcoord_offset_names)
+		const NameList& u_texcoord_offset_names,
+		const NameList& u_texture_names)
 	:	self(new Data(ShaderBuiltinVariableNames(
 			a_position_names, a_texcoord_names, a_color_names,
-			v_position_names, v_texcoord_names, v_color_names,
-			u_texture_names, u_position_matrix_names, u_texcoord_matrix_names,
-			u_texcoord_min_names, u_texcoord_max_names, u_texcoord_offset_names)))
+			v_position_name,  v_texcoord_name,  v_color_name,
+			u_position_matrix_names, u_texcoord_matrix_names,
+			u_texcoord_min_names, u_texcoord_max_names, u_texcoord_offset_names,
+			u_texture_names)))
 	{
 	}
 
+
+	static void
+	validate_name (const String& name, const char* for_variable)
+	{
+		assert(for_variable);
+
+		if (name.empty())
+		{
+			argument_error(
+				__FILE__, __LINE__,
+				"invalid variable name '%s' for '%s'", name.c_str(), for_variable);
+		}
+	}
 
 	static void
 	validate_names (
@@ -416,59 +430,52 @@ namespace Rays
 		const char* for_variable,
 		const char* default_name)
 	{
-		assert(names);
+		assert(names && for_variable && default_name);
 
 		if (names->empty()) names->emplace_back(default_name);
 
 		for (const auto& name : *names)
-		{
-			if (name.empty())
-			{
-				argument_error(
-					__FILE__, __LINE__,
-					"invalid variable name '%s' for '%s'", name.c_str(), for_variable);
-			}
-		}
+			validate_name(name, for_variable);
 	}
 
 	ShaderBuiltinVariableNames::ShaderBuiltinVariableNames (
 		const ShaderEnv::NameList& a_position,
 		const ShaderEnv::NameList& a_texcoord,
 		const ShaderEnv::NameList& a_color,
-		const ShaderEnv::NameList& v_position,
-		const ShaderEnv::NameList& v_texcoord,
-		const ShaderEnv::NameList& v_color,
-		const ShaderEnv::NameList& u_texture,
+		const char* v_position,
+		const char* v_texcoord,
+		const char* v_color,
 		const ShaderEnv::NameList& u_position_matrix,
 		const ShaderEnv::NameList& u_texcoord_matrix,
 		const ShaderEnv::NameList& u_texcoord_min,
 		const ShaderEnv::NameList& u_texcoord_max,
-		const ShaderEnv::NameList& u_texcoord_offset)
+		const ShaderEnv::NameList& u_texcoord_offset,
+		const ShaderEnv::NameList& u_texture)
 	:	attribute_position_names(a_position),
 		attribute_texcoord_names(a_texcoord),
 		attribute_color_names(a_color),
-		varying_position_names(v_position),
-		varying_texcoord_names(v_texcoord),
-		varying_color_names(v_color),
-		uniform_texture_names(u_texture),
+		varying_position_name(v_position ? v_position : "v_Position"),
+		varying_texcoord_name(v_texcoord ? v_texcoord : "v_TexCoord"),
+		varying_color_name(   v_color    ? v_color    : "v_Color"),
 		uniform_position_matrix_names(u_position_matrix),
 		uniform_texcoord_matrix_names(u_texcoord_matrix),
 		uniform_texcoord_min_names(u_texcoord_min),
 		uniform_texcoord_max_names(u_texcoord_max),
-		uniform_texcoord_offset_names(u_texcoord_offset)
+		uniform_texcoord_offset_names(u_texcoord_offset),
+		uniform_texture_names(u_texture)
 	{
 		validate_names(&attribute_position_names,      "attribute_position",      "a_Position");
 		validate_names(&attribute_texcoord_names,      "attribute_texcoord",      "a_TexCoord");
 		validate_names(&attribute_color_names,         "attribute_color",         "a_Color");
-		validate_names(&varying_position_names,        "varying_position",        "v_Position");
-		validate_names(&varying_texcoord_names,        "varying_texcoord",        "v_TexCoord");
-		validate_names(&varying_color_names,           "varying_color",           "v_Color");
-		validate_names(&uniform_texture_names,         "uniform_texture",         "u_Texture");
+		validate_name(varying_position_name,           "varying_position");
+		validate_name(varying_texcoord_name,           "varying_texcoord");
+		validate_name(varying_color_name,              "varying_color");
 		validate_names(&uniform_position_matrix_names, "uniform_position_matrix", "u_PositionMatrix");
 		validate_names(&uniform_texcoord_matrix_names, "uniform_texcoord_matrix", "u_TexCoordMatrix");
 		validate_names(&uniform_texcoord_min_names,    "uniform_texcoord_min",    "u_TexCoordMin");
 		validate_names(&uniform_texcoord_max_names,    "uniform_texcoord_max",    "u_TexCoordMax");
 		validate_names(&uniform_texcoord_offset_names, "uniform_texcoord_offset", "u_TexCoordOffset");
+		validate_names(&uniform_texture_names,         "uniform_texture",         "u_Texture");
 	}
 
 

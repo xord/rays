@@ -21,9 +21,9 @@ module Rays
         builtin_variable_names&.values_at(
           :attribute_position, :attribute_texcoord, :attribute_color,
             :varying_position,   :varying_texcoord,   :varying_color,
-          :uniform_texture,
           :uniform_position_matrix, :uniform_texcoord_matrix,
-          :uniform_texcoord_min, :uniform_texcoord_max))
+          :uniform_texcoord_min, :uniform_texcoord_max, :uniform_texcoord_offset,
+          :uniform_texture))
 
       uniform(**uniforms) unless uniforms.empty?
 

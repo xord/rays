@@ -94,15 +94,15 @@ namespace Rays
 				const NameList& attribute_position_names      = {},
 				const NameList& attribute_texcoord_names      = {},
 				const NameList& attribute_color_names         = {},
-				const NameList& varying_position_names        = {},
-				const NameList& varying_texcoord_names        = {},
-				const NameList& varying_color_names           = {},
-				const NameList& uniform_texture_names         = {},
+				const char*     varying_position_name         = NULL,
+				const char*     varying_texcoord_name         = NULL,
+				const char*     varying_color_name            = NULL,
 				const NameList& uniform_position_matrix_names = {},
 				const NameList& uniform_texcoord_matrix_names = {},
 				const NameList& uniform_texcoord_min_names    = {},
 				const NameList& uniform_texcoord_max_names    = {},
-				const NameList& uniform_texcoord_offset_names = {});
+				const NameList& uniform_texcoord_offset_names = {},
+				const NameList& uniform_texture_names         = {});
 
 			struct Data;
 
