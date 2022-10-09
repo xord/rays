@@ -33,7 +33,7 @@ module Rays
       when 1 then [x]
       when 2 then [x, y]
       when 3 then [x, y, z]
-      when 4 then [x, y, z, 1]
+      when 4 then [x, y, z, 1.0]
       else raise ArgumentError
       end
     end
