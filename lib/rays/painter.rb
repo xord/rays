@@ -92,6 +92,7 @@ module Rays
     end
 
     def shader=(shader, **uniforms)
+      shader = Shader.new shader if shader.is_a?(String)
       shader.uniform(**uniforms) if shader && !uniforms.empty?
       set_shader shader
     end
