@@ -210,15 +210,13 @@ namespace Rays
 			if (!program || self->applied) return;
 			self->applied = true;
 
-			GLint location = glGetUniformLocation(program.id(), self->name);
-			if (location < 0) return;
+			const char* name = self->name;
+			GLint location = glGetUniformLocation(program.id(), name);
+			if (location < 0)
+				shader_error(__FILE__, __LINE__, "uniform variable '%s' not found", name);
 
 			if (!self->value->apply(location))
-			{
-				shader_error(
-					__FILE__, __LINE__,
-					"failed to apply uniform variable '%s'", self->name.c_str());
-			}
+				shader_error(__FILE__, __LINE__, "failed to apply uniform variable '%s'", name);
 		}
 
 		bool operator == (const Uniform& rhs) const
