@@ -112,13 +112,14 @@ class TestPoint < Test::Unit::TestCase
 
   def test_to_a()
     o = point 1, 2, 3
-    assert_equal [1, 2],    o.to_a
-    assert_equal [1],       o.to_a(1)
-    assert_equal [1, 2],    o.to_a(2)
-    assert_equal [1, 2, 3], o.to_a(3)
+    assert_equal [1, 2],       o.to_a
+    assert_equal [1],          o.to_a(1)
+    assert_equal [1, 2],       o.to_a(2)
+    assert_equal [1, 2, 3],    o.to_a(3)
+    assert_equal [1, 2, 3, 1], o.to_a(4)
     assert_raise(ArgumentError) {o.to_a(-1)}
     assert_raise(ArgumentError) {o.to_a(0)}
-    assert_raise(ArgumentError) {o.to_a(4)}
+    assert_raise(ArgumentError) {o.to_a(5)}
   end
 
   def test_index()
