@@ -30,6 +30,8 @@ namespace Rays
 
 	void    OpenGL_check_error (const char* file, int line);
 
+	void    OpenGL_check_error (const char* file, int line, const char* format, ...);
+
 
 }// Rays
 
