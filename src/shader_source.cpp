@@ -42,7 +42,7 @@ namespace Rays
 			GLint status = GL_FALSE;
 			glGetShaderiv(id, GL_COMPILE_STATUS, &status);
 			if (status == GL_FALSE)
-				opengl_error(__FILE__, __LINE__, get_compile_log().c_str());
+				shader_error(__FILE__, __LINE__, get_compile_log().c_str());
 
 			type   = type_;
 			source = source_;

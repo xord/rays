@@ -26,6 +26,13 @@ namespace Rays
 	};
 
 
+	class ShaderError : public OpenGLError
+	{
+		typedef OpenGLError Super;
+		public: ShaderError (const char* str = NULL);
+	};
+
+
 	namespace ErrorFunctions
 	{
 
@@ -37,6 +44,10 @@ namespace Rays
 
 		[[noreturn]]
 		void opengl_error (
+			const char* file, int line, const char* format = NULL, ...);
+
+		[[noreturn]]
+		void shader_error (
 			const char* file, int line, const char* format = NULL, ...);
 
 	}// ErrorFunctions

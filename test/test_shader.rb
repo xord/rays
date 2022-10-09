@@ -27,11 +27,11 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_initialize()
-    assert_raise(Rays::OpenGLError) {shader "foo"}
-    assert_raise(Rays::OpenGLError) {shader "foo", vshader}
-    assert_raise(Rays::OpenGLError) {shader fshader, "foo"}
-    assert_raise(Rays::OpenGLError) {shader vshader}
-    assert_raise(Rays::OpenGLError) {shader fshader, fshader}
+    assert_raise(Rays::ShaderError) {shader "foo"}
+    assert_raise(Rays::ShaderError) {shader "foo", vshader}
+    assert_raise(Rays::ShaderError) {shader fshader, "foo"}
+    assert_raise(Rays::ShaderError) {shader vshader}
+    assert_raise(Rays::ShaderError) {shader fshader, fshader}
     assert_raise(ArgumentError) {shader nil}
     assert shader(fshader)
     assert shader(fshader, vshader)

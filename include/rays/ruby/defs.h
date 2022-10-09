@@ -10,6 +10,10 @@
 
 #define RAYS_CATCH \
 	} \
+	catch (const Rays::ShaderError& e) \
+	{ \
+		RUCY_RAISE(Rays::shader_error_class(), e.what()); \
+	} \
 	catch (const Rays::OpenGLError& e) \
 	{ \
 		RUCY_RAISE(Rays::opengl_error_class(), e.what()); \

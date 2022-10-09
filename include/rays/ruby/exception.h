@@ -18,6 +18,9 @@ namespace Rays
 	Rucy::Class opengl_error_class ();
 	// class Rays::OpenGLError
 
+	Rucy::Class shader_error_class ();
+	// class Rays::ShaderError
+
 
 }// Rays
 

@@ -6,6 +6,7 @@
 
 static Class cRaysError;
 static Class cOpenGLError;
+static Class cShaderError;
 
 void
 Init_exception ()
@@ -14,6 +15,7 @@ Init_exception ()
 
 	cRaysError   = mRays.define_class("RaysError", rb_eRuntimeError);
 	cOpenGLError = mRays.define_class("OpenGLError", cRaysError);
+	cShaderError = mRays.define_class("ShaderError", cOpenGLError);
 }
 
 
@@ -31,6 +33,12 @@ namespace Rays
 	opengl_error_class ()
 	{
 		return cOpenGLError;
+	}
+
+	Class
+	shader_error_class ()
+	{
+		return cShaderError;
 	}
 
 

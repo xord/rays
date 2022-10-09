@@ -20,6 +20,12 @@ namespace Rays
 	}
 
 
+	ShaderError::ShaderError (const char* str)
+	:	Super(str)
+	{
+	}
+
+
 	namespace ErrorFunctions
 	{
 
@@ -35,6 +41,13 @@ namespace Rays
 		{
 			XOT_STRINGF(format, s);
 			throw OpenGLError(Xot::error_text(file, line, s));
+		}
+
+		void
+		shader_error (const char* file, int line, const char* format, ...)
+		{
+			XOT_STRINGF(format, s);
+			throw ShaderError(Xot::error_text(file, line, s));
 		}
 
 	}// ErrorFunctions

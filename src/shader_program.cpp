@@ -215,7 +215,7 @@ namespace Rays
 
 			if (!self->value->apply(location))
 			{
-				opengl_error(
+				shader_error(
 					__FILE__, __LINE__,
 					"failed to apply uniform variable '%s'", self->name.c_str());
 			}
@@ -271,7 +271,7 @@ namespace Rays
 		void set_uniform_texture (const char* name, const UniformValue* value)
 		{
 			if (uniform_textures.size() >= (size_t) get_texture_unit_max())
-				opengl_error(__FILE__, __LINE__, "too many texture units.");
+				shader_error(__FILE__, __LINE__, "too many texture units.");
 
 			set_uniform(&uniform_textures, name, value);
 		}
@@ -316,14 +316,14 @@ namespace Rays
 			GLint status = GL_FALSE;
 			glGetProgramiv(id, GL_LINK_STATUS, &status);
 			if (status == GL_FALSE)
-				opengl_error(__FILE__, __LINE__, get_link_log().c_str());
+				shader_error(__FILE__, __LINE__, get_link_log().c_str());
 
 			glValidateProgram(id);
 
 			GLint validate = GL_FALSE;
 			glGetProgramiv(id, GL_VALIDATE_STATUS, &validate);
 			if (validate == GL_FALSE)
-				opengl_error(__FILE__, __LINE__, "shader program validation failed");
+				shader_error(__FILE__, __LINE__, "shader program validation failed");
 		}
 
 		void attach_shader (const ShaderSource& source) const
