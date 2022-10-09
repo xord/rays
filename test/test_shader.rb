@@ -23,17 +23,15 @@ class TestShader < Test::Unit::TestCase
   end
 
   def fshader(precision = false)
-    s = "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
-    s = "#ifdef GL_ES\nprecision mediump float;\n#endif\n" + s if precision
-    s
+    "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
   end
 
   def test_initialize()
-    assert_raise(Rucy::NativeError) {shader "foo"}
-    assert_raise(Rucy::NativeError) {shader "foo", vshader}
-    assert_raise(Rucy::NativeError) {shader fshader, "foo"}
-    assert_raise(Rucy::NativeError) {shader vshader}
-    assert_raise(Rucy::NativeError) {shader fshader, fshader}
+    assert_raise(Rays::OpenGLError) {shader "foo"}
+    assert_raise(Rays::OpenGLError) {shader "foo", vshader}
+    assert_raise(Rays::OpenGLError) {shader fshader, "foo"}
+    assert_raise(Rays::OpenGLError) {shader vshader}
+    assert_raise(Rays::OpenGLError) {shader fshader, fshader}
     assert_raise(ArgumentError) {shader nil}
     assert shader(fshader)
     assert shader(fshader, vshader)

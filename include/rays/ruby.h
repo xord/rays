@@ -5,6 +5,8 @@
 
 
 #include <rays/ruby/rays.h>
+#include <rays/ruby/defs.h>
+#include <rays/ruby/exception.h>
 
 #include <rays/ruby/point.h>
 #include <rays/ruby/bounds.h>

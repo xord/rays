@@ -2,6 +2,7 @@
 
 
 void Init_rays ();
+void Init_exception ();
 
 void Init_point ();
 void Init_bounds ();
@@ -34,6 +35,7 @@ extern "C" void
 	Rucy::init();
 
 	Init_rays();
+	Init_exception();
 
 	Init_point();
 	Init_bounds();

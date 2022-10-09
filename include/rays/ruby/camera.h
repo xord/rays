@@ -4,7 +4,6 @@
 #define __RAYS_RUBY_CAMERA_H__
 
 
-#include <rucy/rucy.h>
 #include <rucy/class.h>
 #include <rucy/extension.h>
 #include <rays/camera.h>

@@ -4,7 +4,6 @@
 #define __RAYS_RUBY_RAYS_H__
 
 
-#include <rucy/rucy.h>
 #include <rucy/module.h>
 #include <rucy/extension.h>
 #include <rays/rays.h>

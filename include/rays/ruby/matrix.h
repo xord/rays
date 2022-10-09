@@ -4,7 +4,6 @@
 #define __RAYS_RUBY_MATRIX_H__
 
 
-#include <rucy/rucy.h>
 #include <rucy/class.h>
 #include <rucy/extension.h>
 #include <rays/matrix.h>
