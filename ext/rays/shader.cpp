@@ -1,6 +1,7 @@
 #include "rays/ruby/shader.h"
 
 
+#include "rays/ruby/image.h"
 #include "defs.h"
 
 
@@ -128,6 +129,8 @@ RUCY_DEFN(set_uniform)
 			case 4: THIS->set_uniform(name, Af(0), Af(1), Af(2), Af(3)); break;
 		}
 	}
+	else if (argv[0].is_kind_of(Rays::image_class()))
+		THIS->set_uniform(name, to<Rays::Image&>(argv[0]));
 	else
 		argument_error(__FILE__, __LINE__);
 

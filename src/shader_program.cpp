@@ -35,7 +35,7 @@ namespace Rays
 
 			virtual ~UniformValue () {}
 
-			virtual bool apply (GLint location) const = 0;
+			virtual bool apply (size_t index, GLint location) const = 0;
 
 	};// UniformValue
 
@@ -83,7 +83,7 @@ namespace Rays
 					array[i] = args[i];
 			}
 
-			bool apply (GLint location) const
+			bool apply (size_t index, GLint location) const
 			{
 				apply_value(location);
 				return !OpenGL_has_error();
@@ -149,15 +149,17 @@ namespace Rays
 			{
 			}
 
-			bool apply (GLint location) const
+			bool apply (size_t index, GLint location) const
 			{
-				if (!texture) return false;
+				if (!texture)
+					shader_error(__FILE__, __LINE__, "invalid texture");
 
-				GLint unit_max = get_texture_unit_max();
-				GLint unit = unit_max;
-				glGetIntegerv(GL_ACTIVE_TEXTURE, &unit);
-				assert(unit < unit_max);
+				GLint unit = (GLint) (index + 1);// GL_TEXTURE0 is used by apply_builtin_uniforms()
+				GLint max  = get_texture_unit_max();
+				if (unit >= max)
+					shader_error(__FILE__, __LINE__, "texture unit must be less than %d", max);
 
+				glActiveTexture(GL_TEXTURE0 + unit);
 				glBindTexture(GL_TEXTURE_2D, texture.id());
 				glUniform1i(location, unit);
 				return !OpenGL_has_error();
@@ -205,7 +207,7 @@ namespace Rays
 			self->applied = false;
 		}
 
-		void apply (const ShaderProgram& program) const
+		void apply (size_t index, const ShaderProgram& program) const
 		{
 			if (!program || self->applied) return;
 			self->applied = true;
@@ -215,7 +217,7 @@ namespace Rays
 			if (location < 0)
 				shader_error(__FILE__, __LINE__, "uniform variable '%s' not found", name);
 
-			if (!self->value->apply(location))
+			if (!self->value->apply(index, location))
 				shader_error(__FILE__, __LINE__, "failed to apply uniform variable '%s'", name);
 		}
 
@@ -353,17 +355,11 @@ namespace Rays
 			if (applied) return;
 			applied = true;
 
-			for (const auto& value : uniform_values)
-				value.apply(program);
+			for (size_t i = 0; i < uniform_values.size(); ++i)
+				uniform_values[i].apply(i, program);
 
-			int unit = 0;
-			for (const auto& texture : uniform_textures)
-			{
-				glActiveTexture(unit++);
-				texture.apply(program);
-			}
-
-			OpenGL_check_error(__FILE__, __LINE__);
+			for (size_t i = 0; i < uniform_textures.size(); ++i)
+				uniform_textures[i].apply(i, program);
 		}
 
 	};// ShaderProgram::Data

@@ -99,6 +99,21 @@ class TestShader < Test::Unit::TestCase
     assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {|sh| sh.uniform :v, [1.0, 2.0, 3.0, 4.0]}
   end
 
+  def test_uniform_texture()
+    r, g, b = [[1, 0, 0], [0, 1, 0], [0, 0, 1]].map {|c| image {fill c; rect 10}}
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END, tex0: r, tex1: g, tex2: b)[0, 0]
+      uniform sampler2D tex0, tex1, tex2;
+      varying vec4 v_TexCoord;
+      void main() {
+        gl_FragColor = vec4(
+          texture2D(tex0, v_TexCoord.xy).r,
+          texture2D(tex1, v_TexCoord.xy).g,
+          texture2D(tex2, v_TexCoord.xy).b,
+          1.0);
+      }
+    END
+  end
+
   def test_uniform_error()
     assert_raise(Rays::ShaderError) {draw_shader('void main() {}', val: 1.0)}
   end
