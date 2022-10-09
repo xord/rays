@@ -56,93 +56,47 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_uniform_int()
-    assert_equal color(1, 0, 0, 1), draw_shader(<<~END) {_1.uniform :v , 1}[0, 0]
-      uniform int v;
-      void main() {
-        gl_FragColor = vec4(float(v), 0.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2}[0, 0]
-      uniform ivec2 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2]}[0, 0]
-      uniform ivec2 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2, 3}[0, 0]
-      uniform ivec3 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2, 3]}[0, 0]
-      uniform ivec3 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2, 3, 4}[0, 0]
-      uniform ivec4 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, float(v.w) / 4.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2, 3, 4]}[0, 0]
-      uniform ivec4 v;
-      void main() {
-        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, float(v.w) / 4.0);
-      }
-    END
+    draw = -> (type, color_string, &b) {
+      draw_shader(<<~END) {b.call _1}[0, 0].to_a
+        uniform #{type} v;
+        float f(int value, int div) {
+          return float(value) / float(div);
+        }
+        void main() {
+          gl_FragColor = vec4(#{color_string});
+        }
+      END
+    }
+    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v,  1}
+    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v, [1]}
+    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v,  1, 2}
+    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v, [1, 2]}
+    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v,  1, 2, 3}
+    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v, [1, 2, 3]}
+    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v,  1, 2, 3, 4}
+    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v, [1, 2, 3, 4]}
   end
 
   def test_uniform_float()
-    assert_equal color(1, 0, 0, 1), draw_shader(<<~END) {_1.uniform :v , 1.0}[0, 0]
-      uniform float v;
-      void main() {
-        gl_FragColor = vec4(v, 0.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0}[0, 0]
-      uniform vec2 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0]}[0, 0]
-      uniform vec2 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, 0.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0, 3.0}[0, 0]
-      uniform vec3 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0, 3.0]}[0, 0]
-      uniform vec3 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, 1.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0, 3.0, 4.0}[0, 0]
-      uniform vec4 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, v.w / 4.0);
-      }
-    END
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0, 3.0, 4.0]}[0, 0]
-      uniform vec4 v;
-      void main() {
-        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, v.w / 4.0);
-      }
-    END
+    draw = -> (type, color_string, &b) {
+      draw_shader(<<~END) {b.call _1}[0, 0].to_a
+        uniform #{type} v;
+        float f(float value, int div) {
+          return value / float(div);
+        }
+        void main() {
+          gl_FragColor = vec4(#{color_string});
+        }
+      END
+    }
+    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v,  1.0}
+    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v, [1.0]}
+    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v,  1.0, 2.0}
+    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v, [1.0, 2.0]}
+    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v,  1.0, 2.0, 3.0}
+    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v, [1.0, 2.0, 3.0]}
+    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v,  1.0, 2.0, 3.0, 4.0}
+    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v, [1.0, 2.0, 3.0, 4.0]}
   end
 
   def test_uniform_error()
