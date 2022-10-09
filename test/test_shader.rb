@@ -10,7 +10,7 @@ class TestShader < Test::Unit::TestCase
     Rays::Shader.new(*args)
   end
 
-  def img(w = 10, h = 10, &block)
+  def image(w = 10, h = 10, &block)
     Rays::Image.new w, h
   end
 
@@ -22,8 +22,20 @@ class TestShader < Test::Unit::TestCase
     "void main() {gl_Position = vec4(0.0, 0.0, 0.0, 1.0);}"
   end
 
-  def fshader(precision = false)
+  def fshader()
     "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
+  end
+
+  def draw_shader(fill = 1, fragment_shader_source, **uniforms, &block)
+    image.tap do |img|
+      img.paint do |p|
+        p.shader fragment_shader_source, **uniforms
+        block.call p.shader if block
+        p.fill(*fill)
+        p.stroke nil
+        p.rect img.bounds.move_to(0, 0)
+      end
+    end
   end
 
   def test_initialize()
@@ -38,12 +50,103 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_shader()
-    i = img.paint do
-      shader "void main () {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
-      fill 0, 1, 0, 1
-      rect(*bounds.move_to(0, 0).to_a)
-    end
-    assert_equal color(1, 0, 0, 1), i[0, 0]
+    assert_equal color(1, 0, 0, 1), draw_shader([0, 1, 0, 1], <<~END)[0, 0]
+      void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}
+    END
+  end
+
+  def test_uniform_int()
+    assert_equal color(1, 0, 0, 1), draw_shader(<<~END) {_1.uniform :v , 1}[0, 0]
+      uniform int v;
+      void main() {
+        gl_FragColor = vec4(float(v), 0.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2}[0, 0]
+      uniform ivec2 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2]}[0, 0]
+      uniform ivec2 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2, 3}[0, 0]
+      uniform ivec3 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2, 3]}[0, 0]
+      uniform ivec3 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1, 2, 3, 4}[0, 0]
+      uniform ivec4 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, float(v.w) / 4.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1, 2, 3, 4]}[0, 0]
+      uniform ivec4 v;
+      void main() {
+        gl_FragColor = vec4(float(v.x), float(v.y) / 2.0, float(v.z) / 3.0, float(v.w) / 4.0);
+      }
+    END
+  end
+
+  def test_uniform_float()
+    assert_equal color(1, 0, 0, 1), draw_shader(<<~END) {_1.uniform :v , 1.0}[0, 0]
+      uniform float v;
+      void main() {
+        gl_FragColor = vec4(v, 0.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0}[0, 0]
+      uniform vec2 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 0, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0]}[0, 0]
+      uniform vec2 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, 0.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0, 3.0}[0, 0]
+      uniform vec3 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0, 3.0]}[0, 0]
+      uniform vec3 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, 1.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, 1.0, 2.0, 3.0, 4.0}[0, 0]
+      uniform vec4 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, v.w / 4.0);
+      }
+    END
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END) {_1.uniform :v, [1.0, 2.0, 3.0, 4.0]}[0, 0]
+      uniform vec4 v;
+      void main() {
+        gl_FragColor = vec4(v.x, v.y / 2.0, v.z / 3.0, v.w / 4.0);
+      }
+    END
+  end
+
+  def test_uniform_error()
+    assert_raise(Rays::ShaderError) {draw_shader('void main() {}', val: 1.0)}
   end
 
   def test_shader_source()

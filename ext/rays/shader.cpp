@@ -93,9 +93,6 @@ RUCY_DEFN(set_uniform)
 	CHECK;
 	check_arg_count(__FILE__, __LINE__, "Painter#set_uniform", argc, 2, 3, 4, 5);
 
-	#define Ai(n) (argv[n].as_i())
-	#define Af(n) ((float) argv[n].as_f())
-
 	const char* name = argv[0].c_str();
 	if (argv[1].is_array())
 	{
@@ -107,6 +104,9 @@ RUCY_DEFN(set_uniform)
 		argc -= 1;
 		argv += 1;
 	}
+
+	#define Ai(n) (argv[n].as_i())
+	#define Af(n) ((float) argv[n].as_f())
 
 	if (argv[0].is_i())
 	{
