@@ -11,7 +11,7 @@ class TestShader < Test::Unit::TestCase
   end
 
   def image(w = 10, h = 10, &block)
-    Rays::Image.new w, h
+    Rays::Image.new(w, h).tap {|i| i.paint &block if block}
   end
 
   def color(*args)
@@ -26,7 +26,7 @@ class TestShader < Test::Unit::TestCase
     "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
   end
 
-  def draw_shader(fill = 1, fragment_shader_source, **uniforms, &block)
+  def draw_shader(fragment_shader_source, fill = 1, **uniforms, &block)
     image.tap do |img|
       img.paint do |p|
         p.shader fragment_shader_source, **uniforms
@@ -50,14 +50,14 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_shader()
-    assert_equal color(1, 0, 0, 1), draw_shader([0, 1, 0, 1], <<~END)[0, 0]
+    assert_equal color(1, 0, 0, 1), draw_shader(<<~END, [0, 1, 0, 1])[0, 0]
       void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}
     END
   end
 
   def test_uniform_int()
     draw = -> (type, color_string, &b) {
-      draw_shader(<<~END) {b.call _1}[0, 0].to_a
+      draw_shader(<<~END) {|shader| b.call shader}[0, 0].to_a
         uniform #{type} v;
         float f(int value, int div) {
           return float(value) / float(div);
@@ -67,19 +67,19 @@ class TestShader < Test::Unit::TestCase
         }
       END
     }
-    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v,  1}
-    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v, [1]}
-    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v,  1, 2}
-    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v, [1, 2]}
-    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v,  1, 2, 3}
-    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v, [1, 2, 3]}
-    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v,  1, 2, 3, 4}
-    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v, [1, 2, 3, 4]}
+    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {|sh| sh.uniform :v,  1}
+    assert_equal [1, 0, 0, 1], draw['int',   'f(v,   1), 0.0,       0.0,       1.0']       {|sh| sh.uniform :v, [1]}
+    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {|sh| sh.uniform :v,  1, 2}
+    assert_equal [1, 1, 0, 1], draw['ivec2', 'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {|sh| sh.uniform :v, [1, 2]}
+    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {|sh| sh.uniform :v,  1, 2, 3}
+    assert_equal [1, 1, 1, 1], draw['ivec3', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {|sh| sh.uniform :v, [1, 2, 3]}
+    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {|sh| sh.uniform :v,  1, 2, 3, 4}
+    assert_equal [1, 1, 1, 1], draw['ivec4', 'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {|sh| sh.uniform :v, [1, 2, 3, 4]}
   end
 
   def test_uniform_float()
     draw = -> (type, color_string, &b) {
-      draw_shader(<<~END) {b.call _1}[0, 0].to_a
+      draw_shader(<<~END) {|shader| b.call shader}[0, 0].to_a
         uniform #{type} v;
         float f(float value, int div) {
           return value / float(div);
@@ -89,14 +89,14 @@ class TestShader < Test::Unit::TestCase
         }
       END
     }
-    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v,  1.0}
-    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {_1.uniform :v, [1.0]}
-    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v,  1.0, 2.0}
-    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {_1.uniform :v, [1.0, 2.0]}
-    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v,  1.0, 2.0, 3.0}
-    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {_1.uniform :v, [1.0, 2.0, 3.0]}
-    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v,  1.0, 2.0, 3.0, 4.0}
-    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {_1.uniform :v, [1.0, 2.0, 3.0, 4.0]}
+    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {|sh| sh.uniform :v,  1.0}
+    assert_equal [1, 0, 0, 1], draw['float', 'f(v,   1), 0.0,       0.0,       1.0']       {|sh| sh.uniform :v, [1.0]}
+    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {|sh| sh.uniform :v,  1.0, 2.0}
+    assert_equal [1, 1, 0, 1], draw['vec2',  'f(v.x, 1), f(v.y, 2), 0.0,       1.0']       {|sh| sh.uniform :v, [1.0, 2.0]}
+    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {|sh| sh.uniform :v,  1.0, 2.0, 3.0}
+    assert_equal [1, 1, 1, 1], draw['vec3',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), 1.0']       {|sh| sh.uniform :v, [1.0, 2.0, 3.0]}
+    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {|sh| sh.uniform :v,  1.0, 2.0, 3.0, 4.0}
+    assert_equal [1, 1, 1, 1], draw['vec4',  'f(v.x, 1), f(v.y, 2), f(v.z, 3), f(v.w, 4)'] {|sh| sh.uniform :v, [1.0, 2.0, 3.0, 4.0]}
   end
 
   def test_uniform_error()
