@@ -47,8 +47,8 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_shader_source()
-    assert_equal vshader,       shader(fshader, vshader).vertex_shader_source
-    assert_equal fshader(true), shader(fshader, vshader).fragment_shader_source
+    assert_equal vshader, shader(fshader, vshader).vertex_shader_source
+    assert_equal fshader, shader(fshader, vshader).fragment_shader_source
 
     assert_true shader(fshader).vertex_shader_source.then {|source|
       %w[
