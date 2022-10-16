@@ -147,7 +147,9 @@ namespace Rays
 	static void
 	copy_bitmap (Bitmap* dest, const Bitmap& src)
 	{
-		if (!dest || !src)
+		assert(dest);
+
+		if (!src)
 			argument_error(__FILE__, __LINE__);
 
 		int width    = std::min(src.width(),  dest->width());

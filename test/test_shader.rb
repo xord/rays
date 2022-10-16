@@ -11,7 +11,7 @@ class TestShader < Test::Unit::TestCase
   end
 
   def image(w = 10, h = 10, &block)
-    Rays::Image.new(w, h).tap {|i| i.paint &block if block}
+    Rays::Image.new(w, h).tap {|i| i.paint(&block) if block}
   end
 
   def color(*args)
