@@ -82,38 +82,6 @@ namespace Rays
 		return n;
 	}
 
-	static void
-	setup_texture (Texture::Data* self, const void* pixels = NULL)
-	{
-		assert(self && !self->has_id());
-
-		if (self->context)
-			invalid_state_error(__FILE__, __LINE__);
-
-		self->context = OpenGL_get_context();
-		if (!self->context)
-			opengl_error(__FILE__, __LINE__);
-
-		glGenTextures(1, &self->id);
-		glBindTexture(GL_TEXTURE_2D, self->id);
-		if (glIsTexture(self->id) == GL_FALSE)
-			opengl_error(__FILE__, __LINE__, "failed to create texture.");
-
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);//GL_LINEAR);
-
-		GLenum format, type;
-		ColorSpace_get_gl_format_and_type(&format, &type, self->color_space);
-
-		glTexImage2D(
-			GL_TEXTURE_2D, 0, format, self->width_pow2, self->height_pow2, 0,
-			format, type, pixels);
-
-		OpenGL_check_error(__FILE__, __LINE__);
-	}
-
 	template <int BytesPerPixel>
 	static inline void
 	copy_pixel (uchar* dest, const uchar* src)
@@ -196,6 +164,70 @@ namespace Rays
 		}
 	}
 
+	static std::shared_ptr<Bitmap>
+	resize_bitmap (const Bitmap& bitmap, int width, int height)
+	{
+		std::shared_ptr<Bitmap> bmp(
+			new Bitmap(width, height, bitmap.color_space()));
+		if (!*bmp)
+			rays_error(__FILE__, __LINE__);
+
+		copy_bitmap(bmp.get(), bitmap);
+		return bmp;
+	}
+
+	static void
+	setup_texture (
+		Texture::Data* self, int width, int height, const ColorSpace& cs,
+		const Bitmap* bitmap = NULL)
+	{
+		assert(self && !self->has_id());
+
+		if (self->context)
+			invalid_state_error(__FILE__, __LINE__);
+
+		self->context = OpenGL_get_context();
+		if (!self->context)
+			opengl_error(__FILE__, __LINE__);
+
+		glGenTextures(1, &self->id);
+		glBindTexture(GL_TEXTURE_2D, self->id);
+		if (glIsTexture(self->id) == GL_FALSE)
+			opengl_error(__FILE__, __LINE__, "failed to create texture.");
+
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);//GL_LINEAR);
+
+		GLenum format, type;
+		ColorSpace_get_gl_format_and_type(&format, &type, cs);
+
+		// create non-power-of-two texture
+		glTexImage2D(
+			GL_TEXTURE_2D, 0, format, width, height, 0, format, type,
+			bitmap ? bitmap->pixels() : NULL);
+		if (OpenGL_has_error())
+		{
+			// create power-of-two texture
+			int width_pow2  = min_pow2(width);
+			int height_pow2 = min_pow2(height);
+
+			glTexImage2D(
+				GL_TEXTURE_2D, 0, format, width_pow2, height_pow2, 0, format, type,
+				bitmap ? resize_bitmap(*bitmap, width_pow2, height_pow2)->pixels() : NULL);
+			OpenGL_check_error(__FILE__, __LINE__);
+
+			self->width_pow2  = width_pow2;
+			self->height_pow2 = height_pow2;
+		}
+
+		self->width       = width;
+		self->height      = height;
+		self->color_space = cs;
+		self->modified    = true;
+	}
+
 
 	Texture::Texture ()
 	{
@@ -206,14 +238,7 @@ namespace Rays
 		if (width <= 0 || height <= 0 || !cs)
 			argument_error(__FILE__, __LINE__);
 
-		self->width       = width;
-		self->height      = height;
-		self->width_pow2  = min_pow2(width);
-		self->height_pow2 = min_pow2(height);
-		self->color_space = cs;
-		self->modified    = true;
-
-		setup_texture(self.get());
+		setup_texture(self.get(), width, height, cs);
 	}
 
 	Texture::Texture (const Bitmap& bitmap)
@@ -221,26 +246,9 @@ namespace Rays
 		if (!bitmap)
 			argument_error(__FILE__, __LINE__);
 
-		self->width       = bitmap.width();
-		self->height      = bitmap.height();
-		self->width_pow2  = min_pow2(self->width);
-		self->height_pow2 = min_pow2(self->height);
-		self->color_space = bitmap.color_space();
-		self->modified    = true;
-
-		Bitmap bmp = bitmap;
-		if (
-			self->width_pow2  != self->width ||
-			self->height_pow2 != self->height)
-		{
-			bmp = Bitmap(self->width_pow2, self->height_pow2, self->color_space);
-			if (!bmp)
-				rays_error(__FILE__, __LINE__);
-
-			copy_bitmap(&bmp, bitmap);
-		}
-
-		setup_texture(self.get(), bmp.pixels());
+		setup_texture(
+			self.get(), bitmap.width(), bitmap.height(), bitmap.color_space(),
+			&bitmap);
 	}
 
 	Texture::~Texture ()
@@ -256,7 +264,8 @@ namespace Rays
 	int
 	Texture::reserved_width () const
 	{
-		return self->width_pow2;
+		int w = self->width_pow2;
+		return w > 0 ? w : self->width;
 	}
 
 	int
@@ -268,7 +277,8 @@ namespace Rays
 	int
 	Texture::reserved_height () const
 	{
-		return self->height_pow2;
+		int h = self->height_pow2;
+		return h > 0 ? h : self->height;
 	}
 
 	const ColorSpace&
