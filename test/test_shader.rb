@@ -39,14 +39,15 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_initialize()
+    assert shader(fshader)
+    assert shader(fshader, vshader)
+
     assert_raise(Rays::ShaderError) {shader "foo"}
     assert_raise(Rays::ShaderError) {shader "foo", vshader}
     assert_raise(Rays::ShaderError) {shader fshader, "foo"}
     assert_raise(Rays::ShaderError) {shader vshader}
     assert_raise(Rays::ShaderError) {shader fshader, fshader}
     assert_raise(ArgumentError) {shader nil}
-    assert shader(fshader)
-    assert shader(fshader, vshader)
   end
 
   def test_shader()
