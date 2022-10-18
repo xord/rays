@@ -63,6 +63,8 @@ namespace Rays
 	const ShaderBuiltinVariableNames& ShaderEnv_get_builtin_variable_names (
 		const ShaderEnv& env);
 
+	uint ShaderEnv_get_flags (const ShaderEnv& env);
+
 	const ShaderSource& ShaderEnv_get_default_vertex_shader_source (
 		ShaderEnv* env);
 

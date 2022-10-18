@@ -14,6 +14,7 @@ module Rays
       fragment_shader_source,
       vertex_shader_source   = nil,
       builtin_variable_names = nil,
+      ignore_no_uniform_location_error: false,
       **uniforms, &block)
 
       setup(
@@ -23,7 +24,8 @@ module Rays
             :varying_position,   :varying_texcoord,   :varying_color,
           :uniform_position_matrix, :uniform_texcoord_matrix,
           :uniform_texcoord_min, :uniform_texcoord_max, :uniform_texcoord_offset,
-          :uniform_texture))
+          :uniform_texture),
+        ignore_no_uniform_location_error)
 
       uniform(**uniforms) unless uniforms.empty?
 

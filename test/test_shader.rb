@@ -6,8 +6,8 @@ require_relative 'helper'
 
 class TestShader < Test::Unit::TestCase
 
-  def shader(*args)
-    Rays::Shader.new(*args)
+  def shader(*a, **k)
+    Rays::Shader.new(*a, **k)
   end
 
   def image(w = 10, h = 10, &block)
@@ -26,10 +26,12 @@ class TestShader < Test::Unit::TestCase
     "void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
   end
 
-  def draw_shader(fragment_shader_source, fill = 1, **uniforms, &block)
+  def draw_shader(
+    fragment_shader_source, fill: 1, options: {}, uniforms: {}, &block)
+
     image.tap do |img|
       img.paint do |p|
-        p.shader fragment_shader_source, **uniforms
+        p.shader shader(fragment_shader_source, **options.merge(uniforms))
         block.call p.shader if block
         p.fill(*fill)
         p.stroke nil
@@ -51,7 +53,7 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_shader()
-    assert_equal color(1, 0, 0, 1), draw_shader(<<~END, [0, 1, 0, 1])[0, 0]
+    assert_equal color(1, 0, 0, 1), draw_shader(<<~END, fill: [0, 1, 0, 1])[0, 0]
       void main() {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}
     END
   end
@@ -102,7 +104,7 @@ class TestShader < Test::Unit::TestCase
 
   def test_uniform_texture()
     r, g, b = [[1, 0, 0], [0, 1, 0], [0, 0, 1]].map {|c| image {fill c; rect 10}}
-    assert_equal color(1, 1, 1, 1), draw_shader(<<~END, tex0: r, tex1: g, tex2: b)[0, 0]
+    assert_equal color(1, 1, 1, 1), draw_shader(<<~END, uniforms: {tex0: r, tex1: g, tex2: b})[0, 0]
       uniform sampler2D tex0, tex1, tex2;
       varying vec4 v_TexCoord;
       void main() {
@@ -116,7 +118,11 @@ class TestShader < Test::Unit::TestCase
   end
 
   def test_uniform_error()
-    assert_raise(Rays::ShaderError) {draw_shader('void main() {}', val: 1.0)}
+    ignore = -> bool {{ignore_no_uniform_location_error: bool}}
+
+    assert_raise(Rays::ShaderError) {draw_shader 'void main() {}',                         uniforms: {val: 1.0}}
+    assert_raise(Rays::ShaderError) {draw_shader 'void main() {}', options: ignore[false], uniforms: {val: 1.0}}
+    assert_nothing_raised           {draw_shader 'void main() {}', options: ignore[true],  uniforms: {val: 1.0}}
   end
 
   def test_shader_source()

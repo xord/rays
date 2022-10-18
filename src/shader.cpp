@@ -49,7 +49,8 @@ namespace Rays
 
 			program.reset(new ShaderProgram(
 				make_vertex_shader_source(vertex_shader_source),
-				make_fragment_shader_source(fragment_shader_source)));
+				make_fragment_shader_source(fragment_shader_source),
+				env_ ? ShaderEnv_get_flags(*env_) : 0));
 		}
 
 		ShaderSource make_vertex_shader_source (const char* source)
@@ -334,10 +335,12 @@ namespace Rays
 
 		ShaderBuiltinVariableNames names;
 
+		uint flags;
+
 		ShaderSource default_vertex_shader_source;
 
-		Data (const ShaderBuiltinVariableNames& names)
-		:	names(names)
+		Data (const ShaderBuiltinVariableNames& names, uint flags)
+		:	names(names), flags(flags)
 		{
 		}
 
@@ -372,6 +375,12 @@ namespace Rays
 		return env.self->names;
 	}
 
+	uint
+	ShaderEnv_get_flags (const ShaderEnv& env)
+	{
+		return env.self->flags;
+	}
+
 	const ShaderSource&
 	ShaderEnv_get_default_vertex_shader_source (ShaderEnv* env)
 	{
@@ -401,13 +410,16 @@ namespace Rays
 		const NameList& u_texcoord_min_names,
 		const NameList& u_texcoord_max_names,
 		const NameList& u_texcoord_offset_names,
-		const NameList& u_texture_names)
-	:	self(new Data(ShaderBuiltinVariableNames(
-			a_position_names, a_texcoord_names, a_color_names,
-			v_position_name,  v_texcoord_name,  v_color_name,
-			u_position_matrix_names, u_texcoord_matrix_names,
-			u_texcoord_min_names, u_texcoord_max_names, u_texcoord_offset_names,
-			u_texture_names)))
+		const NameList& u_texture_names,
+		uint flags)
+	:	self(new Data(
+			ShaderBuiltinVariableNames(
+				a_position_names, a_texcoord_names, a_color_names,
+				v_position_name,  v_texcoord_name,  v_color_name,
+				u_position_matrix_names, u_texcoord_matrix_names,
+				u_texcoord_min_names, u_texcoord_max_names, u_texcoord_offset_names,
+				u_texture_names),
+			flags))
 	{
 	}
 

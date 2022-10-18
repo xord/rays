@@ -22,9 +22,8 @@ RUCY_END
 static const char*
 to_name (const Value& names, size_t index)
 {
-	assert(names && names.is_array());
-
-	if (index >= names.size()) return NULL;
+	if (!names || !names.is_array() || index >= names.size())
+		return NULL;
 
 	const auto& name = names[index];
 	if (!name) return NULL;
@@ -35,9 +34,8 @@ to_name (const Value& names, size_t index)
 static Rays::ShaderEnv::NameList
 to_name_list (const Value& names, size_t index)
 {
-	assert(names && names.is_array());
-
-	if (index >= names.size()) return {};
+	if (!names || !names.is_array() || index >= names.size())
+		return {};
 
 	const auto& name_or_array = names[index];
 	if (name_or_array.is_array())
@@ -53,10 +51,37 @@ to_name_list (const Value& names, size_t index)
 		return {};
 }
 
+static std::shared_ptr<Rays::ShaderEnv>
+make_env (const Value& names, const Value& ignore_no_uniform_location_error)
+{
+	bool has_names = names && names.is_array() && !names.empty();
+	if (!has_names && !ignore_no_uniform_location_error)
+		return NULL;
+
+	uint flags = 0;
+	if (ignore_no_uniform_location_error)
+		flags |= Rays::ShaderEnv::IGNORE_NO_UNIFORM_LOCATION_ERROR;
+
+	return std::make_shared<Rays::ShaderEnv>(
+		to_name_list(names, 0),
+		to_name_list(names, 1),
+		to_name_list(names, 2),
+		to_name(     names, 3),
+		to_name(     names, 4),
+		to_name(     names, 5),
+		to_name_list(names, 6),
+		to_name_list(names, 7),
+		to_name_list(names, 8),
+		to_name_list(names, 9),
+		to_name_list(names, 10),
+		to_name_list(names, 11),
+		flags);
+}
+
 static
-RUCY_DEF3(setup,
+RUCY_DEF4(setup,
 	fragment_shader_source, vertex_shader_source,
-	builtin_variable_names)
+	builtin_variable_names, ignore_no_uniform_location_error)
 {
 	RUCY_CHECK_OBJ(Rays::Shader, self);
 
@@ -66,23 +91,9 @@ RUCY_DEF3(setup,
 	const char* fs = fragment_shader_source.c_str();
 	const char* vs = vertex_shader_source ? vertex_shader_source.c_str() : NULL;
 
-	const auto& names = builtin_variable_names;
-	if (names && names.is_array() && !names.empty())
-	{
-		*THIS = Rays::Shader(fs, vs, Rays::ShaderEnv(
-			to_name_list(names, 0),
-			to_name_list(names, 1),
-			to_name_list(names, 2),
-			to_name(     names, 3),
-			to_name(     names, 4),
-			to_name(     names, 5),
-			to_name_list(names, 6),
-			to_name_list(names, 7),
-			to_name_list(names, 8),
-			to_name_list(names, 9),
-			to_name_list(names, 10),
-			to_name_list(names, 11)));
-	}
+	auto env = make_env(builtin_variable_names, ignore_no_uniform_location_error);
+	if (env)
+		*THIS = Rays::Shader(fs, vs, *env);
 	else
 		*THIS = Rays::Shader(fs, vs);
 }

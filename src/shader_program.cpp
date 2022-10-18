@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include "rays/shader.h"
 #include "rays/exception.h"
 #include "shader_source.h"
 #include "texture.h"
@@ -207,15 +208,17 @@ namespace Rays
 			self->applied = false;
 		}
 
-		void apply (size_t index, const ShaderProgram& program) const
+		void apply (
+			size_t index, const ShaderProgram& program,
+			bool ignore_no_uniform_location_error) const
 		{
 			if (!program || self->applied) return;
 			self->applied = true;
 
 			const char* name = self->name;
 			GLint location = glGetUniformLocation(program.id(), name);
-			if (location < 0)
-				shader_error(__FILE__, __LINE__, "uniform variable '%s' not found", name);
+			if (location < 0 && !ignore_no_uniform_location_error)
+				shader_error(__FILE__, __LINE__, "uniform location '%s' not found", name);
 
 			if (!self->value->apply(index, location))
 				shader_error(__FILE__, __LINE__, "failed to apply uniform variable '%s'", name);
@@ -240,7 +243,9 @@ namespace Rays
 	struct ShaderProgram::Data
 	{
 
-		GLuint id = 0;
+		GLuint id  = 0;
+
+		uint flags = 0;
 
 		ShaderSource vertex, fragment;
 
@@ -355,11 +360,13 @@ namespace Rays
 			if (applied) return;
 			applied = true;
 
+			bool ignore_no_loc = flags & ShaderEnv::IGNORE_NO_UNIFORM_LOCATION_ERROR;
+
 			for (size_t i = 0; i < uniform_values.size(); ++i)
-				uniform_values[i].apply(i, program);
+				uniform_values[i].apply(i, program, ignore_no_loc);
 
 			for (size_t i = 0; i < uniform_textures.size(); ++i)
-				uniform_textures[i].apply(i, program);
+				uniform_textures[i].apply(i, program, ignore_no_loc);
 		}
 
 	};// ShaderProgram::Data
@@ -389,10 +396,11 @@ namespace Rays
 
 
 	ShaderProgram::ShaderProgram (
-		const ShaderSource& vertex, const ShaderSource& fragment)
+		const ShaderSource& vertex, const ShaderSource& fragment, uint flags)
 	{
 		self->vertex   = vertex;
 		self->fragment = fragment;
+		self->flags    = flags;
 	}
 
 	ShaderProgram::~ShaderProgram ()

@@ -90,6 +90,11 @@ namespace Rays
 
 			typedef std::vector<String> NameList;
 
+			enum Flags
+			{
+				IGNORE_NO_UNIFORM_LOCATION_ERROR = 0x1 << 0,
+			};
+
 			ShaderEnv (
 				const NameList& attribute_position_names      = {},
 				const NameList& attribute_texcoord_names      = {},
@@ -102,7 +107,8 @@ namespace Rays
 				const NameList& uniform_texcoord_min_names    = {},
 				const NameList& uniform_texcoord_max_names    = {},
 				const NameList& uniform_texcoord_offset_names = {},
-				const NameList& uniform_texture_names         = {});
+				const NameList& uniform_texture_names         = {},
+				uint flags                                    = 0);
 
 			struct Data;
 

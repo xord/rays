@@ -25,7 +25,10 @@ namespace Rays
 
 		public:
 
-			ShaderProgram (const ShaderSource& vertex, const ShaderSource& fragment);
+			ShaderProgram (
+				const ShaderSource& vertex,
+				const ShaderSource& fragment,
+				uint flags);
 
 			~ShaderProgram ();
 
