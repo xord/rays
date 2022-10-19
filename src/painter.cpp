@@ -1132,7 +1132,7 @@ namespace Rays
 			painter, self->text_image,
 			0, 0, str_w, str_h,
 			x, y, str_w, str_h,
-			true, &Shader_get_default_shader_for_texture());
+			true, &Shader_get_default_shader_for_text());
 
 		debug_draw_text(painter, font, x, y, str_w / density, str_h / density);
 	}

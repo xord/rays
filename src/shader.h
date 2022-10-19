@@ -59,6 +59,8 @@ namespace Rays
 
 	const Shader& Shader_get_default_shader_for_texture ();
 
+	const Shader& Shader_get_default_shader_for_text ();
+
 
 	const ShaderBuiltinVariableNames& ShaderEnv_get_builtin_variable_names (
 		const ShaderEnv& env);

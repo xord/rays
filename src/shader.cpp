@@ -116,6 +116,23 @@ namespace Rays
 			"}\n");
 	}
 
+	static Shader
+	make_default_shader_for_text ()
+	{
+		const ShaderBuiltinVariableNames& names =
+			ShaderEnv_get_builtin_variable_names(DEFAULT_ENV);
+		return Shader(
+			"varying vec4 "      + V_TEXCOORD + ";\n"
+			"varying vec4 "      + V_COLOR + ";\n"
+			"uniform sampler2D " + U_TEXTURE + ";\n"
+			"void main ()\n"
+			"{\n"
+			"  vec4 tex__    = texture2D(" + U_TEXTURE + ", " + V_TEXCOORD + ".xy);\n"
+			"  float alpha__ = tex__.r * 0.3 + tex__.g * 0.59 + tex__.b * 0.11;\n"
+			"  gl_FragColor = vec4(" + V_COLOR + ".rgb, alpha__);\n"
+			"}\n");
+	}
+
 	const ShaderProgram*
 	Shader_get_program (const Shader& shader)
 	{
@@ -140,6 +157,13 @@ namespace Rays
 	Shader_get_default_shader_for_texture ()
 	{
 		static const Shader SHADER = make_default_shader_for_texture();
+		return SHADER;
+	}
+
+	const Shader&
+	Shader_get_default_shader_for_text ()
+	{
+		static const Shader SHADER = make_default_shader_for_text();
 		return SHADER;
 	}
 
