@@ -29,8 +29,23 @@ namespace Rays
 		static Context context = NULL;
 		if (!context)
 		{
-			NSOpenGLPixelFormat* pf  = [NSOpenGLView defaultPixelFormat];
-			context = [[NSOpenGLContext alloc] initWithFormat: pf shareContext: nil];
+			NSOpenGLPixelFormatAttribute attribs[] =
+			{
+				//NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+				NSOpenGLPFAAccelerated, NSOpenGLPFANoRecovery,
+				NSOpenGLPFADoubleBuffer,
+				NSOpenGLPFAAllowOfflineRenderers,
+				NSOpenGLPFAColorSize, 32,
+				NSOpenGLPFADepthSize, 32,
+				//NSOpenGLPFAMultisample,
+				//NSOpenGLPFASampleBuffers, 1,
+				//NSOpenGLPFASamples, 4,
+				0
+			};
+			NSOpenGLPixelFormat* pf = [[[NSOpenGLPixelFormat alloc]
+				initWithAttributes: attribs] autorelease];
+			context = [[[NSOpenGLContext alloc]
+				initWithFormat: pf shareContext: nil] autorelease];
 		}
 		return context;
 	}
