@@ -328,7 +328,7 @@ namespace Rays
 			GLint validate = GL_FALSE;
 			glGetProgramiv(id, GL_VALIDATE_STATUS, &validate);
 			if (validate == GL_FALSE)
-				shader_error(__FILE__, __LINE__, "shader program validation failed");
+				OpenGL_check_error(__FILE__, __LINE__, "shader program validation failed");
 		}
 
 		void attach_shader (const ShaderSource& source) const
