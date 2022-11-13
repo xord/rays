@@ -104,8 +104,6 @@ namespace Rays
 
 		CGRect rect = CGRectMake(x, context_height - height - y, width, height);
 		CGContextClearRect(context, rect);
-		//CGContextSetRGBFillColor(context, 0, 0, 0, 1);
-		//CGContextFillRect(context, rect);
 		CGContextSetRGBFillColor(context, 1, 1, 1, 1);
 
 		CGContextSaveGState(context);
