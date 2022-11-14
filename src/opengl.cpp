@@ -24,7 +24,7 @@ namespace Rays
 			case GL_INVALID_VALUE:     return "GL_INVALID_VALUE";
 			case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
 			case GL_OUT_OF_MEMORY:     return "GL_OUT_OF_MEMORY";
-			#if !defined(GL_VERSION_3_0)
+			#if !defined(GL_VERSION_3_0) && !defined(GL_ES_VERSION_2_0)
 				case GL_STACK_OVERFLOW:  return "GL_STACK_OVERFLOW";
 				case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
 				case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
