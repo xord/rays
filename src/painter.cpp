@@ -557,38 +557,6 @@ namespace Rays
 				return id;
 			}
 
-			void activate_texture (const Texture* texture)
-			{
-				if (!texture)
-				{
-					glDisable(GL_TEXTURE_2D);
-					return;
-				}
-
-				if (!*texture)
-					argument_error(__FILE__, __LINE__, "invalid texture.");
-
-				GLuint id = texture->id();
-				if (id != get_current_texture_id())
-					glBindTexture(GL_TEXTURE_2D, id);
-
-				glEnable(GL_TEXTURE_2D);
-			}
-
-			GLuint get_current_texture_id ()
-			{
-				GLint id = 0;
-				glGetIntegerv(GL_TEXTURE_BINDING_2D, &id);
-				return (GLuint) id;
-			}
-
-			void deactivate_texture (const Texture* texture)
-			{
-				if (!texture) return;
-
-				glDisable(GL_TEXTURE_2D);
-			}
-
 	};// Painter::Data
 
 
