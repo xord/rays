@@ -532,6 +532,9 @@ namespace Rays
 
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				OpenGL_check_error(__FILE__, __LINE__);
+
+				glDeleteBuffers(1, &buffer);
+				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 			template <typename CoordN>
