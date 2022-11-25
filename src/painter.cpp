@@ -554,7 +554,7 @@ namespace Rays
 
 			GLuint create_buffer ()
 			{
-				GLuint id;
+				GLuint id = 0;
 				glGenBuffers(1, &id);
 				OpenGL_check_error(__FILE__, __LINE__);
 				return id;
