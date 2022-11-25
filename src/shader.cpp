@@ -128,7 +128,7 @@ namespace Rays
 			"void main ()\n"
 			"{\n"
 			"  vec4 col__   = texture2D(" + U_TEXTURE + ", " + V_TEXCOORD + ".xy);\n"
-			#ifdef OSX
+			#if defined(OSX) || defined(IOS)
 			// restore premultiplied rgb values
 			"  vec3 rgb__   = col__.a != 0.0 ? col__.rgb / col__.a : col__.rgb;\n"
 			"  gl_FragColor = " + V_COLOR + " * vec4(rgb__, col__.a);\n"
