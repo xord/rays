@@ -181,7 +181,7 @@ namespace Rays
 	static void
 	setup_texture (
 		Texture::Data* self, int width, int height, const ColorSpace& cs,
-		const Bitmap* bitmap = NULL)
+		const Bitmap* bitmap = NULL, bool npot = false)
 	{
 		assert(self && !self->has_id());
 
@@ -205,11 +205,16 @@ namespace Rays
 		GLenum format, type;
 		ColorSpace_get_gl_format_and_type(&format, &type, cs);
 
-		// create non-power-of-two texture
-		glTexImage2D(
-			GL_TEXTURE_2D, 0, format, width, height, 0, format, type,
-			bitmap ? bitmap->pixels() : NULL);
-		if (OpenGL_has_error())
+		if (npot)
+		{
+			// create non-power-of-two texture
+			glTexImage2D(
+				GL_TEXTURE_2D, 0, format, width, height, 0, format, type,
+				bitmap ? bitmap->pixels() : NULL);
+			npot = OpenGL_has_error();
+		}
+
+		if (!npot)
 		{
 			// create power-of-two texture
 			int width_pow2  = min_pow2(width);
