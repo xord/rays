@@ -272,7 +272,7 @@ RUCY_END
 static Class cPoint;
 
 void
-Init_point ()
+Init_rays_point ()
 {
 	Module mRays = define_module("Rays");
 

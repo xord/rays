@@ -209,7 +209,7 @@ RUCY_END
 static Class cMatrix;
 
 void
-Init_matrix ()
+Init_rays_matrix ()
 {
 	Module mRays = define_module("Rays");
 

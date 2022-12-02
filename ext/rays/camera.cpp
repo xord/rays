@@ -149,7 +149,7 @@ RUCY_END
 static Class cCamera;
 
 void
-Init_camera ()
+Init_rays_camera ()
 {
 	Module mRays = define_module("Rays");
 

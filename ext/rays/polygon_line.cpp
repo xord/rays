@@ -42,7 +42,7 @@ RUCY_END
 static Class cPolygonLine;
 
 void
-Init_polygon_line ()
+Init_rays_polygon_line ()
 {
 	Module mRays   = define_module("Rays");
 	Class cPolygon = mRays.define_class("Polygon");

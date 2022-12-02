@@ -95,7 +95,7 @@ RUCY_END
 static Class cFont;
 
 void
-Init_font ()
+Init_rays_font ()
 {
 	Module mRays = define_module("Rays");
 

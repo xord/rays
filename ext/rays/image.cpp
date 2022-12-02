@@ -134,7 +134,7 @@ RUCY_END
 static Class cImage;
 
 void
-Init_image ()
+Init_rays_image ()
 {
 	Module mRays = define_module("Rays");
 

@@ -102,7 +102,7 @@ RUCY_END
 static Class cBitmap;
 
 void
-Init_bitmap ()
+Init_rays_bitmap ()
 {
 	Module mRays = define_module("Rays");
 

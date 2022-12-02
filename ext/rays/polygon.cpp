@@ -249,7 +249,7 @@ RUCY_END
 static Class cPolygon;
 
 void
-Init_polygon ()
+Init_rays_polygon ()
 {
 	Module mRays = define_module("Rays");
 

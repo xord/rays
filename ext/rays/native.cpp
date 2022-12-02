@@ -2,25 +2,25 @@
 
 
 void Init_rays ();
-void Init_exception ();
+void Init_rays_exception ();
 
-void Init_point ();
-void Init_bounds ();
-void Init_color ();
-void Init_color_space ();
-void Init_matrix ();
+void Init_rays_point ();
+void Init_rays_bounds ();
+void Init_rays_color ();
+void Init_rays_color_space ();
+void Init_rays_matrix ();
 
-void Init_painter ();
-void Init_polyline ();
-void Init_polygon_line ();
-void Init_polygon ();
-void Init_bitmap ();
-void Init_image ();
-void Init_font ();
-void Init_shader ();
-void Init_camera ();
+void Init_rays_painter ();
+void Init_rays_polyline ();
+void Init_rays_polygon_line ();
+void Init_rays_polygon ();
+void Init_rays_bitmap ();
+void Init_rays_image ();
+void Init_rays_font ();
+void Init_rays_shader ();
+void Init_rays_camera ();
 
-void Init_noise ();
+void Init_rays_noise ();
 
 
 extern "C" void
@@ -35,25 +35,25 @@ extern "C" void
 	Rucy::init();
 
 	Init_rays();
-	Init_exception();
+	Init_rays_exception();
 
-	Init_point();
-	Init_bounds();
-	Init_color();
-	Init_color_space();
-	Init_matrix();
+	Init_rays_point();
+	Init_rays_bounds();
+	Init_rays_color();
+	Init_rays_color_space();
+	Init_rays_matrix();
 
-	Init_painter();
-	Init_polyline();
-	Init_polygon_line();
-	Init_polygon();
-	Init_bitmap();
-	Init_image();
-	Init_font();
-	Init_shader();
-	Init_camera();
+	Init_rays_painter();
+	Init_rays_polyline();
+	Init_rays_polygon_line();
+	Init_rays_polygon();
+	Init_rays_bitmap();
+	Init_rays_image();
+	Init_rays_font();
+	Init_rays_shader();
+	Init_rays_camera();
 
-	Init_noise();
+	Init_rays_noise();
 
 	RUCY_CATCH
 }

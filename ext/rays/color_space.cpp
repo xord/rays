@@ -190,7 +190,7 @@ RUCY_END
 static Class cColorSpace;
 
 void
-Init_color_space ()
+Init_rays_color_space ()
 {
 	Module mRays = define_module("Rays");
 

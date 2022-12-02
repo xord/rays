@@ -656,7 +656,7 @@ RUCY_END
 static Class cPainter;
 
 void
-Init_painter ()
+Init_rays_painter ()
 {
 	Module mRays = define_module("Rays");
 

@@ -176,7 +176,7 @@ RUCY_END
 static Class cShader;
 
 void
-Init_shader ()
+Init_rays_shader ()
 {
 	Module mRays = define_module("Rays");
 

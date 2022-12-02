@@ -114,7 +114,7 @@ RUCY_END
 static Class cPolyline;
 
 void
-Init_polyline ()
+Init_rays_polyline ()
 {
 	Module mRays = define_module("Rays");
 

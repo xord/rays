@@ -195,7 +195,7 @@ RUCY_END
 static Class cColor;
 
 void
-Init_color ()
+Init_rays_color ()
 {
 	Module mRays = define_module("Rays");
 

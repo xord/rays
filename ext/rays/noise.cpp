@@ -47,7 +47,7 @@ RUCY_END
 
 
 void
-Init_noise ()
+Init_rays_noise ()
 {
 	Module mRays = define_module("Rays");
 	mRays.define_singleton_method("perlin", perlin);

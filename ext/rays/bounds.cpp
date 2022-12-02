@@ -569,7 +569,7 @@ RUCY_END
 static Class cBounds;
 
 void
-Init_bounds ()
+Init_rays_bounds ()
 {
 	Module mRays = define_module("Rays");
 

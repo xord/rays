@@ -9,7 +9,7 @@ static Class cOpenGLError;
 static Class cShaderError;
 
 void
-Init_exception ()
+Init_rays_exception ()
 {
 	Module mRays = define_module("Rays");
 
