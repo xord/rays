@@ -45,11 +45,10 @@ namespace Rays
 	void
 	OpenGL_check_error (const char* file, int line, const char* format, ...)
 	{
-		XOT_STRINGF(format, s);
-
 		GLenum e = glGetError();
 		if (e != GL_NO_ERROR)
 		{
+			XOT_STRINGF(format, s);
 			opengl_error(
 				file, line,
 				"OpenGL error %s: %s", get_error_name(e).c_str(), s.c_str());
