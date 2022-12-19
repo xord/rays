@@ -329,16 +329,18 @@ namespace Rays
 
 			const auto& names = Shader_get_builtin_variable_names(shader);
 			apply_builtin_uniforms(*program, names, texinfo);
-			apply_attributes(*program, names, points, npoints, texcoords, color, [&]() {
-				draw_indices(mode, indices, nindices, npoints);
-			});
+			apply_attributes(*program, names, points, npoints, texcoords, color);
+			draw_indices(mode, indices, nindices, npoints);
+			cleanup();
 
 			ShaderProgram_deactivate();
 		}
 
 		private:
 
-			typedef std::vector<GLint> LocationList;
+			std::vector<GLint> locations;
+
+			std::vector<GLuint> buffers;
 
 			void apply_builtin_uniforms (
 				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
@@ -406,21 +408,16 @@ namespace Rays
 
 			void apply_attributes (
 				const ShaderProgram& program, const ShaderBuiltinVariableNames& names,
-				const Coord3* points, size_t npoints, const Coord3* texcoords, const Color& color,
-				std::function<void()> draw_fun)
+				const Coord3* points, size_t npoints, const Coord3* texcoords,
+				const Color& color)
 			{
 				assert(points && npoints > 0);
 
-				std::vector<GLuint> buffers;
-				LocationList locations;
-
 				apply_attribute(
-					&buffers, &locations,
 					program, names.attribute_position_names,
 					points, npoints);
 
 				apply_attribute(
-					&buffers, &locations,
 					program, names.attribute_texcoord_names,
 					texcoords ? texcoords : points, npoints);
 
@@ -429,54 +426,44 @@ namespace Rays
 				// with specific glsl 'attribute' name.
 				std::vector<Color> colors(npoints, color);
 				apply_attribute(
-					&buffers, &locations,
 					program, names.attribute_color_names,
 					(const Coord4*) &colors[0], npoints);
 #else
 				for (const auto& name : names.attribute_color_names)
 				{
-					apply_attribute(NULL, program, name, [&](GLint loc) {
+					apply_attribute(program, name, [&](GLint loc) {
 						glVertexAttrib4fv(loc, color.array);
 					});
 				}
 #endif
-
-				draw_fun();
-
-				for (auto loc : locations)
-				{
-					glDisableVertexAttribArray(loc);
-					OpenGL_check_error(__FILE__, __LINE__);
-				}
-
-				glDeleteBuffers((GLsizei) buffers.size(), &buffers[0]);
-				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
 			template <typename CoordN>
 			void apply_attribute(
-				auto* buffers, LocationList* locations,
 				const ShaderProgram& program, const auto& names,
 				const CoordN* values, size_t nvalues)
 			{
-				assert(buffers);
-
 				GLuint buffer = 0;
 				for (const auto& name : names)
 				{
-					apply_attribute(locations, program, name, [&](GLint loc) {
+					#ifndef IOS
 						if (buffer == 0)
 						{
-							buffer = create_and_bind_coordn_buffer(values, nvalues);
-							buffers->push_back(buffer);
+							buffer = create_and_bind_buffer(
+								GL_ARRAY_BUFFER, values, sizeof(CoordN) * nvalues);
+							values = 0;
 						}
+					#endif
 
+					apply_attribute(program, name, [&](GLint loc) {
 						glEnableVertexAttribArray(loc);
-						OpenGL_check_error(__FILE__, __LINE__, "loc: %d %s\n", loc, name.c_str());
+						OpenGL_check_error(
+							__FILE__, __LINE__, "loc: %d %s\n", loc, name.c_str());
 
 						glVertexAttribPointer(
-							loc, CoordN::SIZE, get_gl_type<coord>(),
-							GL_FALSE, sizeof(CoordN), NULL);
+							loc, CoordN::SIZE, get_gl_type<coord>(), GL_FALSE, 0, values);
+
+						locations.push_back(loc);
 					});
 				}
 
@@ -485,26 +472,24 @@ namespace Rays
 			}
 
 			void apply_attribute (
-				LocationList* locations, const ShaderProgram& program, const char* name,
-				std::function<void(GLint)> apply)
+				const ShaderProgram& program, const char* name,
+				std::function<void(GLint)> apply_fun)
 			{
 				GLint loc = glGetAttribLocation(program.id(), name);
 				if (loc < 0) return;
 
-				apply(loc);
+				apply_fun(loc);
 				OpenGL_check_error(__FILE__, __LINE__);
-
-				if (locations) locations->push_back(loc);
 			}
 
 			void apply_uniform (
 				const ShaderProgram& program, const char* name,
-				std::function<void(GLint)> apply)
+				std::function<void(GLint)> apply_fun)
 			{
 				GLint loc = glGetUniformLocation(program.id(), name);
 				if (loc < 0) return;
 
-				apply(loc);
+				apply_fun(loc);
 				OpenGL_check_error(__FILE__, __LINE__);
 			}
 
@@ -518,46 +503,52 @@ namespace Rays
 					nindices = npoints;
 				}
 
-				GLuint buffer = create_buffer();
-				size_t size   = sizeof(uint) * nindices;
+				#ifdef IOS
+					glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, indices);
+					OpenGL_check_error(__FILE__, __LINE__);
+				#else
+					create_and_bind_buffer(
+						GL_ELEMENT_ARRAY_BUFFER, indices, sizeof(uint) * nindices);
 
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
-				OpenGL_check_error(__FILE__, __LINE__);
+					glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, 0);
+					OpenGL_check_error(__FILE__, __LINE__);
 
-				glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STREAM_DRAW);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				glDrawElements(mode, (GLsizei) nindices, GL_UNSIGNED_INT, NULL);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				glDeleteBuffers(1, &buffer);
-				OpenGL_check_error(__FILE__, __LINE__);
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+					OpenGL_check_error(__FILE__, __LINE__);
+				#endif
 			}
 
-			template <typename CoordN>
-			GLuint create_and_bind_coordn_buffer (const CoordN* values, size_t nvalues)
-			{
-				GLuint id   = create_buffer();
-				size_t size = sizeof(CoordN) * nvalues;
-
-				glBindBuffer(GL_ARRAY_BUFFER, id);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				glBufferData(GL_ARRAY_BUFFER, size, values, GL_STREAM_DRAW);
-				OpenGL_check_error(__FILE__, __LINE__);
-
-				return id;
-			}
-
-			GLuint create_buffer ()
+			GLuint create_and_bind_buffer (
+				GLenum target, const void* data, GLsizeiptr size)
 			{
 				GLuint id = 0;
 				glGenBuffers(1, &id);
 				OpenGL_check_error(__FILE__, __LINE__);
+
+				buffers.push_back(id);
+
+				glBindBuffer(target, id);
+				OpenGL_check_error(__FILE__, __LINE__);
+
+				glBufferData(target, size, data, GL_STREAM_DRAW);
+				OpenGL_check_error(__FILE__, __LINE__);
+
 				return id;
+			}
+
+			void cleanup ()
+			{
+				for (auto loc : locations)
+				{
+					glDisableVertexAttribArray(loc);
+					OpenGL_check_error(__FILE__, __LINE__);
+				}
+
+				glDeleteBuffers((GLsizei) buffers.size(), &buffers[0]);
+				OpenGL_check_error(__FILE__, __LINE__);
+
+				locations.clear();
+				buffers.clear();
 			}
 
 	};// Painter::Data
