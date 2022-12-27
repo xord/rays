@@ -67,7 +67,7 @@ namespace Rays
 		ShaderSource make_fragment_shader_source (const char* source)
 		{
 			#ifdef IOS
-				static const String SHARED_HEADER = "precision mediump float;\n";
+				static const String SHARED_HEADER = "precision highp float;\n";
 				static const std::regex PRECISION(R"(^\s*precision\s+\w+p\s+float\s*;)");
 
 				if (!std::regex_search(source, PRECISION))
