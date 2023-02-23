@@ -2,7 +2,7 @@
 
 
 require 'rays/autoinit'
-require 'rays/module'
+require 'rays/extension'
 
 require 'rays/point'
 require 'rays/bounds'

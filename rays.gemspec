@@ -4,7 +4,7 @@
 File.expand_path('lib', __dir__)
   .tap {|s| $:.unshift s if !$:.include?(s) && File.directory?(s)}
 
-require 'rays/module'
+require 'rays/extension'
 
 
 Gem::Specification.new do |s|
@@ -12,14 +12,14 @@ Gem::Specification.new do |s|
     patterns.map {|pat| Dir.glob(pat).to_a}.flatten
   end
 
-  mod   = Rays::Module
-  name  = mod.name.downcase
+  ext   = Rays::Extension
+  name  = ext.name.downcase
   rdocs = glob.call *%w[README .doc/ext/**/*.cpp]
 
   s.name        = name
   s.summary     = 'A Drawing Engine using OpenGL.'
   s.description = 'This library helps you to develop graphics application with OpenGL.'
-  s.version     = mod.version
+  s.version     = ext.version
 
   s.authors  = %w[xordog]
   s.email    = 'xordog@gmail.com'

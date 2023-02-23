@@ -7,12 +7,12 @@
 
 require 'rucy/rake'
 
-require 'xot/module'
-require 'rucy/module'
-require 'rays/module'
+require 'xot/extension'
+require 'rucy/extension'
+require 'rays/extension'
 
 
-MODULES     = [Xot, Rucy, Rays]
+EXTENSIONS  = [Xot, Rucy, Rays]
 TESTS_ALONE = ['test/test_rays.rb']
 
 use_external_library 'https://github.com/g-truc/glm',
