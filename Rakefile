@@ -32,12 +32,10 @@ use_external_library 'https://github.com/greenm01/poly2tri',
 use_external_library 'https://github.com/andrewwillmott/splines-lib.git',
   excludes: 'Test\.cpp'
 
-setup_rakefile
 build_native_library
 build_ruby_extension
 test_ruby_extension
 generate_documents
-tag_versions
 build_ruby_gem
 
 task :default => :ext
