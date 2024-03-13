@@ -5,10 +5,11 @@ GEM
     rake (13.1.0)
     test-unit (3.6.1)
       power_assert
-    yard (0.9.34)
+    yard (0.9.36)
 
 PLATFORMS
   arm64-darwin-21
+  x86_64-linux
 
 DEPENDENCIES
   rake
